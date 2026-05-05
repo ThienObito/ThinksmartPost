@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QTPoster Pro - Thinksmart.vn</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+
+<div class="container">
+    <!-- HEADER -->
+    <header>
+        <div class="logo">
+            <a href="#" style="text-decoration:none; color:inherit;">
+                <h3 style="font-weight: 700; letter-spacing: -1px;">QTPoster<span style="color:#14b8a6">Pro</span></h3>
+            </a>
+        </div>
+        <div class="user-info">
+            <span>Hi, Admin</span>
+            <a href="#" class="btn-logout">Logout</a>
+        </div>
+    </header>
+
+   <div class="main-grid" style="display: flex; gap: 32px; align-items: flex-start;">
+    
+    <!-- SIDEBAR -->
+    <div class="sidebar-menu" style="width: 260px; flex-shrink: 0;">
+        <div class="menu-title">MENU</div>
+        
+        <button onclick="showSection(0)" class="menu-item active" id="menu-0">
+            <i class="fas fa-plus-circle"></i>
+            <span>Tạo bài viết mới</span>
+        </button>
+        
+        <button onclick="showSection(3)" class="menu-item" id="menu-3">
+            <i class="fas fa-magic"></i>
+            <span>Tùy chỉnh AI</span>
+        </button>
+        
+        <button onclick="showSection(1)" class="menu-item" id="menu-1">
+            <i class="fas fa-list-ul"></i>
+            <span>Quản lý bài viết</span>
+        </button>
+        
+        <button onclick="showSection(4)" class="menu-item" id="menu-4">
+            <i class="fas fa-globe"></i>
+            <span>Bài viết trên WordPress</span>
+        </button>
+        
+        <button onclick="showSection(2)" class="menu-item" id="menu-2">
+            <i class="fas fa-cog"></i>
+            <span>Cài đặt API</span>
+        </button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content" style="flex: 1; max-width: 1100px; margin: 0 auto;">
+        
+        <!-- SECTION 0: TẠO BÀI VIẾT -->
+        <div id="section-0" class="section">
+            <h2 style="font-size: 22px; font-weight: 600; margin-bottom: 20px;">Tạo bài viết SEO mới</h2>
+            
+            <div class="glass p-8" style="max-width: 720px;">
+                <form id="createForm">
+                    <div class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-sm text-white/70">Chủ đề bài viết</label>
+                            <button type="button" onclick="suggestTopics()" class="text-teal-400 hover:text-teal-300 text-sm flex items-center gap-1">
+                                <i class="fas fa-lightbulb"></i>
+                                <span>Gợi ý chủ đề</span>
+                            </button>
+                        </div>
+                        <input type="text" id="topic" class="w-full bg-white/10 border border-white/20 rounded-2xl px-5 py-4 text-lg" placeholder="Ví dụ: In 3D linh kiện ô tô">
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-6 mb-8">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Chuyên mục</label>
+                            <select id="category" class="w-full border border-gray-300 rounded-2xl px-4 py-3 text-base focus:outline-none focus:border-teal-500">
+                                <option value="giai-phap">Giải pháp</option>
+                                <option value="ung-dung">Ứng dụng</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Số lượng bài viết</label>
+                            <input type="number" id="quantity" value="1" min="1" max="10" class="w-full border border-gray-300 rounded-2xl px-4 py-3 text-center text-lg font-semibold focus:outline-none focus:border-teal-500">
+                            <p class="text-xs text-gray-500 mt-1">Tạo nhiều bài cùng lúc (1-10)</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Số ảnh mỗi bài</label>
+                            <input type="number" id="imageCount" value="0" min="0" max="3" class="w-full border border-gray-300 rounded-2xl px-4 py-3 text-center text-lg font-semibold focus:outline-none focus:border-teal-500">
+                            <p class="text-xs text-gray-500 mt-1">0 = không tạo ảnh</p>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-save" style="margin-top: 10px;">
+                        <i class="fas fa-rocket" style="margin-right: 8px;"></i> TẠO NGAY BÀI VIẾT
+                    </button>
+                </form>
+                
+                <div id="progressContainer" style="margin-top: 20px; display: none;">
+                    <div style="height: 8px; background: #eee; border-radius: 10px; overflow: hidden;">
+                        <div id="progressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #14b8a6, #22d3ee); transition: width 1.5s;"></div>
+                    </div>
+                    <p id="statusText" style="text-align: center; margin-top: 10px; font-size: 13px; color: #14b8a6; font-weight: 500;">Đang tạo bài viết...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 1: QUẢN LÝ BÀI VIẾT -->
+        <div id="section-1" class="section" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <div>
+                    <h2 style="font-size: 22px; font-weight: 700; color: #0f172a;">Quản lý bài viết</h2>
+                    <p style="font-size: 13px; color: #64748b; margin-top: 4px;">Danh sách bài viết đã tạo</p>
+                </div>
+                
+                <button onclick="loadArticles()" class="btn-save" style="width: auto; padding: 12px 28px; font-size: 14.5px; background: linear-gradient(90deg, #0ea5e9, #0284c8); display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Làm mới danh sách</span>
+                </button>
+            </div>
+            
+            <div class="sop-list" id="articleList">
+                <!-- Bài viết sẽ load động -->
+            </div>
+        </div>
+
+        <!-- SECTION 2: CÀI ĐẶT API -->
+        <div id="section-2" class="section" style="display: none; max-width: 600px;">
+            <h2 style="font-size: 22px; font-weight: 600; margin-bottom: 20px;">Cài đặt API</h2>
+            
+            <form onsubmit="saveAPIKeys(); return false;" class="glass p-8">
+                <div class="input-group">
+                    <label>DeepSeek API Key</label>
+                    <input type="password" id="deepseekKey" placeholder="sk-...">
+                </div>
+                <div class="input-group">
+                    <label>Pexels API Key (tùy chọn)</label>
+                    <input type="password" id="pexelsKey" placeholder="563492ad...">
+                </div>
+                <div class="input-group">
+                    <label>WordPress Domain</label>
+                    <input type="text" id="wpDomain" value="https://thinksmart.vn">
+                </div>
+                <div class="input-group">
+                    <label>WordPress Application Password</label>
+                    <input type="password" id="wpPassword" placeholder="xxxx xxxx xxxx xxxx">
+                </div>
+                
+                <button type="submit" class="btn-save" style="margin-top: 10px;">
+                    <i class="fas fa-save" style="margin-right: 8px;"></i> LƯU CÀI ĐẶT
+                </button>
+            </form>
+        </div>
+
+        <!-- SECTION 3: TÙY CHỈNH AI -->
+        <div id="section-3" class="section" style="display: none;">
+            <h2 class="text-4xl font-bold mb-8">Tùy chỉnh AI</h2>
+            
+            <div class="max-w-3xl space-y-8">
+                <div class="bg-white/5 rounded-3xl p-8">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i class="fas fa-pen text-teal-400 text-xl"></i>
+                        <h3 class="text-xl font-semibold">Prompt viết bài</h3>
+                    </div>
+                    <textarea id="customPrompt" rows="10" class="w-full bg-white/10 border border-white/20 rounded-2xl p-6 font-mono text-sm" placeholder="Dán prompt tùy chỉnh cho việc viết bài tại đây..."></textarea>
+                </div>
+
+                <div class="bg-white/5 rounded-3xl p-8">
+                    <div class="flex items-center gap-3 mb-4">
+                        <i class="fas fa-image text-purple-400 text-xl"></i>
+                        <h3 class="text-xl font-semibold">Prompt tạo ảnh (Image Prompt)</h3>
+                    </div>
+                    <textarea id="customImagePrompt" rows="6" class="w-full bg-white/10 border border-white/20 rounded-2xl p-6 font-mono text-sm" placeholder="Ví dụ: Professional product photography of {topic}, modern industrial style..."></textarea>
+                    <p class="text-xs text-white/50 mt-2">Dùng <code>{topic}</code> để thay thế chủ đề bài viết</p>
+                </div>
+
+                <div class="flex gap-4">
+                    <button onclick="saveCustomPrompts()" class="flex-1 py-4 bg-teal-600 hover:bg-teal-700 rounded-3xl font-semibold flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i> LƯU CẢ HAI PROMPT
+                    </button>
+                    <button onclick="resetCustomPrompts()" class="flex-1 py-4 bg-white/10 hover:bg-white/15 rounded-3xl font-semibold flex items-center justify-center gap-2">
+                        <i class="fas fa-undo"></i> KHÔI PHỤC MẶC ĐỊNH
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: BÀI VIẾT TRÊN WORDPRESS (CODE SẠCH) -->
+<div id="section-4" class="section" style="display: none; max-width: 1100px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+        <div>
+            <h2 style="font-size: 28px; font-weight: 700; color: #0f172a;">Bài viết trên WordPress</h2>
+            <p style="color: #64748b; margin-top: 4px;">Quản lý trực tiếp trên thinksmart.vn</p>
+        </div>
+        
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <!-- BULK ACTIONS -->
+            <div style="background: #f8fafc; border-radius: 14px; padding: 8px 16px; display: flex; align-items: center; gap: 12px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                    <input type="checkbox" id="selectAllWP" onchange="toggleSelectAllWP()" style="width: 18px; height: 18px;">
+                    <span>Chọn tất cả</span>
+                </label>
+                
+                <button onclick="bulkDeleteWPPosts()" style="background: #fee2e2; color: #b91c1c; border: none; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                    <i class="fas fa-trash"></i> Xóa đã chọn
+                </button>
+            </div>
+            
+            <button onclick="showSection(0)" style="background: #14b8a6; color: white; border: none; padding: 12px 24px; border-radius: 9999px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <i class="fas fa-plus"></i>
+                <span>Thêm bài mới</span>
+            </button>
+        </div>
+    </div>
+
+    <div style="background: white; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; padding: 28px;">
+        <div id="wpPostsList" style="min-height: 500px;"></div>
+    </div>
+</div>
+        
+    </div>
+</div>
+</div>
+
+<!-- SECTION 4: BÀI VIẾT TRÊN WORDPRESS (CLEAN + CENTERED) -->
+<div id="section-4" class="section" style="display: none; max-width: 1100px; margin: 0 auto;">
+    
+    <!-- HEADER + BULK ACTIONS -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+        <div>
+            <h2 style="font-size: 28px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">Bài viết trên WordPress</h2>
+            <p style="color: #64748b;">Quản lý trực tiếp trên thinksmart.vn</p>
+        </div>
+        
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <!-- BULK ACTIONS -->
+            <div style="background: #f8fafc; border-radius: 14px; padding: 6px 12px; display: flex; align-items: center; gap: 12px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+                    <input type="checkbox" id="selectAllWP" onchange="toggleSelectAll()" style="width: 18px; height: 18px;">
+                    <span>Chọn tất cả</span>
+                </label>
+                
+                <button onclick="bulkDeleteWPPosts()" 
+                        style="background: #fee2e2; color: #b91c1c; border: none; padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                    <i class="fas fa-trash"></i> Xóa đã chọn
+                </button>
+            </div>
+            
+            <button onclick="createNewWPPost()" 
+                    style="background: #14b8a6; color: white; border: none; padding: 12px 24px; border-radius: 9999px; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <i class="fas fa-plus"></i>
+                <span>Thêm bài mới</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- DANH SÁCH BÀI VIẾT -->
+    <div style="background: white; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; padding: 24px;">
+        <div id="wpPostsList" style="min-height: 400px;">
+            <!-- Nội dung load ở đây -->
+        </div>
+    </div>
+</div>
+<script>
+// ==================== JAVASCRIPT HOÀN CHỈNH ====================
+
+function showSection(section) {
+    document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+    
+    const target = document.getElementById('section-' + section);
+    if (target) target.style.display = 'block';
+    
+    const menu = document.getElementById('menu-' + section);
+    if (menu) menu.classList.add('active');
+    
+    if (section === 1) loadArticles();
+    if (section === 4) loadWPPosts();   // ← THÊM DÒNG NÀY
+}
+
+// ==================== WORDPRESS MANAGER ====================
+async function loadWPPosts() {
+    const container = document.getElementById('wpPostsList');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div style="text-align:center; padding:40px 20px; color:#64748b;">
+            <i class="fas fa-spinner fa-spin" style="font-size:32px; margin-bottom:16px;"></i>
+            <p>Đang tải bài viết từ WordPress...</p>
+        </div>
+    `;
+
+    try {
+        const res = await fetch('/api/wp-posts');
+        if (!res.ok) throw new Error(`Lỗi server: ${res.status}`);
+        
+        const posts = await res.json();
+        container.innerHTML = '';
+
+        if (!posts || posts.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:60px 20px; color:#64748b;">
+                    <i class="fas fa-newspaper" style="font-size:48px; margin-bottom:20px; opacity:0.3;"></i>
+                    <h3 style="font-size:18px; margin-bottom:8px;">Chưa có bài viết nào trên WordPress</h3>
+                    <p style="font-size:14px;">Hãy tạo bài viết đầu tiên!</p>
+                </div>
+            `;
+            return;
+        }
+
+        posts.forEach(post => {
+            const div = document.createElement('div');
+            div.className = 'border border-slate-200 rounded-2xl p-6 hover:bg-slate-50 flex justify-between items-center';
+            div.innerHTML = `
+                <div>
+                    <h3 class="font-semibold text-lg">${post.title.rendered}</h3>
+                    <div class="text-sm text-slate-500 mt-1">Ngày đăng: ${new Date(post.date).toLocaleDateString('vi-VN')}</div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="editWPPost(${post.id})" class="px-5 py-2 bg-blue-100 text-blue-600 rounded-xl text-sm hover:bg-blue-200">Sửa</button>
+                    <button onclick="deleteWPPost(${post.id})" class="px-5 py-2 bg-red-100 text-red-600 rounded-xl text-sm hover:bg-red-200">Xóa</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    } catch (e) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:40px 20px; color:#dc2626;">
+                <i class="fas fa-exclamation-triangle" style="font-size:36px; margin-bottom:16px;"></i>
+                <h3 style="font-size:16px;">Không thể tải bài viết từ WordPress</h3>
+                <p style="font-size:13px; color:#64748b;">${e.message}</p>
+            </div>
+        `;
+    }
+}
+
+async function deleteWPPost(postId) {
+    if (!confirm('Bạn có chắc muốn xóa bài viết này?')) return;
+    try {
+        await fetch(`/api/wp-posts/${postId}`, { method: 'DELETE' });
+        alert('✅ Đã xóa bài viết!');
+        loadWPPosts();
+    } catch (e) {
+        alert('❌ Lỗi khi xóa bài viết');
+    }
+}
+
+function editWPPost(postId) {
+    alert('Chức năng sửa bài viết sẽ được làm tiếp theo!');
+}
+
+function createNewWPPost() {
+    alert('Chức năng thêm bài mới sẽ được làm tiếp theo!');
+}
+
+// Các hàm khác giữ nguyên
+async function loadArticles() { /* giữ nguyên code cũ */ }
+// ... (giữ nguyên toàn bộ code cũ của bạn)
+
+window.onload = function() {
+    showSection(0);
+    loadArticles();
+};
+</script>
+<!-- Modal Gợi ý Chủ Đề -->
+<div id="suggestModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div class="bg-slate-900 rounded-3xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-auto">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h3 class="text-2xl font-bold text-white">Gợi ý chủ đề bài viết</h3>
+                <p class="text-sm text-slate-400 mt-1">Chọn chủ đề tối ưu để tạo bài viết SEO nhanh</p>
+            </div>
+            <button onclick="closeSuggestModal()" class="text-white/50 hover:text-white text-3xl leading-none">&times;</button>
+        </div>
+        
+        <div id="suggestResults" class="space-y-3 mb-6">
+            <!-- Kết quả gợi ý sẽ hiển thị ở đây -->
+        </div>
+        
+        <div class="flex gap-4">
+            <button onclick="closeSuggestModal()" class="flex-1 py-4 bg-white/10 hover:bg-white/15 rounded-3xl text-white">Đóng</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>
