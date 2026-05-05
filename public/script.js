@@ -436,12 +436,16 @@ async function loadWPPosts() {
 
     try {
         const res = await fetch('/api/wp-posts');
-        if (!res.ok) throw new Error(`Lỗi server: ${res.status}`);
-        
         const posts = await res.json();
+
+        // Kiểm tra nếu không phải mảng
+        if (!Array.isArray(posts)) {
+            throw new Error("Dữ liệu trả về không hợp lệ");
+        }
+
         container.innerHTML = '';
 
-        if (!posts || posts.length === 0) {
+        if (posts.length === 0) {
             container.innerHTML = `
                 <div style="text-align:center; padding:60px 20px; color:#64748b;">
                     <i class="fas fa-newspaper" style="font-size:48px; margin-bottom:20px; opacity:0.3;"></i>
@@ -465,7 +469,6 @@ async function loadWPPosts() {
                 </div>
                 
                 <div style="display: flex; gap: 10px; flex-shrink: 0; align-items: center;">
-                    <!-- NÚT XEM MỚI -->
                     <a href="${post.link}" target="_blank" 
                        style="background: #e0f2fe; color: #0369a1; text-decoration: none; padding: 9px 18px; border-radius: 10px; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px;">
                         <i class="fas fa-external-link-alt"></i> Xem
