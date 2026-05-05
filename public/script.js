@@ -22,16 +22,8 @@ function showToast(message, type = 'success') {
     setTimeout(() => { toast.style.animation = 'slideOut 0.4s ease forwards'; setTimeout(() => toast.remove(), 400); }, 2800);
 }
 
-// ==================== HIỂN THỊ SECTION ====================
-function showSection(section) {
-    document.querySelectorAll('.section').forEach(s => {
-        s.style.display = 'none';
-        s.style.opacity = '0';
-    });
-
-    // ==================== CONFIRM MODAL ĐẸP (thay alert/confirm xấu) ====================
+// ==================== CONFIRM MODAL ĐẸP ====================
 function showConfirm(message, onConfirm, onCancel = null) {
-    // Xóa modal cũ nếu có
     const oldModal = document.getElementById('customConfirmModal');
     if (oldModal) oldModal.remove();
 
@@ -75,7 +67,6 @@ function showConfirm(message, onConfirm, onCancel = null) {
         if (onCancel) onCancel();
     };
     
-    // Đóng khi click nền
     modal.onclick = (e) => {
         if (e.target === modal) {
             modal.remove();
@@ -83,7 +74,14 @@ function showConfirm(message, onConfirm, onCancel = null) {
         }
     };
 }
-    
+
+// ==================== HIỂN THỊ SECTION ====================
+function showSection(section) {
+    document.querySelectorAll('.section').forEach(s => {
+        s.style.display = 'none';
+        s.style.opacity = '0';
+    });
+
     document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
     
     const target = document.getElementById('section-' + section);
@@ -100,6 +98,7 @@ function showConfirm(message, onConfirm, onCancel = null) {
     if (section === 1) loadArticles();
     if (section === 0) loadWPCategories();
     if (section === 4) loadWPPosts();
+    if (section === 2) loadCustomPrompts();
 }
 
 // ==================== TÙY CHỈNH 2 PROMPT ====================
@@ -130,15 +129,6 @@ function loadCustomPrompts() {
     if (articlePrompt) document.getElementById('customPrompt').value = articlePrompt;
     if (imagePrompt) document.getElementById('customImagePrompt').value = imagePrompt;
 }
-
-// Override showSection to load prompts for tab 2 (Tùy chỉnh AI)
-const originalShowSection = showSection;
-showSection = function(section) {
-    originalShowSection(section);
-    if (section === 2) {
-        loadCustomPrompts();
-    }
-};
 
 // ==================== TẠO BÀI VIẾT (CODE ĐÃ SỬA - QUAN TRỌNG) ====================
 document.getElementById('createForm').addEventListener('submit', async function(e) {
@@ -189,7 +179,6 @@ document.getElementById('createForm').addEventListener('submit', async function(
 
                 alert(`✅ Hoàn thành!\n\nĐã tạo thành công ${successCount}/${quantity} bài viết.`);
 
-                // Chuyển sang tab Quản lý bài viết
                 showSection(1);
                 loadArticles();
             }, 800);
@@ -322,7 +311,6 @@ async function loadArticles() {
 }
 
 // ==================== XEM TRƯỚC BÀI VIẾT ====================
-// ==================== XEM TRƯỚC BÀI VIẾT ====================
 async function previewArticle(filename) {
     try {
         const res = await fetch('/api/articles');
@@ -332,7 +320,7 @@ async function previewArticle(filename) {
         if (!article) return showToast('Không tìm thấy bài viết!', 'error');
         
         const modal = document.createElement('div');
-        modal.className = 'fixed';   // ← DÒNG QUAN TRỌNG (đã thêm)
+        modal.className = 'fixed';
         modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px;';
         
         modal.innerHTML = `
@@ -438,7 +426,6 @@ async function loadWPPosts() {
         const res = await fetch('/api/wp-posts');
         const posts = await res.json();
 
-        // Kiểm tra nếu không phải mảng
         if (!Array.isArray(posts)) {
             throw new Error("Dữ liệu trả về không hợp lệ");
         }
@@ -499,8 +486,6 @@ async function loadWPPosts() {
     }
 }
 
-// ==================== WORDPRESS - CHỌN TẤT CẢ & XÓA ĐÃ CHỌN ====================
-// ==================== CHỌN TẤT CẢ - WORDPRESS ====================
 function toggleSelectAllWP() {
     const selectAll = document.getElementById('selectAllWP');
     const checkboxes = document.querySelectorAll('.wp-checkbox');
@@ -535,70 +520,9 @@ async function bulkDeleteWPPosts() {
     );
 }
 
-async function bulkDeleteWPPosts() {
-    const checkedBoxes = document.querySelectorAll('.wp-checkbox:checked');
-    
-    if (checkedBoxes.length === 0) {
-        showToast('Vui lòng chọn ít nhất 1 bài viết!', 'error');
-        return;
-    }
-    
-    showConfirm(
-        `Bạn có chắc muốn xóa ${checkedBoxes.length} bài viết đã chọn?`,
-        async () => {
-            let successCount = 0;
-            
-            for (let box of checkedBoxes) {
-                const postId = box.dataset.id;
-                try {
-                    const res = await fetch(`/api/wp-posts/${postId}`, { method: 'DELETE' });
-                    if (res.ok) {
-                        successCount++;
-                    } else {
-                        console.error('Xóa thất bại ID:', postId);
-                    }
-                } catch (e) {
-                    console.error('Lỗi kết nối khi xóa ID:', postId);
-                }
-            }
-            
-            if (successCount > 0) {
-                showToast(`✅ Đã xóa thành công ${successCount}/${checkedBoxes.length} bài viết!`, 'success');
-            } else {
-                showToast('❌ Không xóa được bài viết nào. Vui lòng thử lại!', 'error');
-            }
-            
-            loadWPPosts();
-        }
-    );
-}
-
-async function bulkDeleteWPPosts() {
-    const checkedBoxes = document.querySelectorAll('.wp-checkbox:checked');
-    if (checkedBoxes.length === 0) {
-        alert('Vui lòng chọn ít nhất 1 bài viết!');
-        return;
-    }
-    
-    if (!confirm(`Bạn có chắc muốn xóa ${checkedBoxes.length} bài viết đã chọn?`)) return;
-
-    let successCount = 0;
-    for (let box of checkedBoxes) {
-        const postId = box.dataset.id;
-        try {
-            await fetch(`/api/wp-posts/${postId}`, { method: 'DELETE' });
-            successCount++;
-        } catch (e) {}
-    }
-    
-    alert(`✅ Đã xóa thành công ${successCount}/${checkedBoxes.length} bài viết!`);
-    loadWPPosts();
-}
-
 function editWPPost(postId) {
-    // Tạo modal chỉnh sửa đẹp
-        const modal = document.createElement('div');
-    modal.className = 'fixed';   // ← THÊM DÒNG NÀY
+    const modal = document.createElement('div');
+    modal.className = 'fixed';
     modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.75); display:flex; align-items:center; justify-content:center; z-index:99999; padding:20px;';
     
     modal.innerHTML = `
@@ -633,7 +557,6 @@ function editWPPost(postId) {
     const contentInput = modal.querySelector('#editContent');
     const saveBtn = modal.querySelector('#saveEditBtn');
     
-    // Load dữ liệu bài viết hiện tại từ WordPress
     fetch(`/api/wp-posts`)
         .then(res => res.json())
         .then(posts => {
@@ -647,7 +570,6 @@ function editWPPost(postId) {
             showToast('Không thể tải dữ liệu bài viết!', 'error');
         });
     
-    // Xử lý khi bấm nút Lưu
     saveBtn.onclick = async () => {
         const newTitle = titleInput.value.trim();
         const newContent = contentInput.value.trim();
@@ -675,7 +597,7 @@ function editWPPost(postId) {
             if (result.success) {
                 modal.remove();
                 showToast('✅ Đã lưu thay đổi thành công!', 'success');
-                loadWPPosts(); // Tải lại danh sách
+                loadWPPosts();
             } else {
                 showToast('❌ Lỗi khi lưu: ' + (result.message || ''), 'error');
                 saveBtn.innerHTML = 'Lưu thay đổi';
@@ -693,11 +615,7 @@ function createNewWPPost() {
     showSection(0);
 }
 
-function createNewWPPost() {
-    showSection(0);
-}
-
-// ==================== GỢI Ý CHỦ ĐỀ BÀI VIẾT (ĐÃ SỬA) ====================
+// ==================== GỢI Ý CHỦ ĐỀ BÀI VIẾT ====================
 async function suggestTopics() {
     const category = document.getElementById('category')?.value || 'giai-phap';
     
@@ -710,7 +628,6 @@ async function suggestTopics() {
     }
     
     modal.classList.remove('hidden');
-   // === PHẦN LOADING (thay đoạn cũ) ===
     resultsDiv.innerHTML = `
     <div class="flex flex-col items-center justify-center py-10 text-center">
         <i class="fas fa-spinner fa-spin text-teal-400 text-4xl mb-4"></i>
@@ -731,40 +648,34 @@ async function suggestTopics() {
         if (data.success && data.suggestions) {
             resultsDiv.innerHTML = '';
             
-            // === THAY ĐOẠN NÀY ===
-data.suggestions.forEach((item) => {
-    const div = document.createElement('div');
-    div.className = 'bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl p-5 cursor-pointer transition text-white';
-    div.innerHTML = `
-        <div class="flex justify-between items-start">
-            <div class="flex-1">
-                <div class="font-semibold text-lg mb-2 text-white">${item.topic}</div>
-                <div class="text-sm text-slate-300 mb-3">${item.reason}</div>
-                <div class="flex items-center gap-2">
-                    <span class="px-3 py-1 bg-teal-500/20 text-teal-400 text-xs rounded-full">${item.type}</span>
-                    <span class="text-xs text-slate-400">Độ tối ưu: ${item.score}/10</span>
-                </div>
-            </div>
-        </div>
-    `;
+            data.suggestions.forEach((item) => {
+                const div = document.createElement('div');
+                div.className = 'bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl p-5 cursor-pointer transition text-white';
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="font-semibold text-lg mb-2 text-white">${item.topic}</div>
+                            <div class="text-sm text-slate-300 mb-3">${item.reason}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 bg-teal-500/20 text-teal-400 text-xs rounded-full">${item.type}</span>
+                                <span class="text-xs text-slate-400">Độ tối ưu: ${item.score}/10</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
                 
-                                div.onclick = () => {
+                div.onclick = () => {
                     document.getElementById('topic').value = item.topic;
                     closeSuggestModal();
-                    
-                    // Sử dụng modal confirm đẹp thay vì confirm cũ
                     setTimeout(() => {
                         showConfirm(
                             'Bạn có muốn tạo bài viết với chủ đề này ngay không?',
                             () => {
-                                // Người dùng bấm Xác nhận
                                 document.getElementById('createForm').dispatchEvent(new Event('submit'));
                             }
                         );
                     }, 300);
                 };
-                
-                resultsDiv.appendChild(div);
                 
                 resultsDiv.appendChild(div);
             });
@@ -781,19 +692,17 @@ function closeSuggestModal() {
 
 // ==================== KHỞI ĐỘNG ====================
 window.onload = function() {
-    showSection(0); // Mặc định mở tab Tạo bài viết
+    showSection(0);
     
-    // Load API keys từ localStorage
     const saved = localStorage.getItem('apiKeys');
     if (saved) {
         const keys = JSON.parse(saved);
         if (document.getElementById('deepseekKey')) document.getElementById('deepseekKey').value = keys.deepseek || '';
         if (document.getElementById('pexelsKey')) document.getElementById('pexelsKey').value = keys.pexels || '';
         if (document.getElementById('wpDomain')) document.getElementById('wpDomain').value = keys.wpDomain || 'https://thinksmart.vn';
-        if (document.getElementById(' wpPassword')) document.getElementById('wpPassword').value = keys.wpPassword || '';
+        if (document.getElementById('wpPassword')) document.getElementById('wpPassword').value = keys.wpPassword || '';
     }
     
-    // Load categories
     loadWPCategories();
     
     console.log('✅ QTPoster Pro initialized successfully!');
