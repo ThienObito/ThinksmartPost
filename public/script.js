@@ -132,7 +132,7 @@ function loadCustomPrompts() {
 
 // ==================== TẠO BÀI VIẾT (CODE ĐÃ SỬA - QUAN TRỌNG) ====================
 document.getElementById('createForm').addEventListener('submit', async function(e) {
-    e.preventDefault();                    // ← DÒNG NÀY RẤT QUAN TRỌNG, KHÔNG ĐƯỢC XÓA
+    e.preventDefault();
     
     const topic = document.getElementById('topic').value.trim();
     const quantity = parseInt(document.getElementById('quantity').value) || 1;
@@ -144,7 +144,6 @@ document.getElementById('createForm').addEventListener('submit', async function(
         return;
     }
 
-    // Hiển thị progress bar
     const progressContainer = document.getElementById('progressContainer');
     const progressBar = document.getElementById('progressBar');
     const statusText = document.getElementById('statusText');
