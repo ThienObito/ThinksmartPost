@@ -1,0 +1,33 @@
+services:
+  app:
+    build: .
+    container_name: qtposter-pro
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      - NODE_ENV=production
+      - PORT=4001
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
+      - WP_APP_PASSWORD=${WP_APP_PASSWORD}
+      - WP_URL=${WP_URL:-https://thinksmart.vn}
+      - WP_USERNAME=${WP_USERNAME:-admin}
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      # Persist data (articles, users, queue, templates, notes)
+      - qtposter-data:/app/data
+      # Persist uploaded images
+      - qtposter-uploads:/app/public/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  qtposter-data:
+    driver: local
+  qtposter-uploads:
+    driver: local

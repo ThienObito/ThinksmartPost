@@ -1,29 +1,19 @@
-# Environment
+logs/
+public/uploads/
+public/dist/
+data/
 .env
 .env.*
-
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Data & Output
-data/
-output/
-images/
 *.log
-
-# Python
-venv/
-__pycache__/
-*.pyc
-*.pyo
-
-# OS
 .DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
+node_modules/
+.openclaw/
+AGENTS.md
+FRONTEND.md
+HEARTBEAT.md
+IDENTITY.md
+MEMORY.md
+SOUL.md
+TOOLS.md
+USER.md
+npm-debug.log*

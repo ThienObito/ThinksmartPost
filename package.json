@@ -3,13 +3,25 @@
   "version": "2.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build:css": "tailwindcss --input public/src/style.css --output public/dist/style.css",
+    "dev:css": "tailwindcss --input public/src/style.css --output public/dist/style.css --watch",
+    "build": "npm run build:css"
   },
   "dependencies": {
+    "@tailwindcss/cli": "^4.3.0",
     "axios": "^1.8.4",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
-    "replicate": "^1.4.0"
+    "express-rate-limit": "^8.5.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "replicate": "^1.4.0",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4.3.0",
+    "uuid": "^14.0.0"
   }
 }

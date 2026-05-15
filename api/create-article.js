@@ -1,156 +1,301 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const Replicate = require('replicate');
 
 const DATA_DIR = path.join(__dirname, '../data');
-const replicate = new Replicate({
-    auth: process.env.REPLICATE_API_TOKEN
-});
 
-// Hàm extract JSON an toàn
+// ── Extract JSON from AI response (multi-strategy fallback) ────
 function extractJSON(text) {
-    if (!text) throw new Error("AI trả về rỗng");
-    
-    // Loại bỏ markdown code block
-    text = text.replace(/```json\n?/gi, '').replace(/```\s*$/gi, '').trim();
-    
+  if (!text) throw new Error('AI trả về nội dung rỗng');
+
+  let cleaned = text.trim();
+
+  // Strategy 1: Remove markdown code blocks
+  cleaned = cleaned.replace(/```(?:json)?\n?/gi, '').replace(/```\s*$/gi, '').trim();
+
+  // Strategy 2: Direct JSON parse
+  try {
+    return JSON.parse(cleaned);
+  } catch { /* continue */ }
+
+  // Strategy 3: Find first { ... } block (handles extra text before/after JSON)
+  const braceMatch = cleaned.match(/\{[\s\S]*\}/);
+  if (braceMatch) {
     try {
-        return JSON.parse(text);
-    } catch (e) {
-        // Thử tìm JSON object trong text
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) {
-            try {
-                return JSON.parse(match[0]);
-            } catch (e2) {}
+      return JSON.parse(braceMatch[0]);
+    } catch { /* continue */ }
+  }
+
+  // Strategy 4: Try to fix common JSON issues (trailing commas, single quotes, etc.)
+  const fixed = cleaned
+    .replace(/([{,])\s*'([^']+)'\s*:/g, '$1"$2":')    // single-quoted keys -> double
+    .replace(/:\s*'([^']+)'/g, ':"$1"')                // single-quoted values -> double
+    .replace(/,\s*([}\]])/g, '$1')                      // trailing commas
+    .replace(/\/\/.*$/gm, '');                          // line comments
+
+  try { return JSON.parse(fixed); } catch { /* continue */ }
+
+  // Strategy 5: Find { ... } block in fixed version
+  const fixedMatch = fixed.match(/\{[\s\S]*\}/);
+  if (fixedMatch) {
+    try { return JSON.parse(fixedMatch[0]); } catch { /* continue */ }
+  }
+
+  // Strategy 6: If AI returned structured sections (intro, sections, cta), try to use as-is
+  if (text.includes('<h2>') || text.includes('<article>') || text.includes('</h')) {
+    return {
+      title: text.match(/<h1>([^<]+)<\/h1>/) ? text.match(/<h1>([^<]+)<\/h1>/)[1].trim() : '',
+      content: text,
+      meta_description: '',
+      keywords: [],
+    };
+  }
+
+  throw new Error('Không thể parse JSON từ AI. AI trả về: ' + text.substring(0, 200) + '...');
+}
+
+// ── Build HTML from structured or flat content ──────────────────
+function buildHtmlContent(article) {
+  if (typeof article.content === 'string' && article.content.startsWith('<')) {
+    return article.content;
+  }
+  const parts = [];
+  if (article.intro) parts.push(`<p>${article.intro}</p>`);
+  if (Array.isArray(article.sections)) {
+    for (const sec of article.sections) {
+      if (sec.heading) parts.push(`<h2>${sec.heading}</h2>`);
+      if (sec.content) parts.push(`<p>${sec.content}</p>`);
+      if (Array.isArray(sec.subsections)) {
+        for (const sub of sec.subsections) {
+          if (sub.subheading) parts.push(`<h3>${sub.subheading}</h3>`);
+          if (sub.content) parts.push(`<div>${sub.content}</div>`);
         }
-        throw new Error("Không parse được JSON từ AI");
+      }
     }
+  }
+  // KHÔNG thêm CTA, không thêm footer, không thông tin liên hệ
+  return parts.length > 0
+    ? `<article>${parts.join('\n')}</article>`
+    : `<article><p>${article.meta_description || ''}</p></article>`;
 }
 
-// Hàm tạo ảnh bằng Flux Schnell
-async function generateImage(prompt) {
-    try {
-        const output = await replicate.run(
-            "black-forest-labs/flux-schnell",
-            {
-                input: {
-                    prompt: prompt,
-                    go_fast: true,
-                    megapixels: "1",
-                    num_outputs: 1,
-                    aspect_ratio: "16:9",
-                    output_format: "png",
-                    output_quality: 90
-                }
-            }
-        );
-        return output[0];
-    } catch (error) {
-        console.error("❌ Lỗi tạo ảnh:", error.message);
-        return null;
-    }
-}
+// ═══════════════════════════════════════════════════════════════
+// ANGLES MỞ RỘNG: 20 góc nhìn khác nhau để đa dạng hóa nội dung
+// ═══════════════════════════════════════════════════════════════
+const ANGLES = [
+  'Tổng quan, định nghĩa cơ bản và giới thiệu tổng thể về chủ đề.',
+  'So sánh chi tiết các phương án, ưu nhược điểm và bảng so sánh.',
+  'Nghiên cứu điển hình, số liệu 2026, dữ liệu thực tế và dự báo tương lai.',
+  'Hướng dẫn thực hành từng bước, triển khai ứng dụng thực tế.',
+  'Các câu hỏi thường gặp, giải đáp thắc mắc và lưu ý quan trọng.',
+  'Góc nhìn chuyên gia, phân tích chuyên sâu và khuyến nghị chuyên môn.',
+  'Xu hướng công nghệ mới nhất, đổi mới sáng tạo và tác động ngành.',
+  'Phân tích chi phí - lợi ích, tối ưu ngân sách và ROI.',
+  'Tiêu chuẩn kỹ thuật, quy trình kiểm định và đảm bảo chất lượng.',
+  'Nghiên cứu thị trường, nhu cầu người dùng và cơ hội ứng dụng.',
+  'Tối ưu hóa quy trình, cải tiến hiệu suất và năng suất.',
+  'Bài học từ thực tiễn, case study thành công và thất bại.',
+  'Phân tích rủi ro, giải pháp khắc phục và dự phòng.',
+  'Vật liệu và công nghệ chế tạo tiên tiến, so sánh đặc tính.',
+  'Quy trình thiết kế từ ý tưởng đến sản phẩm hoàn thiện.',
+  'Ứng dụng trong các ngành cụ thể: y tế, hàng không, ô tô, điện tử.',
+  'So sánh giữa phương pháp truyền thống và công nghệ mới.',
+  'Phân tích tác động môi trường và phát triển bền vững.',
+  'Đánh giá độ bền, kiểm tra chất lượng và tuổi thọ sản phẩm.',
+  'Tích hợp IoT, tự động hóa và chuyển đổi số trong lĩnh vực.',
+];
 
-// ==================== HÀM CHÍNH TẠO BÀI VIẾT ====================
-async function createArticleHandler(req, res) {
-    const { topics, category = 'giai-phap', style = 'Professional' } = req.body;
+// ═══════════════════════════════════════════════════════════════
+// SUB-TOPIC TEMPLATES: khi QTY > 1, AI sẽ chọn hướng khác nhau
+// ═══════════════════════════════════════════════════════════════
+const SUB_TOPIC_DIRECTIONS = [
+  'Hãy viết về tổng quan và khái niệm cơ bản, phù hợp cho người mới bắt đầu.',
+  'Hãy tập trung vào so sánh các giải pháp, công nghệ hoặc phương pháp khác nhau.',
+  'Hãy viết về ứng dụng thực tế trong các ngành cụ thể với ví dụ chi tiết.',
+  'Hãy viết dưới dạng hướng dẫn từng bước (step-by-step guide).',
+  'Hãy phân tích xu hướng mới nhất, dự báo và tương lai của chủ đề này.',
+  'Hãy viết về các tiêu chuẩn kỹ thuật, quy trình kiểm tra và đảm bảo chất lượng.',
+  'Hãy viết về tối ưu hóa chi phí, phân tích ROI và hiệu quả kinh tế.',
+  'Hãy viết dưới góc nhìn so sánh giữa phương pháp truyền thống và hiện đại.',
+  'Hãy tập trung vào vật liệu, công nghệ chế tạo và các yếu tố kỹ thuật.',
+  'Hãy viết về những sai lầm thường gặp và cách khắc phục.',
+  'Hãy viết dưới dạng nghiên cứu điển hình (case study) với số liệu thực tế.',
+  'Hãy viết về tác động môi trường và phát triển bền vững liên quan.',
+];
 
-    if (!topics || !Array.isArray(topics) || topics.length === 0) {
-        return res.status(400).json({ success: false, message: "Vui lòng nhập ít nhất 1 chủ đề" });
-    }
+// ═══════════════════════════════════════════════════════════════
+// PROMPT CHÍNH: SẠCH, KHÔNG CÓ THÔNG TIN CÔNG TY HAY LIÊN HỆ
+// ═══════════════════════════════════════════════════════════════
 
-    console.log("📝 Đang tạo bài viết cho:", topics);
-    const results = [];
+const SEO_PROMPT = (topic, angleIdx, subDirection, articleIndex, totalCount) => {
+  const angle = ANGLES[angleIdx % ANGLES.length];
+  const direction = subDirection || '';
 
-    for (const topic of topics) {
-        try {
-            // 1. Gọi DeepSeek
-            const prompt = `Bạn là Senior SEO Content Writer chuyên nghiệp cho Thinksmart.vn.
+  const diversityInstruction = totalCount > 1
+    ? `\nQUAN TRỌNG - ĐA DẠNG HÓA: Đây là bài viết số ${articleIndex + 1}/${totalCount} trong loạt bài về chủ đề "${topic}". Bài viết này PHẢI hoàn toàn khác biệt so với các bài khác trong loạt. Cụ thể:
+- Tiêu đề: KHÔNG trùng lặp ý tưởng với các bài khác
+- Góc nhìn: ${direction || 'Khác biệt, độc đáo'}
+- Cấu trúc bài viết: Khác biệt (có thể dùng FAQ, list, so sánh, hướng dẫn...)
+- Ví dụ và số liệu: Sử dụng ví dụ HOÀN TOÀN khác
+- Từ ngữ: Tránh dùng các cụm từ giống bài khác
+=> Mỗi bài là một tác phẩm độc lập, không chỉ là biến thể của cùng một nội dung.`
+    : '';
 
-Hãy viết một bài BLOG CHI TIẾT, CHẤT LƯỢNG CAO, chuẩn SEO 2026 về chủ đề: "${topic}"
+  return `Bạn là chuyên gia viết nội dung chuyên ngành, khách quan.
 
-YÊU CẦU:
-- Độ dài: 1800 - 2500 từ
-- Ngôn ngữ tiếng Việt, giọng văn chuyên nghiệp, dễ hiểu
-- Cấu trúc chuẩn SEO: Mở đầu hấp dẫn, H2, H3 rõ ràng, bullet points, bảng so sánh (nếu có), ví dụ thực tế, số liệu mới 2026
-- Kết thúc bằng CTA mạnh: Liên hệ Thinksmart.vn
-- Nội dung ORIGINAL, mang giá trị thực tế cao
+Hãy viết một bài viết chất lượng cao bằng tiếng Việt về chủ đề: "${topic}"
 
-TRẢ VỀ CHÍNH XÁC ĐỊNH DẠNG JSON (không thêm text nào ngoài JSON):
+GÓC VIẾT: ${angle}
 
+${diversityInstruction}
+
+YÊU CẦU NỘI DUNG:
+- Tiêu đề: 50-65 ký tự, hấp dẫn, chứa từ khóa chính, KHÔNG chứa tên công ty hay thương hiệu
+- Nội dung: 1500-2500 từ tiếng Việt, chuyên nghiệp, dễ hiểu
+- Cấu trúc: H2 → H3 → Bullet points/Bảng → Kết luận (KHÔNG có CTA, KHÔNG có thông tin liên hệ)
+- Số liệu mới cập nhật, ví dụ thực tế, khách quan
+
+⚠️ TUYỆT ĐỐI KHÔNG được:
+- KHÔNG đề cập đến bất kỳ công ty, thương hiệu, website, email, hotline nào
+- KHÔNG có phần "Liên hệ chúng tôi", "Gọi ngay", "Đăng ký tư vấn"
+- KHÔNG có footer, quảng cáo, call-to-action bán hàng
+- KHÔNG giới thiệu hoặc quảng bá bất kỳ dịch vụ/sản phẩm thương mại nào
+- KHÔNG sử dụng các cụm như "chúng tôi có", "công ty chúng tôi", "hãy liên hệ"
+
+=> Nội dung thuần túy chuyên môn, khách quan, giá trị cho người đọc.
+
+QUAN TRỌNG: Chỉ trả về JSON, không thêm text nào khác.
+
+ĐỊNH DẠNG JSON:
 {
-  "title": "Tiêu đề bài viết hấp dẫn (50-65 ký tự)",
-  "content": "<article><h2>...</h2><p>...</p>...</article>",
-  "meta_description": "Mô tả meta 145-160 ký tự",
-  "keywords": ["từ khóa chính", "từ khóa phụ"]
+  "title": "Tiêu đề hấp dẫn (không có tên công ty)",
+  "content": "<article><h2>...</h2><p>...</p></article>",
+  "meta_description": "Mô tả 145-160 ký tự",
+  "keywords": ["từ khóa 1", "từ khóa 2"]
 }`;
+};
 
-            const aiRes = await axios.post('https://api.deepseek.com/v1/chat/completions', {
-                model: "deepseek-chat",
-                messages: [{ role: "user", content: prompt }],
-                temperature: 0.7,
-                max_tokens: 8000
-            }, {
-                headers: { Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}` }
-            });
+// ── Simple fallback prompt (no company, no contact) ────────────
+const SIMPLE_PROMPT = (topic, articleIndex, totalCount) => {
+  const diversityNote = totalCount > 1
+    ? `\nBÀI SỐ ${articleIndex + 1}/${totalCount}: Hãy viết với góc nhìn và nội dung KHÁC BIỆT so với các bài khác trong loạt.`
+    : '';
+  return `Viết bài chuyên môn bằng tiếng Việt về: "${topic}"${diversityNote}
 
-            let article = extractJSON(aiRes.data.choices[0].message.content);
-            console.log("✅ DeepSeek trả về thành công cho:", topic);
+KHÔNG được đề cập đến bất kỳ công ty, thương hiệu, liên hệ hay quảng cáo nào.
+Nội dung thuần túy chuyên môn, khách quan.
 
-            // 2. Tạo ảnh (nếu có REPLICATE_API_TOKEN)
-            const imageUrls = [];
-            if (process.env.REPLICATE_API_TOKEN) {
-                const imagePrompts = [
-                    `Professional modern photo of ${topic}, high-tech industrial style, clean background`,
-                    `Detailed close-up of ${topic}, technical photography, professional lighting`
-                ];
+Trả về JSON CHUẨN (không thêm text nào khác):
+{
+  "title": "Tiêu đề",
+  "content": "<article><h2>...</h2><p>...</p></article>",
+  "meta_description": "Mô tả",
+  "keywords": ["từ khóa"]
+}`;
+};
 
-                for (const imgPrompt of imagePrompts) {
-                    const imgUrl = await generateImage(imgPrompt);
-                    if (imgUrl) imageUrls.push(imgUrl);
-                }
-            } else {
-                console.log("⚠️ Bỏ qua tạo ảnh (chưa có REPLICATE_API_TOKEN)");
-            }
+// ── Handler ─────────────────────────────────────────────────────
+async function createArticleHandler(req, res) {
+  const { topics, category = 'giai-phap', prompt_template } = req.body;
+  const userId = req.user?.id || 'unknown';
 
-            // 3. Chèn ảnh vào nội dung
-            let finalContent = article.content || `<article><h2>${article.title || topic}</h2><p>${article.meta_description || ''}</p></article>`;
-            imageUrls.forEach((url, i) => {
-                finalContent += `<img src="${url}" alt="Hình ${i+1} - ${topic}" style="max-width:100%; border-radius:12px; margin:20px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">`;
-            });
+  if (!topics || !Array.isArray(topics) || topics.length === 0) {
+    return res.status(400).json({ success: false, message: 'Vui lòng nhập ít nhất 1 chủ đề' });
+  }
 
-            // 4. Lưu file JSON
-            const timestamp = new Date().toISOString().slice(0,19).replace(/[:T-]/g, '');
-            const safeTitle = (article.title || topic).replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '_').substring(0, 60);
-            const baseName = `${timestamp}_${safeTitle}`;
+  const rawTopics = topics.filter(Boolean);
+  const totalCount = rawTopics.length;
+  console.log(`📝 [${userId}] Tạo ${totalCount} bài viết (chỉ text, không ảnh)…`);
+  const results = [];
 
-            const jsonData = {
-                title: article.title || topic,
-                content: finalContent,
-                summary: article.meta_description || `Khám phá ${topic} - Giải pháp từ Thinksmart.vn`,
-                thumbnail: imageUrls[0] || "",
-                category_slug: category,
-                images: imageUrls,
-                createdAt: new Date().toISOString()
-            };
+  for (let ti = 0; ti < totalCount; ti++) {
+    const topic = rawTopics[ti];
+    try {
+      // 1. Build prompt with angle + sub-direction + diversity instruction
+      const angleIdx = ti;
+      const subIdx = ti % SUB_TOPIC_DIRECTIONS.length;
+      const subDirection = SUB_TOPIC_DIRECTIONS[subIdx];
 
-            fs.writeFileSync(path.join(DATA_DIR, `${baseName}.json`), JSON.stringify(jsonData, null, 2));
-
-            results.push({ success: true, title: article.title || topic, file: `${baseName}.json` });
-            console.log("✅ Hoàn thành bài viết:", article.title || topic);
-
-        } catch (error) {
-            console.error("❌ Lỗi khi tạo bài viết cho topic:", topic, "→", error.message);
-            if (error.response) {
-                console.error("DeepSeek response:", error.response.data);
-            }
-            results.push({ success: false, topic, error: error.message });
+      let finalPrompt;
+      if (prompt_template) {
+        let tp = prompt_template
+          .replace(/\{topic\}/g, topic)
+          .replace(/\{angle\}/g, ANGLES[angleIdx % ANGLES.length] || '');
+        if (totalCount > 1) {
+          tp += `\n\nQUAN TRỌNG: Đây là bài ${ti + 1}/${totalCount}. Hãy tạo nội dung KHÁC BIỆT hoàn toàn so với các bài khác. KHÔNG thêm thông tin công ty, liên hệ, quảng cáo.`;
         }
-    }
+        finalPrompt = tp;
+      } else {
+        finalPrompt = SEO_PROMPT(topic, angleIdx, subDirection, ti, totalCount);
+      }
 
-    res.json({ success: true, results });
+      // 2. Call DeepSeek (text only — no image generation)
+      let article = null;
+      let lastError = null;
+
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const prompt = attempt === 1 ? finalPrompt : SIMPLE_PROMPT(topic, ti, totalCount);
+          const temperature = totalCount > 1 ? 1.0 : 0.7;
+          const aiRes = await axios.post(
+            'https://api.deepseek.com/v1/chat/completions',
+            { model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature, max_tokens: 8000 },
+            { headers: { Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}` } },
+          );
+
+          const rawContent = aiRes.data.choices[0].message.content;
+          article = extractJSON(rawContent);
+          if (article && (article.title || article.content)) break;
+        } catch (err) {
+          lastError = err.message;
+          console.log(`  ⚠ Attempt ${attempt} failed: ${err.message}`);
+        }
+      }
+
+      if (!article) {
+        throw new Error(lastError || 'Không thể tạo bài viết từ AI');
+      }
+
+      if (!article.title) article.title = topic;
+      if (!article.content) article.content = '';
+      console.log(`  ✅ (${ti + 1}/${totalCount}) DeepSeek → "${article.title.substring(0, 50)}…"`);
+
+      // 3. Build HTML content (text only — images can be added later via UI)
+      const htmlContent = buildHtmlContent(article);
+
+      // 4. Save (no images during creation)
+      const ts = new Date().toISOString().replace(/[:T-]/g, '').slice(0, 15);
+      const safeTitle = (article.title || topic)
+        .replace(/[^a-zA-Z0-9À-ỹ\s]/gi, '').trim().replace(/\s+/g, '_').substring(0, 60);
+
+      const jsonData = {
+        title: article.title,
+        slug: article.slug || safeTitle.toLowerCase(),
+        content: htmlContent,
+        summary: article.meta_description || `Bài viết chuyên sâu về ${topic} - kiến thức và phân tích chuyên môn.`,
+        thumbnail: '',
+        category_slug: category,
+        keywords: article.keywords || [],
+        altImages: article.alt_images || [],
+        relatedPosts: article.related_posts || [],
+        images: [],
+        userId,
+        published: false,
+        createdAt: new Date().toISOString(),
+      };
+
+      const filename = `${ts}_${safeTitle}${totalCount > 1 ? '_p' + (ti + 1) : ''}.json`;
+      fs.writeFileSync(path.join(DATA_DIR, filename), JSON.stringify(jsonData, null, 2), 'utf-8');
+      results.push({ success: true, title: article.title, file: filename });
+      console.log(`  ✅ Saved → ${filename}`);
+    } catch (error) {
+      const errMsg = error.response?.data?.error?.message || error.message;
+      console.error(`  ❌ ${topic}:`, errMsg.substring(0, 200));
+      results.push({ success: false, topic, error: errMsg });
+    }
+  }
+
+  res.json({ success: true, results });
 }
 
 module.exports = createArticleHandler;

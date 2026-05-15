@@ -1,182 +1,333 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const rateLimit = require('express-rate-limit');
 
+// ── Shared utils ─────────────────────────────────────────────────
+const {
+  sanitizeContent,
+  sanitizeImageUrl,
+  validateFilename,
+  asyncHandler,
+  wpAuth,
+  getCategoryId,
+  refreshCategoryCache,
+} = require('./utils');
+
+// ── Routes ──────────────────────────────────────────────────────
 const createArticleHandler = require('./api/create-article');
 const suggestTopicsHandler = require('./api/suggest-topics');
+const authRoutes = require('./api/auth');
+const queueRoutes = require('./api/queue');
+const templateRoutes = require('./api/templates');
+const chatRoutes = require('./api/chat');
+const reportRoutes = require('./api/report');
+const analyticsRoutes = require('./api/analytics');
+const notesRoutes = require('./api/notes');
+const libraryRoutes = require('./api/library');
+
+// ── Admin routes ────────────────────────────────────────────────
+const adminRoutes = require('./api/admin');
+const { authRequired, authOptional } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 4001;
+const DATA_DIR = path.join(__dirname, 'data');
 
-// Middleware
+// ── Rate Limiting ───────────────────────────────────────────────
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 200, // limit each IP to 200 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Quá nhiều yêu cầu, vui lòng thử lại sau 15 phút' },
+});
+
+// Stricter limit for auth endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20, // 20 login/register attempts per 15 min
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Quá nhiều lần thử đăng nhập, vui lòng thử lại sau 15 phút' },
+});
+
+// AI endpoint limiter
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 min
+  max: 10, // 10 AI calls per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Quá nhiều yêu cầu AI, vui lòng chậm lại' },
+});
+
+// ── Middleware ──────────────────────────────────────────────────
 app.use(cors());
+app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
+app.use(limiter); // Global rate limit
 
-// ====================== DATA FOLDER ======================
-const DATA_DIR = path.join(__dirname, 'data');
+// ── Data directory ──────────────────────────────────────────────
 if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// ====================== ROUTE TRANG CHỦ ======================
+// ── WordPress helpers (uses shared utils) ───────────────────────
+async function wpRequest(method, endpoint, data = null) {
+  const auth = wpAuth();
+  if (!auth) throw new Error('Thiếu WP_APP_PASSWORD trong .env');
+  const config = {
+    method,
+    url: `${auth.url}/wp-json/wp/v2/${endpoint}`,
+    headers: { Authorization: auth.header, 'Content-Type': 'application/json' },
+    timeout: 30000,
+  };
+  if (data) config.data = data;
+  const res = await axios(config);
+  return res.data;
+}
+
+// ── Serve index ─────────────────────────────────────────────────
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ====================== API ARTICLES ======================
-app.get('/api/articles', (req, res) => {
-    try {
-        const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json'));
-        const list = files.map(file => {
-            try {
-                const data = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), 'utf8'));
-                return { file, ...data };
-            } catch (e) { return null; }
-        }).filter(Boolean);
-        res.json(list);
-    } catch (e) {
-        res.status(500).json({ success: false, message: e.message });
-    }
-});
+// ── Auth routes (with stricter rate limit) ──────────────────────
+app.use('/api/auth', authLimiter, authRoutes);
 
-app.delete('/api/articles/:filename', (req, res) => {
-    const filePath = path.join(DATA_DIR, req.params.filename);
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-        res.json({ success: true });
-    } else {
-        res.status(404).json({ success: false, message: "File không tồn tại" });
-    }
-});
+// ── API routes ──────────────────────────────────────────────────
+app.use('/api/queue', queueRoutes);
+app.use('/api/templates', templateRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/report', reportRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notes', notesRoutes);
+app.use('/api/library', libraryRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
-// ====================== WORDPRESS ======================
-const WP_URL = process.env.WP_URL || 'https://thinksmart.vn';
-const WP_APP_PASSWORD = process.env.WP_APP_PASSWORD;
+// ── Chat (with AI rate limit) ───────────────────────────────────
+app.use('/api/chat', aiLimiter, chatRoutes);
 
-async function createWPPost(post) {
-    if (!WP_APP_PASSWORD) {
-        return { success: false, error: 'Thiếu WP_APP_PASSWORD trong .env' };
-    }
-    const credentials = Buffer.from(`admin:${WP_APP_PASSWORD}`).toString('base64');
-    const catId = post.category_slug === 'ung-dung' ? 3 : 2;
+// ── Local articles CRUD (auth required) ─────────────────────────
 
-    try {
-        const response = await axios.post(
-            `${WP_URL}/wp-json/wp/v2/posts`,
-            {
-                title: post.title,
-                content: post.content,
-                excerpt: post.summary || '',
-                status: 'publish',
-                categories: [catId]
-            },
-            {
-                headers: {
-                    'Authorization': `Basic ${credentials}`,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-        return { success: true, title: post.title, wpId: response.data.id };
-    } catch (error) {
-        console.error(error.response?.data || error.message);
-        return { success: false, title: post.title, error: error.message };
-    }
-}
-
-app.post('/api/post-all', async (req, res) => {
-    const { files, deleteFromWP = false } = req.body;
-    if (!files || files.length === 0) return res.status(400).json({ success: false });
-
-    let successCount = 0;
-    const results = [];
-
-    for (const filename of files) {
+app.get('/api/articles', authRequired, (req, res) => {
+  try {
+    const files = fs.readdirSync(DATA_DIR)
+      .filter(f => f.endsWith('.json') && !f.startsWith('queue') && f !== 'users.json')
+      .map(file => {
         try {
-            const filePath = path.join(DATA_DIR, filename);
-            if (!fs.existsSync(filePath)) continue;
+          const data = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), 'utf-8'));
+          return { file, ...data };
+        } catch { return null; }
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-            const post = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-            const result = await createWPPost(post);
+    const filtered = req.user.role === 'admin'
+      ? files
+      : files.filter(f => !f.userId || f.userId === req.user.id);
 
-            if (result.success && deleteFromWP) {
-                fs.unlinkSync(filePath);
-            }
-            if (result.success) successCount++;
-            results.push(result);
-        } catch (e) {
-            results.push({ success: false, filename, error: e.message });
-        }
-    }
-
-    res.json({ success: true, successCount, results });
+    res.json(filtered);
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
 });
 
-// ====================== WORDPRESS API ======================
-app.get('/api/wp-categories', async (req, res) => {
+app.get('/api/articles/:filename', authRequired, asyncHandler(async (req, res) => {
+  const resolvedPath = validateFilename(req.params.filename);
+  if (!resolvedPath) {
+    return res.status(404).json({ success: false, message: 'File không tồn tại' });
+  }
+  res.json(JSON.parse(fs.readFileSync(resolvedPath, 'utf-8')));
+}));
+
+app.put('/api/articles/:filename', authRequired, asyncHandler(async (req, res) => {
+  const resolvedPath = validateFilename(req.params.filename);
+  if (!resolvedPath) {
+    return res.status(404).json({ success: false, message: 'File không tồn tại' });
+  }
+  const current = JSON.parse(fs.readFileSync(resolvedPath, 'utf-8'));
+  const { content, images, thumbnail, title, summary } = req.body;
+  if (content !== undefined) current.content = content;
+  if (images !== undefined) current.images = images;
+  if (thumbnail !== undefined) current.thumbnail = thumbnail;
+  if (title !== undefined) current.title = title;
+  if (summary !== undefined) current.summary = summary;
+  current.updatedAt = new Date().toISOString();
+  fs.writeFileSync(resolvedPath, JSON.stringify(current, null, 2), 'utf-8');
+  res.json({ success: true, message: 'Updated', article: current });
+}));
+
+app.delete('/api/articles/:filename', authRequired, asyncHandler(async (req, res) => {
+  const resolvedPath = validateFilename(req.params.filename);
+  if (!resolvedPath) {
+    return res.status(404).json({ success: false, message: 'File không tồn tại' });
+  }
+  fs.unlinkSync(resolvedPath);
+  res.json({ success: true });
+}));
+
+// ── Stats / Dashboard ───────────────────────────────────────────
+app.get('/api/stats', authRequired, (req, res) => {
+  try {
+    const files = fs.readdirSync(DATA_DIR)
+      .filter(f => f.endsWith('.json') && !f.startsWith('queue') && f !== 'users.json')
+      .map(f => {
+        try {
+          return JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf-8'));
+        } catch { return null; }
+      })
+      .filter(Boolean);
+
+    const filtered = req.user.role === 'admin'
+      ? files
+      : files.filter(f => !f.userId || f.userId === req.user.id);
+
+    const totalArticles = filtered.length;
+    const published = filtered.filter(f => f.published).length;
+    const withImages = filtered.filter(f => f.images && f.images.length > 0).length;
+    const categories = {};
+    filtered.forEach(f => {
+      const cat = f.category_slug || 'other';
+      categories[cat] = (categories[cat] || 0) + 1;
+    });
+
+    res.json({
+      success: true,
+      stats: { totalArticles, published, withImages, draft: totalArticles - published, categories },
+    });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// ── Post to WordPress ───────────────────────────────────────────
+app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
+  const { files, deleteAfterPublish = false } = req.body;
+  if (!files || files.length === 0) {
+    return res.status(400).json({ success: false, message: 'Danh sách files trống' });
+  }
+
+  const results = [];
+  let successCount = 0;
+
+  for (const rawFilename of files) {
+    const resolvedPath = validateFilename(rawFilename);
+    if (!resolvedPath) {
+      results.push({ success: false, filename: rawFilename, error: 'File không tồn tại' });
+      continue;
+    }
+
     try {
-        const credentials = Buffer.from(`admin:${WP_APP_PASSWORD}`).toString('base64');
-        const response = await axios.get(`${WP_URL}/wp-json/wp/v2/categories`, {
-            headers: { Authorization: `Basic ${credentials}` }
-        });
-        res.json(response.data);
-    } catch (e) {
-        res.json([{ slug: 'giai-phap', name: 'Giải pháp' }, { slug: 'ung-dung', name: 'Ứng dụng' }]);
+      const post = JSON.parse(fs.readFileSync(resolvedPath, 'utf-8'));
+
+      // Sanitize content (handle double-encoded JSON)
+      const cleanContent = sanitizeContent(post.content);
+
+      // Sanitize thumbnail
+      const cleanThumb = sanitizeImageUrl(
+        post.thumbnail || (Array.isArray(post.images) && post.images.length > 0 ? post.images[0] : '')
+      );
+
+      // Build WP post body with dynamic category mapping
+      const wpBody = {
+        title: post.title || 'Untitled',
+        content: cleanContent,
+        excerpt: post.summary || '',
+        status: 'publish',
+        categories: [getCategoryId(post.category_slug)],
+      };
+
+      if (cleanThumb) {
+        console.log(`  ℹ️ Bài viết có ảnh (${cleanThumb.substring(0, 50)}...) nhưng bỏ qua featured_media — cần upload ảnh lên WP media library trước.`);
+      }
+
+      const data = await wpRequest('POST', 'posts', wpBody);
+
+      // Mark as published & save back
+      post.published = true;
+      post.publishedAt = new Date().toISOString();
+      post.wpId = data.id;
+      post.content = cleanContent;
+      post.thumbnail = cleanThumb;
+      if (Array.isArray(post.images)) {
+        post.images = post.images.map(sanitizeImageUrl).filter(Boolean);
+      }
+      fs.writeFileSync(resolvedPath, JSON.stringify(post, null, 2), 'utf-8');
+
+      if (deleteAfterPublish) fs.unlinkSync(resolvedPath);
+
+      successCount++;
+      results.push({ success: true, title: post.title, wpId: data.id });
+    } catch (error) {
+      const details = error.response?.data;
+      const errMsg = details?.message || error.message;
+      if (details) {
+        console.error('WP Error details:', JSON.stringify(details).substring(0, 500));
+      }
+      const friendlyMsg = errMsg.includes('featured_media')
+        ? 'Ảnh đại diện không hợp lệ (featured_media phải là số ID media hợp lệ từ WordPress)'
+        : errMsg;
+      results.push({ success: false, filename: rawFilename, error: friendlyMsg });
     }
+  }
+
+  res.json({ success: true, successCount, results });
+}));
+
+// ── WordPress API proxy ─────────────────────────────────────────
+app.get('/api/wp-categories', asyncHandler(async (req, res) => {
+  try {
+    const data = await wpRequest('GET', 'categories');
+    res.json(data);
+  } catch {
+    res.json([
+      { slug: 'giai-phap', name: 'Giải pháp' },
+      { slug: 'ung-dung', name: 'Ứng dụng' },
+    ]);
+  }
+}));
+
+app.get('/api/wp-posts', asyncHandler(async (req, res) => {
+  const data = await wpRequest('GET', 'posts?per_page=50');
+  res.json(data);
+}));
+
+app.delete('/api/wp-posts/:id', asyncHandler(async (req, res) => {
+  await wpRequest('DELETE', `posts/${req.params.id}?force=true`);
+  res.json({ success: true });
+}));
+
+app.put('/api/wp-posts/:id', asyncHandler(async (req, res) => {
+  const data = await wpRequest('POST', `posts/${req.params.id}`, req.body);
+  res.json({ success: true, data });
+}));
+
+// ── AI Handlers (with auth + rate limit) ────────────────────────
+app.post('/api/create-article', authRequired, aiLimiter, createArticleHandler);
+app.post('/api/suggest-topics', authRequired, aiLimiter, suggestTopicsHandler);
+
+// ── Global error handler ────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('❌ Unhandled error:', err.message);
+  console.error(err.stack?.substring(0, 500));
+  res.status(500).json({
+    success: false,
+    message: process.env.NODE_ENV === 'production'
+      ? 'Lỗi server nội bộ'
+      : err.message,
+  });
 });
 
-app.get('/api/wp-posts', async (req, res) => {
-    try {
-        const credentials = Buffer.from(`admin:${WP_APP_PASSWORD}`).toString('base64');
-        const response = await axios.get(`${WP_URL}/wp-json/wp/v2/posts?per_page=50`, {
-            headers: { Authorization: `Basic ${credentials}` }
-        });
-        res.json(response.data);
-    } catch (e) {
-        res.status(500).json([]);
-    }
-});
-
-app.delete('/api/wp-posts/:id', async (req, res) => {
-    try {
-        const credentials = Buffer.from(`admin:${WP_APP_PASSWORD}`).toString('base64');
-        await axios.delete(`${WP_URL}/wp-json/wp/v2/posts/${req.params.id}?force=true`, {
-            headers: { Authorization: `Basic ${credentials}` }
-        });
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ success: false });
-    }
-});
-
-app.put('/api/wp-posts/:id', async (req, res) => {
-    try {
-        const credentials = Buffer.from(`admin:${WP_APP_PASSWORD}`).toString('base64');
-        const response = await axios.post(
-            `${WP_URL}/wp-json/wp/v2/posts/${req.params.id}`,
-            req.body,
-            {
-                headers: {
-                    Authorization: `Basic ${credentials}`,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-        res.json({ success: true, data: response.data });
-    } catch (e) {
-        res.status(500).json({ success: false, message: e.response?.data || e.message });
-    }
-});
-
-// ====================== MOUNT API HANDLERS ======================
-app.post('/api/create-article', createArticleHandler);
-app.post('/api/suggest-topics', suggestTopicsHandler);
-
-// ====================== KHỞI ĐỘNG ======================
-app.listen(PORT, () => {
-    console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+// ── Start ───────────────────────────────────────────────────────
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 AutoContentPoster Pro v3.0`);
+  console.log(`   http://localhost:${PORT}`);
+  console.log(`   Auth: enabled (JWT)`);
+  console.log(`   Rate limit: global=200/15m, auth=20/15m, AI=10/1m`);
 });
