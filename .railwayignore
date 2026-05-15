@@ -1,12 +1,12 @@
-logs/
-public/uploads/
-data/
-.env
-.env.*
-*.log
-.DS_Store
 node_modules/
-.openclaw/
+.git/
+logs/
+*.md
+Dockerfile
+docker-compose.yml
+DEPLOY.md
+ecosystem.config.js
+.gitignore
 AGENTS.md
 FRONTEND.md
 HEARTBEAT.md
@@ -15,4 +15,3 @@ MEMORY.md
 SOUL.md
 TOOLS.md
 USER.md
-npm-debug.log*
