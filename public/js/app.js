@@ -192,6 +192,7 @@ function showConfirm(msg, onYes, onNo) {
  */
 const QTP = {
   _token: localStorage.getItem('qtp_token'),
+  _fakeMode: localStorage.getItem('qtp_fake') !== 'false',
   _user: (() => {
     try {
       const u = localStorage.getItem('qtp_user');
@@ -204,6 +205,146 @@ const QTP = {
   _templates: [],
   _notes: [],
   _analyticsChart: null,
+  _fakeArticles: null,
+  _fakeTemplates: null,
+};
+
+/* ── Fake Data Store ── */
+QTP._fake = {
+  /** Generate fake articles array */
+  get articles() {
+    if (QTP._fakeArticles) return QTP._fakeArticles;
+    const titles = [
+      'Hướng dẫn SEO WordPress Toàn Diện 2026',
+      'Cách Viết Content Chuẩn Google AI',
+      'Top 10 Công Cụ AI Cho Content Marketing',
+      'Chiến Lược Social Media Cho Doanh Nghiệp Nhỏ',
+      'Tối Ưu Tốc Độ Website WordPress',
+      'Xu Hướng Thiết Kế Web 2026',
+      'Bí Quyết Tăng Traffic Tự Nhiên',
+      'Hướng Dẫn Làm Video Shorts Cho Marketing',
+      'Email Marketing Automation Cơ Bản',
+      'Phân Tích Đối Thủ Cạnh Tranh SEO',
+      'Cách Tối Ưu Hình Ảnh Cho Web',
+      'Xây Dựng Backlink Chất Lượng',
+      'Google Analytics Cho Người Mới',
+      'Chiến Lược Content Marketing 2026',
+      'Hướng Dẫn Làm Landing Page Chuyển Đổi Cao',
+    ];
+    const categories = ['SEO', 'Content', 'Marketing', 'WordPress', 'Social Media', 'AI Tools'];
+    const statuses = ['published', 'published', 'published', 'draft'];
+    const now = new Date();
+    const articles = [];
+    for (let i = 0; i < 42; i++) {
+      const daysAgo = Math.floor(Math.random() * 60);
+      const d = new Date(now);
+      d.setDate(d.getDate() - daysAgo);
+      const title = titles[i % titles.length] + (i >= titles.length ? ' #' + (i + 1) : '');
+      articles.push({
+        file: `article-${i + 1}.json`,
+        title,
+        summary: `Bài viết chuyên sâu về ${title.toLowerCase()}. Cung cấp kiến thức hữu ích cho người mới bắt đầu và chuyên gia.`,
+        category_slug: categories[i % categories.length],
+        published: statuses[i % statuses.length] === 'published',
+        createdAt: d.toISOString(),
+        publishedAt: statuses[i % statuses.length] === 'published' ? d.toISOString() : null,
+        wpId: statuses[i % statuses.length] === 'published' ? 100 + i : null,
+        wpUrl: statuses[i % statuses.length] === 'published' ? `https://thinksmart.vn/article-${i}` : '',
+        images: i % 3 === 0 ? ['https://picsum.photos/800/400?random=' + i] : [],
+        userId: i === 0 ? 'admin-001' : 'user-' + ((i % 5) + 1),
+      });
+    }
+    QTP._fakeArticles = articles;
+    return articles;
+  },
+
+  /** Generate fake stats */
+  get stats() {
+    const arts = this.articles;
+    const total = arts.length;
+    const published = arts.filter(a => a.published).length;
+    const draft = total - published;
+    return { totalArticles: total, published, draft, withImages: arts.filter(a => a.images?.length).length };
+  },
+
+  /** Generate fake templates */
+  get templates() {
+    if (QTP._fakeTemplates) return QTP._fakeTemplates;
+    const t = [
+      { id: 't1', name: 'Blog SEO Chuẩn', category: 'SEO', tone: 'Chuyên nghiệp', tags: ['seo', 'blog', 'wordpress'], variables: ['title', 'keywords', 'meta_desc'] },
+      { id: 't2', name: 'Bài Viết Social Media', category: 'Marketing', tone: 'Thân thiện', tags: ['social', 'marketing', 'short'], variables: ['title', 'hashtags', 'cta'] },
+      { id: 't3', name: 'Hướng Dẫn Từng Bước', category: 'Content', tone: 'Dễ hiểu', tags: ['tutorial', 'guide', 'howto'], variables: ['title', 'steps', 'tips'] },
+      { id: 't4', name: 'Review Sản Phẩm', category: 'E-commerce', tone: 'Khách quan', tags: ['review', 'product', 'compare'], variables: ['product', 'pros', 'cons'] },
+      { id: 't5', name: 'Tin Tức & Cập Nhật', category: 'News', tone: 'Trung lập', tags: ['news', 'update', 'breaking'], variables: ['headline', 'source', 'date'] },
+      { id: 't6', name: 'Case Study Chi Tiết', category: 'Content', tone: 'Phân tích', tags: ['case-study', 'data', 'results'], variables: ['title', 'metrics', 'outcome'] },
+    ];
+    QTP._fakeTemplates = t;
+    return t;
+  },
+
+  /** Generate fake queue */
+  get queue() {
+    const now = new Date();
+    return [
+      { id: 'q1', filename: 'Hướng dẫn SEO WordPress.json', status: 'pending', createdAt: new Date(now - 3600000).toISOString(), error: null },
+      { id: 'q2', filename: 'Cách Viết Content Chuẩn AI.json', status: 'published', createdAt: new Date(now - 7200000).toISOString(), error: null },
+      { id: 'q3', filename: 'Top 10 Công Cụ AI Content.json', status: 'publishing', createdAt: new Date(now - 10800000).toISOString(), error: null },
+      { id: 'q4', filename: 'Chiến Lược Social Media.json', status: 'pending', createdAt: new Date(now - 14400000).toISOString(), error: null },
+      { id: 'q5', filename: 'Tối Ưu Tốc Độ WordPress.json', status: 'failed', createdAt: new Date(now - 18000000).toISOString(), error: 'WP API timeout' },
+    ];
+  },
+
+  /** Generate fake WP posts */
+  get wpPosts() {
+    const now = new Date();
+    return [
+      { id: 101, title: { rendered: 'Hướng dẫn SEO WordPress Toàn Diện 2026' }, date: new Date(now - 86400000).toISOString(), status: 'publish', link: 'https://thinksmart.vn/seo-wordpress-2026' },
+      { id: 102, title: { rendered: 'Cách Viết Content Chuẩn Google AI' }, date: new Date(now - 172800000).toISOString(), status: 'publish', link: 'https://thinksmart.vn/content-google-ai' },
+      { id: 103, title: { rendered: 'Top 10 Công Cụ AI Cho Content Marketing' }, date: new Date(now - 259200000).toISOString(), status: 'publish', link: 'https://thinksmart.vn/ai-content-tools' },
+      { id: 104, title: { rendered: 'Bí Quyết Tăng Traffic Tự Nhiên' }, date: new Date(now - 345600000).toISOString(), status: 'draft', link: 'https://thinksmart.vn/tang-traffic' },
+      { id: 105, title: { rendered: 'Xu Hướng Thiết Kế Web 2026' }, date: new Date(now - 432000000).toISOString(), status: 'publish', link: 'https://thinksmart.vn/thiet-ke-web-2026' },
+      { id: 106, title: { rendered: 'Email Marketing Automation Cơ Bản' }, date: new Date(now - 518400000).toISOString(), status: 'publish', link: 'https://thinksmart.vn/email-automation' },
+      { id: 107, title: { rendered: 'Phân Tích Đối Thủ Cạnh Tranh SEO' }, date: new Date(now - 604800000).toISOString(), status: 'draft', link: 'https://thinksmart.vn/phan-tich-doi-thu-seo' },
+    ];
+  },
+
+  /** Generate fake users */
+  get users() {
+    const now = new Date();
+    return [
+      { id: 'admin-001', username: 'admin', fullName: 'Admin Chính', role: 'admin', status: 'active', createdAt: new Date(now - 86400000 * 365).toISOString() },
+      { id: 'user-1', username: 'minhanh', fullName: 'Minh Anh Nguyễn', role: 'editor', status: 'active', createdAt: new Date(now - 86400000 * 180).toISOString() },
+      { id: 'user-2', username: 'thanhha', fullName: 'Thanh Hà Trần', role: 'writer', status: 'active', createdAt: new Date(now - 86400000 * 90).toISOString() },
+      { id: 'user-3', username: 'lanphuong', fullName: 'Lan Phương Lê', role: 'writer', status: 'active', createdAt: new Date(now - 86400000 * 45).toISOString() },
+      { id: 'user-4', username: 'congson', fullName: 'Công Sơn Phạm', role: 'sale', status: 'inactive', createdAt: new Date(now - 86400000 * 30).toISOString() },
+      { id: 'user-5', username: 'hongnhung', fullName: 'Hồng Nhung Vũ', role: 'sale', status: 'active', createdAt: new Date(now - 86400000 * 15).toISOString() },
+    ];
+  },
+
+  /** Generate fake notes */
+  get notes() {
+    const now = new Date();
+    return [
+      { id: 'n1', title: 'Ý tưởng bài viết SEO tháng tới', content: 'Lên danh sách 10 keyword chính cần viết trong tháng 6. Ưu tiên các chủ đề về AI và Google SGE.', createdAt: new Date(now - 3600000).toISOString() },
+      { id: 'n2', title: 'Lịch đăng bài tuần này', content: 'Thứ 2: Bài SEO WordPress\nThứ 4: Content về AI Tools\nThứ 6: Case Study Social Media', createdAt: new Date(now - 86400000).toISOString() },
+      { id: 'n3', title: 'Ghi chú meeting khách hàng', content: 'Khách hàng muốn tập trung vào content dạng video ngắn. Cần nghiên cứu thêm về TikTok SEO.', createdAt: new Date(now - 172800000).toISOString() },
+      { id: 'n4', title: 'Cập nhật Google Algorithm', content: 'Google vừa ra mắt bản update mới về nội dung AI. Cần review lại các bài viết cũ.', createdAt: new Date(now - 259200000).toISOString() },
+      { id: 'n5', title: 'Kế hoạch quảng cáo tháng 7', content: 'Ngân sách: 5M VND cho Facebook Ads\nMục tiêu: 1000 leads\nKPI: CPA dưới 50K', createdAt: new Date(now - 345600000).toISOString() },
+    ];
+  },
+
+  /** Generate fake media images */
+  get media() {
+    return this.articles.filter(a => a.images?.length).map(a => ({
+      url: a.images[0],
+      title: a.title,
+    })).concat([
+      { url: 'https://picsum.photos/800/400?random=100', title: 'Banner SEO 2026' },
+      { url: 'https://picsum.photos/800/400?random=101', title: 'Infographic Content AI' },
+      { url: 'https://picsum.photos/800/400?random=102', title: 'Social Media Template' },
+      { url: 'https://picsum.photos/800/400?random=103', title: 'WordPress Theme Preview' },
+    ]);
+  },
 };
 
 /* ===================================================================
@@ -234,6 +375,10 @@ QTP.App = {
   toggleSidebar() {
     $id('sidebar').classList.toggle('open');
     $id('sideOvl').classList.toggle('open');
+    // Prevent body scroll when sidebar open on mobile
+    if (window.innerWidth <= 767) {
+      document.body.style.overflow = $id('sidebar').classList.contains('open') ? 'hidden' : '';
+    }
   },
 
   /** Navigate to a section by name (e.g. 'dashboard', 'articles') */
@@ -262,8 +407,10 @@ QTP.App = {
       wp: 'WP.load',
       users: 'Users.load',
       analytics: 'Analytics.load',
+      usage: 'Usage.load',
       notes: 'Notes.load',
       media: 'Media.load',
+      chat: 'Chat.load',
       library: 'Library.load',
       settings: 'Settings.load',
     };
@@ -277,6 +424,9 @@ QTP.App = {
   showApp() {
     $id('landingPage').style.display = 'none';
     $id('appWrap').style.display = 'block';
+    // Show mobile topbar if on small screen
+    const mb = $id('mobileTopbar');
+    if (mb) mb.style.display = window.innerWidth <= 767 ? 'flex' : 'none';
     this.setUserInfo();
   },
 
@@ -293,6 +443,34 @@ QTP.App = {
 
   /** Load dashboard stats & recent articles */
   async loadDashboard() {
+    // ══ Fake Data ══
+    if (QTP._fakeMode) {
+      const s = QTP._fake.stats;
+      $id('sTotal').textContent = s.totalArticles;
+      $id('sPub').textContent = s.published;
+      $id('sDraft').textContent = s.draft;
+      $id('sImg').textContent = s.withImages;
+
+      const arts = QTP._fake.articles;
+      QTP._articles = arts;
+      const recent = arts.slice(0, 6);
+      const container = $id('recentArts');
+      container.innerHTML = recent
+        .map(
+          (a) => `
+        <div class="recent-row">
+          <div class="recent-dot ${a.published ? 'published' : 'draft'}"></div>
+          <div class="recent-info">
+            <div class="recent-title">${esc(a.title)}</div>
+            <div class="recent-meta">${a.published ? 'Đã đăng' : 'Nháp'} · ${fmtDate(a.createdAt)}</div>
+          </div>
+          <span class="recent-status ${a.published ? 'pub' : 'drf'}">${a.published ? 'WP' : 'Draft'}</span>
+        </div>`
+        )
+        .join('');
+      return;
+    }
+
     try {
       const res = await api('/stats');
       if (res.success && res.stats) {
@@ -334,6 +512,20 @@ QTP.App = {
     } catch {
       /* best-effort */
     }
+  },
+
+  /** Toggle fake/demo data mode (persisted in localStorage) */
+  toggleFakeMode(on) {
+    QTP._fakeMode = !!on;
+    localStorage.setItem('qtp_fake', QTP._fakeMode ? 'true' : 'false');
+    this._syncFakeBtn();
+    showToast(QTP._fakeMode ? '✅ Chế độ dữ liệu mẫu đã bật' : '✅ Chế độ dữ liệu thật đã bật');
+  },
+
+  /** Sync ON/OFF buttons to match _fakeMode */
+  _syncFakeBtn() {
+    const el = $id('fakeOnOff');
+    if (el) el.className = 'fake-onoff ' + (QTP._fakeMode ? 'on' : 'off');
   },
 }; // end QTP.App
 
@@ -467,6 +659,37 @@ QTP.Auth = {
 QTP.Articles = {
   /** Load all articles and render grid */
   async load() {
+    // ══ Fake Data ══
+    if (QTP._fakeMode) {
+      const arts = QTP._fake.articles;
+      QTP._articles = arts;
+      const container = $id('artList');
+      container.innerHTML = arts
+        .map(
+          (a) => `
+        <div class="article-card">
+          <div class="article-card-head">
+            <span class="article-cat">${esc(a.category_slug ?? 'other')}</span>
+            <span class="article-status ${a.published ? 'pub' : 'drf'}">${a.published ? 'Published' : 'Draft'}</span>
+          </div>
+          <h3 class="article-title">${esc(a.title)}</h3>
+          <p class="article-summary">${trunc(esc(a.summary ?? ''), 120)}</p>
+          <div class="article-meta">
+            <span><i class="far fa-calendar"></i> ${fmtDate(a.createdAt)}</span>
+            ${a.images?.length ? `<span><i class="fas fa-image"></i> ${a.images.length}</span>` : ''}
+            ${a.wpId ? '<span><i class="fas fa-globe"></i> WP</span>' : ''}
+          </div>
+          <div class="article-actions">
+            <button onclick="QTP.Articles.preview('${a.file}')" class="btn btn-ghost btn-sm" title="Xem trước"><i class="fas fa-eye"></i></button>
+            <button onclick="QTP.Articles.publish('${a.file}')" class="btn btn-sm" style="background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2)"><i class="fas fa-upload"></i> Đăng WP</button>
+            <button onclick="QTP.Articles.del('${a.file}')" class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)" title="Xóa"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>`
+        )
+        .join('');
+      return;
+    }
+
     const container = $id('artList');
     container.innerHTML =
       '<div style="grid-column:1/-1" class="loading-state"><div class="spinner"></div><p>Đang tải danh sách bài viết…</p></div>';
@@ -689,6 +912,13 @@ QTP.Templates = {
 
   /** Fetch all templates and render */
   async load() {
+    // ══ Fake Data ══
+    if (QTP._fakeMode) {
+      QTP._templates = QTP._fake.templates;
+      this.render(QTP._fake.templates);
+      return;
+    }
+
     const container = $id('tmplList');
     container.innerHTML =
       '<div style="grid-column:1/-1" class="loading-state"><div class="spinner"></div><p>Đang tải templates…</p></div>';
@@ -958,6 +1188,13 @@ QTP.Queue = {
   _data: [],
 
   async load() {
+    // ══ Fake Data ══
+    if (QTP._fakeMode) {
+      this._data = QTP._fake.queue;
+      this._renderQueue(QTP._fake.queue);
+      return;
+    }
+
     const cont = $id('qCont');
     cont.innerHTML =
       '<div class="loading-state"><div class="spinner"></div><p>Đang tải hàng đợi…</p></div>';
@@ -1111,9 +1348,13 @@ QTP.Report = {
 
 QTP.WP = {
   async load() {
+    // Always fetch real WP posts — no fake mode for this section
     const cont = $id('wpCont');
     cont.innerHTML =
       '<div class="loading-state"><div class="spinner"></div><p>Đang tải từ WordPress…</p></div>';
+
+    // Show connection info
+    this.showStatus();
 
     try {
       const posts = await api('/wp-posts');
@@ -1127,6 +1368,10 @@ QTP.WP = {
 
       cont.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:12px;color:var(--color-muted);margin-bottom:4px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between">
+            <span>Tổng số: <strong style="color:var(--text)">${posts.length}</strong> bài viết</span>
+            <span class="wp-sync-info"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Đã đồng bộ</span>
+          </div>
           ${posts
             .map(
               (p) => `
@@ -1134,12 +1379,15 @@ QTP.WP = {
               <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
                 <div style="flex:1;min-width:0">
                   <div style="font-weight:600;font-size:14px">${esc(p.title?.rendered || 'Untitled')}</div>
-                  <div style="font-size:11px;color:var(--color-muted);margin-top:2px">${fmtDate(p.date)}</div>
+                  <div style="font-size:11px;color:var(--color-muted);margin-top:2px">
+                    <i class="far fa-calendar-alt" style="margin-right:3px"></i>${fmtDate(p.date)}
+                    ${p.status ? `<span style="margin-left:8px;padding:1px 6px;border-radius:4px;font-size:10px;background:${p.status === 'publish' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)'};color:${p.status === 'publish' ? '#22c55e' : '#f59e0b'}">${p.status === 'publish' ? 'Đã xuất bản' : 'Nháp'}</span>` : ''}
+                  </div>
                 </div>
                 <div style="display:flex;gap:8px;flex-shrink:0">
-                  <a href="${p.link || '#'}" target="_blank" class="btn btn-ghost btn-sm"><i class="fas fa-external-link-alt"></i></a>
-                  <button onclick="QTP.WP.edit(${p.id})" class="btn btn-ghost btn-sm"><i class="fas fa-edit"></i></button>
-                  <button onclick="QTP.WP.del(${p.id})" class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)"><i class="fas fa-trash"></i></button>
+                  <a href="${p.link || '#'}" target="_blank" class="btn btn-ghost btn-sm" title="Xem bài viết"><i class="fas fa-external-link-alt"></i></a>
+                  <button onclick="QTP.WP.edit(${p.id})" class="btn btn-ghost btn-sm" title="Chỉnh sửa bài viết"><i class="fas fa-pen"></i></button>
+                  <button onclick="QTP.WP.del(${p.id})" class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)" title="Xóa khỏi WP"><i class="fas fa-trash"></i></button>
                 </div>
               </div>
             </div>`
@@ -1148,37 +1396,236 @@ QTP.WP = {
         </div>`;
     } catch {
       cont.innerHTML =
-        '<div style="text-align:center;padding:40px;color:var(--color-danger)">Lỗi tải bài viết WordPress</div>';
+        '<div style="text-align:center;padding:40px;color:var(--color-danger)"><i class="fas fa-exclamation-triangle" style="font-size:48px;opacity:0.3;display:block;margin-bottom:16px"></i>Lỗi tải bài viết WordPress<br><span style="font-size:13px;color:var(--color-muted)">Kiểm tra kết nối hoặc URL WordPress trong Cài Đặt</span></div>';
     }
   },
 
-  edit(postId) {
-    const title = prompt('Tiêu đề mới:');
-    if (title?.trim()) {
-      api(`/wp-posts/${postId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ title: title.trim() }),
-      })
-        .then((r) => {
-          if (r.success) {
-            showToast('Đã cập nhật!');
-            this.load();
-          } else {
-            showToast('Lỗi!', 'error');
-          }
-        })
-        .catch(() => showToast('Lỗi kết nối!', 'error'));
+  async testConn() {
+    const btn = $id('wpTestBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;margin:0 auto"></div>';
+
+    try {
+      const res = await api('/wp-posts?per_page=1');
+      if (Array.isArray(res)) {
+        this.showStatus(true, `✅ Kết nối thành công! WordPress có bài viết.`);
+      } else {
+        this.showStatus(false, '❌ Kết nối thất bại. Kiểm tra URL và mật khẩu ứng dụng WP trong Cài Đặt.');
+      }
+    } catch {
+      this.showStatus(false, '❌ Không thể kết nối WordPress. Kiểm tra cấu hình trong Cài Đặt.');
     }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-plug"></i> Kiểm tra';
+  },
+
+  showStatus(connected, msg) {
+    const st = $id('wpStatus');
+    const wpUrl = localStorage.getItem('qtp_wp_url') || 'https://thinksmart.vn';
+
+    if (connected === undefined) {
+      // Just show config info
+      st.style.display = 'block';
+      st.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(237,105,24,0.1);display:flex;align-items:center;justify-content:center;color:var(--color-accent)">
+              <i class="fas fa-globe"></i>
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:13px">WordPress</div>
+              <div style="font-size:12px;color:var(--color-muted)">${esc(wpUrl)}</div>
+            </div>
+          </div>
+          <div style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(245,158,11,0.1);color:#f59e0b">
+            <i class="fas fa-circle" style="font-size:6px;margin-right:4px"></i> Chưa kiểm tra
+          </div>
+        </div>`;
+      return;
+    }
+
+    st.style.display = 'block';
+    st.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;border-radius:8px;background:${connected ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'};display:flex;align-items:center;justify-content:center;color:${connected ? '#22c55e' : '#ef4444'}">
+            <i class="fas ${connected ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:13px">${esc(wpUrl)}</div>
+            <div style="font-size:12px;color:var(--color-muted)">${esc(msg || '')}</div>
+          </div>
+        </div>
+        <div style="font-size:11px;padding:3px 10px;border-radius:20px;background:${connected ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'};color:${connected ? '#22c55e' : '#ef4444'};white-space:nowrap">
+          <i class="fas fa-circle" style="font-size:6px;margin-right:4px"></i> ${connected ? 'Đã kết nối' : 'Lỗi kết nối'}
+        </div>
+      </div>`;
+  },
+
+  reset() {
+    showConfirm('⚠️ Reset kết nối WordPress?\n\nĐiều này sẽ xoá URL & mật khẩu WP đã lưu.\nKhông ảnh hưởng bài viết trên WordPress.', async () => {
+      try {
+        const settings = JSON.parse(localStorage.getItem('qtp_settings') || '{}');
+        delete settings.wpUrl;
+        delete settings.wpPass;
+        localStorage.setItem('qtp_settings', JSON.stringify(settings));
+        // Also clear cached WP credentials
+        localStorage.removeItem('qtp_wp_url');
+        localStorage.removeItem('qtp_wp_pass');
+        showToast('✅ Đã reset kết nối WordPress!');
+        const st = $id('wpStatus');
+        st.style.display = 'none';
+        $id('wpCont').innerHTML =
+          '<div style="text-align:center;padding:40px;color:var(--color-muted)"><i class="fas fa-plug" style="font-size:48px;opacity:0.3;display:block;margin-bottom:16px"></i>Đã reset. Vui lòng cấu hình lại WP trong <a href="#" onclick="QTP.App.go(\\\'settings\\\')" style="color:var(--color-accent)">Cài Đặt</a>.</div>';
+      } catch {
+        showToast('❌ Lỗi khi reset!', 'error');
+      }
+    });
+  },
+
+  _editingId: null, // current WP post being edited
+
+  edit(postId) {
+    this._editingId = postId;
+    const modal = $id('wpEditModal');
+    const titleEl = $id('wpEditTitle');
+    const contentEl = $id('wpEditContent');
+    const btn = $id('wpEditSaveBtn');
+
+    titleEl.value = 'Đang tải…';
+    contentEl.value = '';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải…';
+    modal.classList.add('open');
+    this.hideImagePicker();
+
+    // Fetch full post data
+    api(`/wp-posts?include=${postId}`)
+      .then(posts => {
+        const post = Array.isArray(posts) ? posts.find(p => p.id === postId) : null;
+        if (!post) throw new Error('Không tìm thấy bài viết');
+        titleEl.value = post.title?.rendered || '';
+        contentEl.value = post.content?.raw || post.content?.rendered || '';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+      })
+      .catch(() => {
+        showToast('❌ Không thể tải bài viết!', 'error');
+        this.closeEdit();
+      });
+  },
+
+  closeEdit() {
+    $id('wpEditModal').classList.remove('open');
+    this._editingId = null;
+    this.hideImagePicker();
+  },
+
+  _saveEdit() {
+    const id = this._editingId;
+    const title = $id('wpEditTitle').value.trim();
+    const content = $id('wpEditContent').value.trim();
+    const btn = $id('wpEditSaveBtn');
+
+    if (!title) { showToast('Vui lòng nhập tiêu đề!', 'error'); return; }
+    if (!content) { showToast('Vui lòng nhập nội dung!', 'error'); return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu…';
+
+    api(`/wp-posts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ title, content }),
+    })
+      .then(r => {
+        if (r.success) {
+          showToast('✅ Đã cập nhật bài viết!');
+          this.closeEdit();
+          this.load();
+        } else {
+          showToast('❌ Lỗi lưu!', 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+        }
+      })
+      .catch(() => {
+        showToast('❌ Lỗi kết nối!', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+      });
+  },
+
+  showImagePicker() {
+    const picker = $id('wpImagePicker');
+    const grid = $id('wpImgGrid');
+    if (picker.style.display === 'block') { this.hideImagePicker(); return; }
+
+    picker.style.display = 'block';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--color-muted);font-size:12px"><i class="fas fa-spinner fa-spin"></i> Đang tải thư viện…</div>';
+
+    // Fetch from library API
+    api('/library/images?limit=50')
+      .then(res => {
+        const images = res.success ? (res.images || []) : [];
+        if (!images.length) {
+          grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--color-muted);font-size:12px;padding:16px">Thư viện trống. Upload ảnh trước.</div>';
+          return;
+        }
+        grid.innerHTML = images.map(img => {
+          const name = img.alt || img.originalName || 'unknown';
+          const thumbUrl = esc(img.thumb || img.url);
+          const fullUrl = thumbUrl.startsWith('/') ? window.location.origin + thumbUrl : thumbUrl;
+          // Proper JS string escaping for onclick
+          const jsUrl = JSON.stringify(img.url || '');
+          const jsAlt = JSON.stringify(name);
+          return `
+          <div onclick="QTP.WP._insertImage(${jsUrl}, ${jsAlt})" style="cursor:pointer;border-radius:6px;overflow:hidden;border:2px solid transparent;aspect-ratio:1;background:var(--color-card-2);transition:border-color 0.15s;position:relative" onmouseover="this.style.borderColor='#6366f1'" onmouseout="this.style.borderColor='transparent'">
+            <img src="${fullUrl}" alt="" style="width:100%;height:100%;object-fit:cover" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;font-size:10px;color:var(--color-muted);padding:4px;word-break:break-all;overflow:hidden">${esc(name)}</div>
+          </div>
+        `}).join('');
+      })
+      .catch(() => {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--color-danger);font-size:12px">Lỗi tải thư viện</div>';
+      });
+  },
+
+  hideImagePicker() {
+    $id('wpImagePicker').style.display = 'none';
+  },
+
+  _insertImage(url, alt) {
+    const ta = $id('wpEditContent');
+    // Convert relative paths to absolute using the app's domain
+    const absUrl = url.startsWith('/') ? window.location.origin + url : url;
+    const imgTag = `<figure><img src="${absUrl}" alt="${alt || ''}" style="max-width:100%;height:auto;border-radius:8px"><figcaption style="text-align:center;font-size:13px;color:var(--color-muted);margin-top:6px">${alt || ''}</figcaption></figure>\n`;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    ta.value = ta.value.substring(0, start) + imgTag + ta.value.substring(end);
+    ta.selectionStart = ta.selectionEnd = start + imgTag.length;
+    ta.focus();
+  },
+
+  _insertTag(openTag, closeTag) {
+    const ta = $id('wpEditContent');
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = ta.value.substring(start, end);
+    ta.value = ta.value.substring(0, start) + openTag + selected + closeTag + ta.value.substring(end);
+    ta.selectionStart = start;
+    ta.selectionEnd = start + openTag.length + selected.length + closeTag.length;
+    ta.focus();
   },
 
   del(postId) {
     showConfirm('Xóa bài viết khỏi WordPress?', async () => {
       try {
         await api(`/wp-posts/${postId}`, { method: 'DELETE' });
-        showToast('Đã xóa!');
+        showToast('✅ Đã xóa!');
         this.load();
       } catch {
-        showToast('Lỗi!', 'error');
+        showToast('❌ Lỗi!', 'error');
       }
     });
   },
@@ -1193,6 +1640,33 @@ QTP.Users = {
   _users: [],
 
   async load() {
+    // ══ Fake Data ══
+    if (QTP._fakeMode) {
+      const users = QTP._fake.users;
+      this._users = users;
+      $id('usersSubtitle').textContent = `${users.length} users`;
+      $id('usersCont').innerHTML = `
+        <table class="admin-table">
+          <thead><tr><th>User</th><th>Username</th><th>Role</th><th>Status</th><th>Created</th><th></th></tr></thead>
+          <tbody>
+            ${users.map(u => `
+              <tr>
+                <td data-label="User"><strong>${esc(u.fullName || u.username)}</strong></td>
+                <td data-label="Username">${esc(u.username)}</td>
+                <td data-label="Role"><span class="article-status ${u.role === 'admin' ? 'pub' : 'draft'}">${u.role}</span></td>
+                <td data-label="Status"><span style="color:${u.status === 'active' ? '#22c55e' : '#ef4444'};font-size:12px">${u.status || 'active'}</span></td>
+                <td data-label="Created" style="font-size:12px;color:var(--color-muted)">${fmtDate(u.createdAt)}</td>
+                <td>
+                  <button onclick="QTP.Users.toggleStatus('${u.id}')" class="btn btn-ghost btn-sm" title="Đổi trạng thái"><i class="fas ${u.status === 'active' ? 'fa-pause' : 'fa-play'}"></i></button>
+                  <button onclick="QTP.Users.edit('${u.id}')" class="btn btn-ghost btn-sm"><i class="fas fa-edit"></i></button>
+                  <button onclick="QTP.Users.del('${u.id}')" class="btn btn-ghost btn-sm" style="color:var(--color-danger)"><i class="fas fa-trash"></i></button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+      return;
+    }
+
     const cont = $id('usersCont');
     cont.innerHTML =
       '<div class="loading-state"><div class="spinner"></div><p>Đang tải danh sách user…</p></div>';
@@ -1212,11 +1686,11 @@ QTP.Users = {
               .map(
                 (u) => `
               <tr>
-                <td><strong>${esc(u.fullName || u.username)}</strong></td>
-                <td>${esc(u.username)}</td>
-                <td><span class="article-status ${u.role === 'admin' ? 'pub' : 'draft'}">${u.role}</span></td>
-                <td><span style="color:${u.status === 'active' ? '#22c55e' : '#ef4444'};font-size:12px">${u.status || 'active'}</span></td>
-                <td style="font-size:12px;color:var(--color-muted)">${fmtDate(u.createdAt)}</td>
+                <td data-label="User"><strong>${esc(u.fullName || u.username)}</strong></td>
+                <td data-label="Username">${esc(u.username)}</td>
+                <td data-label="Role"><span class="article-status ${u.role === 'admin' ? 'pub' : 'draft'}">${u.role}</span></td>
+                <td data-label="Status"><span style="color:${u.status === 'active' ? '#22c55e' : '#ef4444'};font-size:12px">${u.status || 'active'}</span></td>
+                <td data-label="Created" style="font-size:12px;color:var(--color-muted)">${fmtDate(u.createdAt)}</td>
                 <td>
                   <button onclick="QTP.Users.toggleStatus('${u.id}')" class="btn btn-ghost btn-sm" title="Đổi trạng thái"><i class="fas ${u.status === 'active' ? 'fa-pause' : 'fa-play'}"></i></button>
                   <button onclick="QTP.Users.edit('${u.id}')" class="btn btn-ghost btn-sm"><i class="fas fa-edit"></i></button>
@@ -1339,23 +1813,47 @@ QTP.Settings = {
   load() {
     const keys = JSON.parse(localStorage.getItem('qtp_settings') || '{}');
     $id('sDK').value = keys.deepseek || '';
-    $id('sRepl').value = keys.replicate || '';
-    $id('sWpUrl').value = keys.wpUrl || 'https://thinksmart.vn';
-    $id('sWpPass').value = keys.wpPass || '';
+
+    // Load WP config from server API
+    api('/settings/wp')
+      .then(r => {
+        if (r.success) {
+          $id('sWpUrl').value = r.wpUrl || 'https://thinksmart.vn';
+          $id('sWpPass').value = r.wpPass || '';
+        }
+      })
+      .catch(() => {
+        // Fallback to localStorage
+        $id('sWpUrl').value = keys.wpUrl || 'https://thinksmart.vn';
+        $id('sWpPass').value = keys.wpPass || '';
+      });
+
+    // Sync fake data toggle
+    QTP.App._syncFakeBtn();
   },
 
-  save() {
-    const settings = {
-      deepseek: $id('sDK').value.trim(),
-      replicate: $id('sRepl').value.trim(),
-      wpUrl: $id('sWpUrl').value.trim(),
-      wpPass: $id('sWpPass').value.trim(),
-    };
-    localStorage.setItem('qtp_settings', JSON.stringify(settings));
-    showToast(
-      'Đã lưu cài đặt! Settings được lưu local — cần config .env trên server để生效',
-      'warning'
-    );
+  async save() {
+    const deepseek = $id('sDK').value.trim();
+    const wpUrl = $id('sWpUrl').value.trim();
+    const wpPass = $id('sWpPass').value.trim();
+
+    // Save DeepSeek key to localStorage (frontend only)
+    localStorage.setItem('qtp_settings', JSON.stringify({ deepseek }));
+
+    // Save WP config to server
+    try {
+      const r = await api('/settings/wp', {
+        method: 'POST',
+        body: JSON.stringify({ wpUrl, wpPass }),
+      });
+      if (r.success) {
+        showToast('✅ Đã lưu cấu hình WordPress!');
+      } else {
+        showToast('❌ ' + (r.message || 'Lỗi lưu'), 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối server!', 'error');
+    }
   },
 }; // end QTP.Settings
 
@@ -1367,52 +1865,71 @@ QTP.Analytics = {
   _data: {},
 
   async load() {
-    const days = parseInt($id('analyticsPeriod').value) || 30;
+    // ══ Fake Data Toggle ══
+    if (QTP._fakeMode) {
+      const period = parseInt($id('analyticsPeriod').value) || 30;
+      this._loadFakeData(period);
+      this.showTab('performance');
+      return;
+    }
+
+    const period = parseInt($id('analyticsPeriod').value) || 30;
 
     try {
-      const overview = await api(`/analytics/overview?days=${days}`);
-      if (overview.success) {
-        const o = overview.overview;
-        $id('anTotalViews').textContent = o.totalViewsFormatted || '—';
-        $id('anTotalVisitors').textContent = o.totalVisitorsFormatted || '—';
-        $id('anEngagement').textContent = (o.avgEngagementScore ?? 0) + '%';
-        $id('anBounce').textContent = (o.avgBounceRate ?? 0) + '%';
+      const perf = await api(`/analytics/performance?period=${period}`);
+      if (perf.success) {
+        const k = perf.kpis;
+        $id('anTotalViews').textContent = (k.anTotalViews || 0).toLocaleString();
+        $id('anTotalViews').style.color = '#ed6918';
+        $id('anTotalVisitors').textContent = (k.anTotalVisitors || 0).toLocaleString();
+        $id('anTotalVisitors').style.color = '#3b82f6';
+        $id('anEngagement').textContent = (k.anEngagement || 0).toFixed(1) + '%';
+        $id('anEngagement').style.color = '#22c55e';
+        $id('anBounce').textContent = (k.anBounce || 0).toFixed(1) + '%';
+        $id('anBounce').style.color = '#ef4444';
 
-        if (overview.trafficHistory?.length) {
-          this._renderChart(overview.trafficHistory);
+        // Restore correct labels
+        $q('#analyticsPerformance .stat-card:nth-child(1) .stat-lbl').textContent = 'Lượt xem';
+        $q('#analyticsPerformance .stat-card:nth-child(2) .stat-lbl').textContent = 'Khách truy cập';
+        $q('#analyticsPerformance .stat-card:nth-child(3) .stat-lbl').textContent = 'Tương tác';
+        $q('#analyticsPerformance .stat-card:nth-child(4) .stat-lbl').textContent = 'Tỉ lệ thoát';
+
+        // Timeline chart (articles created vs published per day)
+        if (perf.trafficChart?.length) {
+          this._renderTimeline(perf.trafficChart);
         }
 
+        // Top articles
         const topCont = $id('anTopArticles');
-        if (overview.topArticles?.length) {
-          topCont.innerHTML = overview.topArticles
+        if (perf.topArticles?.length) {
+          topCont.innerHTML = perf.topArticles
             .map(
               (a) => `
             <div class="report-row">
               <span class="report-label">${trunc(esc(a.title ?? ''), 40)}</span>
-              <span class="report-value">${(a.metrics.views ?? 0).toLocaleString()} views</span>
+              <span style="font-size:11px;color:var(--color-muted)">${fmtDate(a.publishedAt || a.createdAt)}</span>
             </div>`
             )
             .join('');
         } else {
-          topCont.innerHTML =
-            '<div style="font-size:12px;color:var(--color-muted);padding:12px">Chưa có dữ liệu</div>';
+          topCont.innerHTML = '<div style="font-size:12px;color:var(--color-muted);padding:12px">Chưa có bài viết</div>';
         }
 
-        if (overview.allMetrics) {
-          $id('anArticlesCount').textContent = `${overview.allMetrics.length} articles`;
+        // Articles table
+        if (perf.articlesTable?.length) {
+          $id('anArticlesCount').textContent = `${perf.anArticlesCount} bài viết`;
           $id('anArticlesTable').innerHTML = `
             <table class="admin-table">
-              <thead><tr><th>Title</th><th>Views</th><th>Bounce</th><th>Engage</th></tr></thead>
+              <thead><tr><th>Bài viết</th><th>Danh mục</th><th>Trạng thái</th><th>Ngày</th></tr></thead>
               <tbody>
-                ${overview.allMetrics
-                  .slice(0, 20)
+                ${perf.articlesTable
                   .map(
                     (a) => `
                   <tr>
-                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${trunc(esc(a.title ?? ''), 50)}</td>
-                    <td>${(a.metrics.views ?? 0).toLocaleString()}</td>
-                    <td>${a.metrics.bounceRate ?? 0}%</td>
-                    <td>${a.metrics.engagementScore ?? 0}%</td>
+                    <td>${trunc(esc(a.title), 40)}</td>
+                    <td>${esc(a.category)}</td>
+                    <td><span class="article-status ${a.status === 'published' ? 'pub' : 'drf'}">${a.status === 'published' ? 'Đã đăng' : 'Nháp'}</span></td>
+                    <td style="font-size:11px;color:var(--color-muted)">${fmtDate(a.createdAt)}</td>
                   </tr>`
                   )
                   .join('')}
@@ -1420,22 +1937,195 @@ QTP.Analytics = {
             </table>`;
         }
       }
-    } catch {
-      /* best-effort */
-    }
+    } catch { /* best-effort */ }
 
     // Pre-fetch other tabs data
-    try {
-      this._data.keywords = await api('/analytics/keywords');
-    } catch {}
-    try {
-      this._data.gap = await api('/analytics/gap-analysis');
-    } catch {}
-    try {
-      this._data.roi = await api('/analytics/roi');
-    } catch {}
+    try { this._data.keywords = await api(`/analytics/keywords?period=${period}`); } catch {}
+    try { this._data.gap = await api(`/analytics/gap?period=${period}`); } catch {}
+    try { this._data.roi = await api(`/analytics/roi?period=${period}`); } catch {}
 
     this.showTab('performance');
+  },
+
+  /* ── Growth Trend Chart (views + visitors line) ── */
+
+  _renderGrowthChart(timeline) {
+    const canvas = $id('trafficChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    const ctx = canvas.getContext('2d');
+
+    if (QTP._analyticsChart) QTP._analyticsChart.destroy();
+
+    const labels = timeline.map(d => {
+      const dt = new Date(d.date + 'T00:00:00');
+      return dt.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+    });
+    const views = timeline.map(d => d.views);
+    const visitors = timeline.map(d => d.visitors);
+    const step = Math.max(1, Math.floor(labels.length / 10));
+    const tickLabels = labels.map((l, i) => (i % step === 0 ? l : ''));
+
+    // Compute growth line (7-day moving average growth %)
+    const growthPct = timeline.map((d, i) => {
+      if (i < 7) return null;
+      const avg7 = timeline.slice(i - 6, i + 1).reduce((s, x) => s + x.views, 0) / 7;
+      const prev7 = timeline.slice(Math.max(0, i - 13), i - 6).reduce((s, x) => s + x.views, 0) / 7;
+      return prev7 > 0 ? ((avg7 - prev7) / prev7 * 100) : 0;
+    });
+    const growthMax = Math.max(...growthPct.filter(Boolean).map(Math.abs), 5);
+    const scaledGrowth = growthPct.map(v => v !== null ? (v / growthMax) * (Math.max(...views) * 0.3) : null);
+
+    QTP._analyticsChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Lượt xem',
+            data: views,
+            borderColor: '#ed6918',
+            backgroundColor: 'rgba(237,105,24,0.08)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 2,
+            borderWidth: 2,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Khách',
+            data: visitors,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.05)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 2,
+            borderWidth: 2,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Tăng trưởng %',
+            data: scaledGrowth,
+            borderColor: '#22c55e',
+            backgroundColor: 'transparent',
+            borderDash: [5, 3],
+            tension: 0.3,
+            pointRadius: 0,
+            borderWidth: 1.5,
+            yAxisID: 'y',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(12,12,22,0.95)',
+            titleColor: '#f8fafc',
+            bodyColor: '#cbd5e1',
+            borderColor: 'rgba(237,105,24,0.2)',
+            borderWidth: 1,
+            cornerRadius: 8,
+            callbacks: {
+              label: function(ctx) {
+                if (ctx.datasetIndex === 2) {
+                  const idx = ctx.dataIndex;
+                  const val = growthPct[idx];
+                  return val !== null ? `Tăng trưởng: ${val.toFixed(1)}%` : '';
+                }
+                return ctx.dataset.label + ': ' + Number(ctx.raw).toLocaleString();
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#52525b', font: { size: 9 }, maxTicksLimit: 12 },
+            grid: { display: false },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#52525b', font: { size: 9 }, precision: 0 },
+            grid: { color: 'rgba(255,255,255,0.03)' },
+          },
+        },
+      },
+    });
+  },
+
+  /* ── Articles per day bar chart ── */
+
+  _renderArticlesDaily(timeline) {
+    const canvas = $id('articlesDailyChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    const ctx = canvas.getContext('2d');
+
+    if (this._dailyChart) this._dailyChart.destroy();
+
+    const labels = timeline.map(d => {
+      const dt = new Date(d.date + 'T00:00:00');
+      return dt.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+    });
+    const created = timeline.map(d => d.articlesCreated);
+    const published = timeline.map(d => d.articlesPublished);
+    const step = Math.max(1, Math.floor(labels.length / 8));
+    const tickLabels = labels.map((l, i) => (i % step === 0 ? l : ''));
+
+    this._dailyChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Tạo',
+            data: created,
+            backgroundColor: 'rgba(237,105,24,0.7)',
+            borderColor: '#ed6918',
+            borderWidth: 1,
+            borderRadius: 3,
+          },
+          {
+            label: 'Đăng',
+            data: published,
+            backgroundColor: 'rgba(34,197,94,0.7)',
+            borderColor: '#22c55e',
+            borderWidth: 1,
+            borderRadius: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 10, padding: 6 },
+          },
+          tooltip: {
+            backgroundColor: 'rgba(12,12,22,0.95)',
+            titleColor: '#f8fafc',
+            bodyColor: '#cbd5e1',
+            borderColor: 'rgba(237,105,24,0.2)',
+            borderWidth: 1,
+            cornerRadius: 8,
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#52525b', font: { size: 8 }, maxTicksLimit: 10 },
+            grid: { display: false },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#52525b', font: { size: 8 }, precision: 0 },
+            grid: { color: 'rgba(255,255,255,0.03)' },
+          },
+        },
+      },
+    });
   },
 
   showTab(tab) {
@@ -1465,81 +2155,26 @@ QTP.Analytics = {
     }
   },
 
-  /* ── Chart ── */
-
-  _renderChart(history) {
-    const canvas = $id('trafficChart');
-    if (!canvas) return;
-    if (QTP._analyticsChart) QTP._analyticsChart.destroy();
-
-    const ctx = canvas.getContext('2d');
-    QTP._analyticsChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: history.map((h) => {
-          const d = h.date.split('-');
-          return d[2] + '/' + d[1];
-        }),
-        datasets: [
-          {
-            label: 'Views',
-            data: history.map((h) => h.views),
-            borderColor: '#ed6918',
-            backgroundColor: 'rgba(237,105,24,0.08)',
-            fill: true,
-            tension: 0.4,
-            pointRadius: 2,
-            borderWidth: 2,
-          },
-          {
-            label: 'Visitors',
-            data: history.map((h) => h.visitors),
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59,130,246,0.05)',
-            fill: true,
-            tension: 0.4,
-            pointRadius: 2,
-            borderWidth: 2,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: {
-            grid: { display: false },
-            ticks: { color: '#52525b', font: { size: 10 }, maxTicksLimit: 10 },
-          },
-          y: {
-            grid: { color: 'rgba(255,255,255,0.03)' },
-            ticks: { color: '#52525b', font: { size: 10 } },
-          },
-        },
-      },
-    });
-  },
-
   /* ── Keywords Tab ── */
 
   _renderKeywords(data) {
     if (!data) return;
-    $id('anKwCount').textContent = `${data.totalKeywords || 0} keywords`;
+    $id('anKwCount').textContent = `${data.anKwCount || 0} keywords`;
 
-    if (data.tracked) {
+    if (data.keywords) {
       $id('anKeywordsTable').innerHTML = `
         <table class="admin-table">
-          <thead><tr><th>Keyword</th><th>Volume</th><th>Diff</th><th>Trend</th></tr></thead>
+          <thead><tr><th>Keyword</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Position</th></tr></thead>
           <tbody>
-            ${data.tracked
+            ${data.keywords
               .map(
                 (k) => `
               <tr>
                 <td>${esc(k.keyword)}</td>
-                <td>${(k.volume || 0).toLocaleString()}</td>
-                <td><span style="color:${(k.difficulty || 0) > 50 ? '#ef4444' : '#22c55e'}">${k.difficulty || 0}</span></td>
-                <td style="color:${k.trend === 'up' ? '#22c55e' : k.trend === 'down' ? '#ef4444' : '#f59e0b'}">${k.trend || 'stable'}</td>
+                <td>${(k.impressions || 0).toLocaleString()}</td>
+                <td>${(k.clicks || 0).toLocaleString()}</td>
+                <td>${k.ctr || 0}%</td>
+                <td>#${k.position || '-'}</td>
               </tr>`
               )
               .join('')}
@@ -1552,24 +2187,25 @@ QTP.Analytics = {
         data.rising
           .map(
             (k) =>
-              `<div class="report-row"><span class="report-label">${esc(k.keyword)}</span><span style="color:#22c55e">↑ ${(k.volume || 0).toLocaleString()}</span></div>`
+              `<div class="report-row"><span class="report-label">${esc(k.keyword)}</span><span style="color:#22c55e">up ${(k.impressions || 0).toLocaleString()} luot</span></div>`
           )
           .join('') ||
-        '<div style="font-size:12px;color:var(--color-muted)">Chưa có dữ liệu</div>';
+        '<div style="font-size:12px;color:var(--color-muted)">Chua co du lieu</div>';
     }
 
-    if (data.topRankingPages) {
+    if (data.rankingPages) {
       $id('anRankingPages').innerHTML = `
         <table class="admin-table">
-          <thead><tr><th>Keyword</th><th>Position</th><th>Volume</th></tr></thead>
+          <thead><tr><th>URL</th><th>Impressions</th><th>Clicks</th><th>Position</th></tr></thead>
           <tbody>
-            ${data.topRankingPages
+            ${data.rankingPages
               .map(
                 (p) => `
               <tr>
-                <td>${esc(p.keyword)}</td>
-                <td>#${p.currentPosition || '?'}</td>
-                <td>${(p.volume || 0).toLocaleString()}</td>
+                <td style="font-size:11px;word-break:break-all">${esc(p.url || p.keyword || '')}</td>
+                <td>${(p.impressions || 0).toLocaleString()}</td>
+                <td>${(p.clicks || 0).toLocaleString()}</td>
+                <td>#${p.position || '?'}</td>
               </tr>`
               )
               .join('')}
@@ -1582,16 +2218,16 @@ QTP.Analytics = {
 
   _renderGap(data) {
     if (!data) return;
-    $id('anGapCount').textContent = `${data.totalOpportunities || 0} opportunities`;
-    $id('anGapEstTraffic').textContent = (data.estimatedTrafficGain || 0).toLocaleString();
+    $id('anGapCount').textContent = `${data.anGapCount || 0} co hoi`;
+    $id('anGapEstTraffic').textContent = (data.anGapEstTraffic || 0).toLocaleString();
 
     if (data.gaps) {
       $id('anGapList').innerHTML = data.gaps
         .map(
           (g) => `
         <div class="report-row">
-          <span class="report-label">${esc(g.topic)}</span>
-          <span style="font-size:12px;color:${g.opportunity === 'Cao' ? '#22c55e' : g.opportunity === 'Trung bình' ? '#f59e0b' : '#ef4444'}">${g.opportunity || ''}</span>
+          <span class="report-label">${esc(g.keyword || g.topic)}</span>
+          <span style="font-size:12px;color:${g.opportunity === 'Cao' ? '#22c55e' : g.opportunity === 'Trung binh' ? '#f59e0b' : '#ef4444'}">${g.opportunity || ''}</span>
         </div>`
         )
         .join('');
@@ -1601,16 +2237,16 @@ QTP.Analytics = {
       $id('anCoveredList').innerHTML = data.covered
         .map(
           (c) =>
-            `<div class="report-row"><span class="report-label">${esc(c.topic || c)}</span><span style="color:#22c55e">✅</span></div>`
+            `<div class="report-row"><span class="report-label">${esc(c.name || c.slug || c)}</span><span style="color:#22c55e">${c.count || 0} bai</span></div>`
         )
         .join('');
     }
 
-    if (data.competitorDomains) {
-      $id('anCompetitorList').innerHTML = data.competitorDomains
+    if (data.competitorList) {
+      $id('anCompetitorList').innerHTML = data.competitorList
         .map(
           (d) =>
-            `<div style="padding:8px 14px;border-radius:8px;background:var(--color-card-2);border:1px solid var(--color-border);font-size:12px">${esc(d)}</div>`
+            `<div style="padding:8px 14px;border-radius:8px;background:var(--color-card-2);border:1px solid var(--color-border);font-size:12px">${esc(d.domain)}<br><small style="color:var(--color-muted)">Bai viet: ${d.articles} | Diem: ${d.score}</small></div>`
         )
         .join('');
     }
@@ -1620,22 +2256,274 @@ QTP.Analytics = {
 
   _renderROI(data) {
     if (!data) return;
-    $id('anHoursSaved').textContent = data.hoursSaved ? data.hoursSaved.toLocaleString() + 'h' : '—';
-    $id('anMoneySaved').textContent = data.moneySaved ? (data.moneySaved / 1_000_000).toFixed(1) + 'M' : '—';
-    $id('anQualityScore').textContent = data.qualityScore ? data.qualityScore + '/100' : '—';
-    $id('anROI').textContent = data.roi ? data.roi.toFixed(0) + '%' : '—';
-    $id('anQualityNum').textContent = (data.qualityScore ?? 0) + '/100';
-    $id('anQualityBar').style.width = Math.min(100, data.qualityScore ?? 0) + '%';
+    const k = data.kpis || {};
+    $id('anHoursSaved').textContent = k.anHoursSaved ? k.anHoursSaved.toLocaleString() + 'h' : '-';
+    $id('anMoneySaved').textContent = k.anMoneySaved ? (k.anMoneySaved / 1_000_000).toFixed(1) + 'M VND' : '-';
+    $id('anQualityScore').textContent = k.anQualityScore ? k.anQualityScore + '/100' : '-';
+    $id('anROI').textContent = data.roi ? data.roi.toFixed(0) + '%' : '-';
+    $id('anQualityNum').textContent = (k.anQualityNum || '0/100');
+    $id('anQualityBar').style.width = Math.min(100, k.anQualityBar || 0) + '%';
 
     if (data.beforeAfter) {
       const b = data.beforeAfter;
       $id('anBeforeMetrics').innerHTML = `
-        <div class="report-row"><span class="report-label">Thời gian/bài</span><span class="report-value">${b.before.timePerArticle} phút</span></div>
-        <div class="report-row"><span class="report-label">SL/tháng</span><span class="report-value">${b.before.monthlyOutput} bài</span></div>`;
+        <div class="report-row"><span class="report-label">Thoi gian/bai</span><span class="report-value">${b.before.timePerArticle} phut</span></div>
+        <div class="report-row"><span class="report-label">SL/thang</span><span class="report-value">${b.before.monthlyOutput} bai</span></div>`;
       $id('anAfterMetrics').innerHTML = `
-        <div class="report-row"><span class="report-label">Thời gian/bài</span><span class="report-value" style="color:#22c55e">${b.after.timePerArticle} phút</span></div>
-        <div class="report-row"><span class="report-label">SL/tháng</span><span class="report-value" style="color:#22c55e">${b.after.monthlyOutput} bài</span></div>`;
+        <div class="report-row"><span class="report-label">Thoi gian/bai</span><span class="report-value" style="color:#22c55e">${b.after.timePerArticle} phut</span></div>
+        <div class="report-row"><span class="report-label">SL/thang</span><span class="report-value" style="color:#22c55e">${b.after.monthlyOutput} bai</span></div>`;
     }
+  },
+  /* ── Fake Data Generator ── */
+
+  _loadFakeData(period) {
+    const now = new Date();
+
+    // ── Generate data ──
+    const timeline = [];
+    let baseCreated = 2, basePublished = 1, baseViews = 1200, baseVisitors = 400;
+    for (let i = period - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dayStr = d.toISOString().split('T')[0];
+      const growth = 1 + (period - i) / period * 0.5;
+      const created = Math.round(baseCreated * growth * (0.5 + Math.random()));
+      const published = Math.round(basePublished * growth * (0.4 + Math.random()));
+      baseCreated += 0.1 + Math.random() * 0.3;
+      basePublished += 0.1 + Math.random() * 0.2;
+      timeline.push({
+        date: dayStr,
+        articlesCreated: Math.max(0, created),
+        articlesPublished: Math.max(0, Math.min(created, published)),
+        views: Math.round(baseViews * growth * (0.6 + Math.random() * 0.8)),
+        visitors: Math.round(baseVisitors * growth * (0.5 + Math.random() * 0.6)),
+      });
+    }
+
+    const totalViews = timeline.reduce((s, d) => s + d.views, 0);
+    const totalVisitors = timeline.reduce((s, d) => s + d.visitors, 0);
+    const avgEngagement = 62.4 + Math.random() * 8;
+    const avgBounce = 30.2 + Math.random() * 6;
+
+    // Last 7 days vs previous 7 for growth
+    const last7 = timeline.slice(-7);
+    const prev7 = timeline.slice(-14, -7);
+    const viewsGrowth = prev7.length ? ((last7.reduce((s,d)=>s+d.views,0) - prev7.reduce((s,d)=>s+d.views,0)) / prev7.reduce((s,d)=>s+d.views,0) * 100).toFixed(1) : '+0.0';
+    const visGrowth = prev7.length ? ((last7.reduce((s,d)=>s+d.visitors,0) - prev7.reduce((s,d)=>s+d.visitors,0)) / prev7.reduce((s,d)=>s+d.visitors,0) * 100).toFixed(1) : '+0.0';
+    const engGrowth = '+' + (3.2 + Math.random() * 4).toFixed(1);
+    const bounceGrowth = (-2.1 - Math.random() * 3).toFixed(1);
+
+    // ── KPI Cards ──
+    $id('anTotalViews').textContent = totalViews.toLocaleString();
+    $id('anTotalVisitors').textContent = totalVisitors.toLocaleString();
+    $id('anEngagement').textContent = avgEngagement.toFixed(1) + '%';
+    $id('anBounce').textContent = avgBounce.toFixed(1) + '%';
+
+    // ── Growth Badges ──
+    const setBadge = (id, val, isGoodUp) => {
+      const el = $id(id);
+      if (!el) return;
+      const num = parseFloat(val);
+      const isUp = num > 0;
+      el.style.display = 'inline-flex';
+      el.className = 'an-growth-badge ' + (isUp ? 'an-growth-up' : 'an-growth-down');
+      const arrow = isUp ? '↑' : '↓';
+      el.innerHTML = `${arrow} ${Math.abs(num)}%`;
+    };
+    setBadge('anViewsGrowth', viewsGrowth, true);
+    setBadge('anVisitorsGrowth', visGrowth, true);
+    setBadge('anEngagementGrowth', engGrowth, true);
+    setBadge('anBounceGrowth', bounceGrowth, false);
+
+    // ── Growth Trend Chart (views + visitors + growth line) ──
+    this._renderGrowthChart(timeline);
+
+    // ── Trending Posts ──
+    const trendingList = [
+      { title: 'Hướng dẫn SEO WordPress Toàn Diện 2026', views: 2840, engagement: 68, growth: '+32%', badge: '🔥', badgeClass: 'trending-hot', label: 'Hot' },
+      { title: 'Cách Viết Content Chuẩn Google AI', views: 2150, engagement: 72, growth: '+28%', badge: '📈', badgeClass: 'trending-trending', label: 'Trending' },
+      { title: 'Top 10 Công Cụ AI Cho Content Marketing', views: 1890, engagement: 65, growth: '+45%', badge: '🔥', badgeClass: 'trending-hot', label: 'Hot' },
+      { title: 'Chiến Lược Social Media Cho Doanh Nghiệp Nhỏ', views: 1560, engagement: 58, growth: '+18%', badge: '👍', badgeClass: 'trending-popular', label: 'Popular' },
+      { title: 'Tối Ưu Tốc Độ Website WordPress', views: 1340, engagement: 71, growth: '+22%', badge: '📈', badgeClass: 'trending-trending', label: 'Trending' },
+      { title: 'Xu Hướng Thiết Kế Web 2026', views: 1120, engagement: 55, growth: '+15%', badge: '👍', badgeClass: 'trending-popular', label: 'Popular' },
+      { title: 'Bí Quyết Tăng Traffic Tự Nhiên', views: 980, engagement: 63, growth: '+40%', badge: '🆕', badgeClass: 'trending-new', label: 'New' },
+      { title: 'Hướng Dẫn Làm Video Shorts Cho Marketing', views: 870, engagement: 60, growth: '+12%', badge: '🆕', badgeClass: 'trending-new', label: 'New' },
+    ];
+
+    $id('anTrendingCount').textContent = `${trendingList.length} bài`;
+    $id('anTrendingPosts').innerHTML = trendingList.map((t, i) => {
+      const rankClass = i < 3 ? `trending-rank-${i + 1}` : 'trending-rank-n';
+      return `<div class="trending-card">
+        <div class="trending-rank ${rankClass}">${i + 1}</div>
+        <div class="trending-info">
+          <div class="trending-title">${esc(t.title)}</div>
+          <div class="trending-meta">
+            <span><i class="fas fa-eye" style="font-size:8px"></i> ${t.views.toLocaleString()}</span>
+            <span><i class="fas fa-chart-simple" style="font-size:8px"></i> ${t.engagement}%</span>
+            <span style="color:#22c55e">${t.growth}</span>
+          </div>
+        </div>
+        <span class="trending-badge ${t.badgeClass}">${t.badge} ${t.label}</span>
+      </div>`;
+    }).join('');
+
+    // ── Articles per day bar chart ──
+    this._renderArticlesDaily(timeline);
+
+    // Article summary stats
+    const totalArticles = timeline.reduce((s, d) => s + d.articlesCreated, 0);
+    const totalPublished = timeline.reduce((s, d) => s + d.articlesPublished, 0);
+    $id('anTotalArticles').textContent = totalArticles.toLocaleString();
+    $id('anTotalPublished').textContent = totalPublished.toLocaleString();
+    $id('anTotalDrafts').textContent = (totalArticles - totalPublished).toLocaleString();
+
+    // ── Articles Table with per-article metrics ──
+    const categories = ['SEO', 'Content', 'Marketing', 'WordPress', 'Social Media', 'AI Tools'];
+    const statuses = ['published', 'published', 'published', 'draft'];
+    const allArticles = [];
+    const articleNames = [
+      'Hướng dẫn SEO WordPress Toàn Diện 2026',
+      'Cách Viết Content Chuẩn Google AI',
+      'Top 10 Công Cụ AI Cho Content Marketing',
+      'Chiến Lược Social Media Cho Doanh Nghiệp Nhỏ',
+      'Tối Ưu Tốc Độ Website WordPress',
+      'Xu Hướng Thiết Kế Web 2026',
+      'Bí Quyết Tăng Traffic Tự Nhiên',
+      'Hướng Dẫn Làm Video Shorts Cho Marketing',
+      'Email Marketing Automation Cơ Bản',
+      'Phân Tích Đối Thủ Cạnh Tranh SEO',
+    ];
+    for (let i = 0; i < totalArticles; i++) {
+      const daysAgo = Math.floor(Math.random() * period);
+      const d = new Date(now);
+      d.setDate(d.getDate() - daysAgo);
+      allArticles.push({
+        title: articleNames[i % articleNames.length] + (i >= articleNames.length ? ' #' + (i + 1) : ''),
+        category: categories[i % categories.length],
+        createdAt: d.toISOString(),
+        status: statuses[i % statuses.length],
+        views: Math.floor(100 + Math.random() * 5000),
+        clicks: Math.floor(10 + Math.random() * 300),
+        ctr: (3 + Math.random() * 12).toFixed(1),
+      });
+    }
+
+    // Top articles first
+    allArticles.sort((a, b) => b.views - a.views);
+
+    $id('anArticlesCount').textContent = `${totalArticles} bài viết`;
+    $id('anArticlesTable').innerHTML = `
+      <table class="admin-table">
+        <thead><tr><th>Bài viết</th><th>Danh mục</th><th>Lượt xem</th><th>Click</th><th>CTR</th><th>Trạng thái</th><th>Ngày</th></tr></thead>
+        <tbody>
+          ${allArticles.slice(0, 50).map(a => `
+          <tr>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${trunc(esc(a.title), 35)}</td>
+            <td><span style="font-size:10px;color:var(--color-muted)">${esc(a.category)}</span></td>
+            <td style="color:#ed6918;font-weight:600">${a.views.toLocaleString()}</td>
+            <td style="color:#3b82f6">${a.clicks.toLocaleString()}</td>
+            <td style="color:#22c55e">${a.ctr}%</td>
+            <td><span class="article-status ${a.status === 'published' ? 'pub' : 'drf'}">${a.status === 'published' ? 'Đã đăng' : 'Nháp'}</span></td>
+            <td style="font-size:10px;color:var(--color-muted)">${fmtDate(a.createdAt)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    // ── Keywords ──
+    const fakeKeywords = [
+      { keyword: 'seo wordpress', impressions: 8450, clicks: 1234, ctr: 14.6, position: 4 },
+      { keyword: 'content AI', impressions: 6200, clicks: 891, ctr: 14.4, position: 5 },
+      { keyword: 'công cụ AI content', impressions: 5400, clicks: 756, ctr: 14.0, position: 3 },
+      { keyword: 'học SEO online', impressions: 4800, clicks: 672, ctr: 14.0, position: 6 },
+      { keyword: 'viết content marketing', impressions: 4100, clicks: 574, ctr: 14.0, position: 4 },
+      { keyword: 'tối ưu web', impressions: 3600, clicks: 504, ctr: 14.0, position: 7 },
+      { keyword: 'email marketing', impressions: 3200, clicks: 448, ctr: 14.0, position: 5 },
+      { keyword: 'social media marketing', impressions: 2800, clicks: 392, ctr: 14.0, position: 8 },
+      { keyword: 'wordpress plugin', impressions: 2500, clicks: 350, ctr: 14.0, position: 9 },
+      { keyword: 'keyword research', impressions: 2100, clicks: 294, ctr: 14.0, position: 6 },
+      { keyword: 'backlink building', impressions: 1800, clicks: 252, ctr: 14.0, position: 10 },
+      { keyword: 'website speed', impressions: 1500, clicks: 210, ctr: 14.0, position: 7 },
+    ];
+    const risingKeywords = [
+      { keyword: 'AI content marketing', impressions: 3200 },
+      { keyword: 'Google SGE update', impressions: 2800 },
+      { keyword: 'video marketing 2026', impressions: 2500 },
+      { keyword: 'SEO podcast', impressions: 1800 },
+      { keyword: 'local SEO strategy', impressions: 1200 },
+    ];
+    const rankingPages = [
+      { url: '/huong-dan-seo-wordpress', impressions: 3400, clicks: 510, position: 3 },
+      { url: '/content-ai-la-gi', impressions: 2900, clicks: 435, position: 2 },
+      { url: '/cong-cu-ai-content', impressions: 2500, clicks: 375, position: 5 },
+      { url: '/hoc-seo-online', impressions: 2100, clicks: 315, position: 4 },
+      { url: '/viet-content-marketing', impressions: 1800, clicks: 270, position: 6 },
+      { url: '/toi-uu-toc-do-web', impressions: 1400, clicks: 210, position: 7 },
+      { url: '/email-marketing-automation', impressions: 1100, clicks: 165, position: 8 },
+    ];
+
+    this._data.keywords = {
+      keywords: fakeKeywords,
+      anKwCount: fakeKeywords.length,
+      rising: risingKeywords,
+      rankingPages,
+    };
+
+    // ── Gap Analysis ──
+    const gaps = [
+      { keyword: 'Google Core Web Vitals', category: 'SEO', impressions: 1200, clicks: 180, ctr: 15.0, position: '—', opportunity: 'Cao', estimatedTraffic: 180 },
+      { keyword: 'AI viết content tự động', impressions: 950, clicks: 0, ctr: 0, position: '—', opportunity: 'Cao', estimatedTraffic: 142 },
+      { keyword: 'Website bán hàng online', impressions: 800, clicks: 0, ctr: 0, position: '—', opportunity: 'Cao', estimatedTraffic: 120 },
+      { keyword: 'Chatbot AI cho doanh nghiệp', impressions: 650, clicks: 0, ctr: 0, position: '—', opportunity: 'Trung bình', estimatedTraffic: 97 },
+      { keyword: 'Google Business Profile SEO', impressions: 500, clicks: 0, ctr: 0, position: '—', opportunity: 'Trung bình', estimatedTraffic: 75 },
+      { keyword: 'Content pillar strategy', impressions: 400, clicks: 0, ctr: 0, position: '—', opportunity: 'Trung bình', estimatedTraffic: 60 },
+      { keyword: 'SEO cho hình ảnh', impressions: 300, clicks: 0, ctr: 0, position: '—', opportunity: 'Thấp', estimatedTraffic: 45 },
+    ];
+    const covered = [
+      { slug: 'seo', name: 'SEO Tổng Quan', count: 12 },
+      { slug: 'content', name: 'Content Marketing', count: 8 },
+      { slug: 'marketing', name: 'Digital Marketing', count: 6 },
+      { slug: 'wordpress', name: 'WordPress Tips', count: 10 },
+      { slug: 'social-media', name: 'Social Media', count: 4 },
+    ];
+    const competitorList = [
+      { domain: 'thinksmart.vn', articles: totalArticles, keywords: fakeKeywords.length, score: 85 },
+      { domain: 'webseo24h.com', articles: 120, keywords: 48, score: 72 },
+      { domain: 'marketingai.vn', articles: 85, keywords: 35, score: 68 },
+      { domain: 'contentpro.vn', articles: 95, keywords: 42, score: 76 },
+    ];
+
+    this._data.gap = {
+      gaps,
+      anGapCount: gaps.length,
+      anGapEstTraffic: gaps.reduce((s, g) => s + (g.estimatedTraffic || 0), 0),
+      covered,
+      competitorList,
+    };
+
+    // ── ROI ──
+    const hoursSaved = 1248 + Math.floor(Math.random() * 200);
+    const moneySaved = hoursSaved * 150000;
+    const qualityScore = 82 + Math.floor(Math.random() * 10);
+    const roi = 312 + Math.floor(Math.random() * 60);
+
+    this._data.roi = {
+      kpis: {
+        anHoursSaved: hoursSaved,
+        anMoneySaved: moneySaved,
+        anQualityScore: qualityScore,
+        anQualityNum: `${qualityScore}/100`,
+        anQualityBar: qualityScore,
+      },
+      totalArticles,
+      publishedArticles: Math.round(totalArticles * 0.72),
+      totalCost: 1250000,
+      contentValue: totalArticles * 200000,
+      roi,
+      beforeAfter: {
+        before: { timePerArticle: 240, monthlyOutput: 7, monthlyCost: 10800000 },
+        after: { timePerArticle: 30, monthlyOutput: 60, monthlyCost: 4200000 },
+      },
+    };
   },
 }; // end QTP.Analytics
 
@@ -1644,7 +2532,16 @@ QTP.Analytics = {
    =================================================================== */
 
 QTP.Media = {
+  _images: [],
+
   async load() {
+    // ══ Fake Data ══
+    if (QTP._fakeMode) {
+      this._images = QTP._fake.media.slice();
+      this._render();
+      return;
+    }
+
     const cont = $id('mediaCont');
     cont.innerHTML =
       '<div class="loading-state" style="grid-column:1/-1"><div class="spinner"></div><p>Đang tải thư viện ảnh…</p></div>';
@@ -1689,6 +2586,29 @@ QTP.Media = {
   refresh() {
     this.load();
   },
+
+  /** Render all images with delete button */
+  _render() {
+    const cont = $id('mediaCont');
+    if (!this._images.length) {
+      cont.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--color-muted)"><i class="fas fa-images" style="font-size:48px;opacity:0.3;display:block;margin-bottom:16px"></i>Chưa có ảnh. Thêm ảnh từ bài viết.</div>';
+      return;
+    }
+    cont.innerHTML = this._images.slice(0, 50).map((img, idx) => `
+      <div class="img-cell" onclick="window.open('${img.url}','_blank')">
+        <img src="${esc(img.url)}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
+        <button class="img-del-btn" onclick="event.stopPropagation();QTP.Media.del(${idx})" title="Xóa ảnh">✕</button>
+      </div>`).join('');
+  },
+
+  /** Delete an image by index */
+  del(index) {
+    showConfirm('Xóa ảnh này?', () => {
+      this._images.splice(index, 1);
+      this._render();
+      showToast('✅ Đã xóa ảnh!');
+    });
+  },
 }; // end QTP.Media
 
 /* ===================================================================
@@ -1699,6 +2619,21 @@ QTP.Notes = {
   _colors: [],
 
   async load() {
+    // ══ Fake Data ══
+    if (QTP._fakeMode) {
+      this._colors = [
+        { id: 'yellow', bg: '#fbbf24', text: '#1c1917' },
+        { id: 'green', bg: '#4ade80', text: '#052e16' },
+        { id: 'blue', bg: '#60a5fa', text: '#172554' },
+        { id: 'pink', bg: '#f472b6', text: '#500724' },
+        { id: 'purple', bg: '#a78bfa', text: '#2e1065' },
+      ];
+      QTP._notes = QTP._fake.notes;
+      this._render(QTP._fake.notes);
+      this._renderColorFilter();
+      return;
+    }
+
     const cont = $id('notesGrid');
     cont.innerHTML =
       '<div class="loading-state" style="grid-column:1/-1"><div class="spinner"></div><p>Đang tải ghi chú…</p></div>';
@@ -2236,11 +3171,221 @@ QTP.Library = {
 }; // end QTP.Library
 
 /* ===================================================================
-   SECTION 17 — QTP.Chat (AI Assistant Floating Chat)
+   SECTION 17 — QTP.Usage (API Usage Tracking)
+   =================================================================== */
+
+QTP.Usage = {
+  async load() {
+    // ══ Fake Data ══
+    if (QTP._fakeMode) {
+      this._loadFakeUsage();
+      return;
+    }
+
+    try {
+      const data = await api('/usage');
+      if (!data.success) throw new Error();
+
+      const t = data.total;
+      const today = data.today;
+      const cost = data.cost;
+
+      $id('usDeepseek').textContent = (t.deepseek || 0).toLocaleString();
+      $id('usReplicate').textContent = (t.replicate || 0).toLocaleString();
+      $id('usWp').textContent = (t.wp_publish || 0).toLocaleString();
+      $id('usCost').textContent = '$' + (cost.total || 0).toFixed(2);
+
+      $id('usTodayDeepseek').textContent = today.deepseek || 0;
+      $id('usTodayReplicate').textContent = today.replicate || 0;
+      $id('usTodayCost').textContent = '$' + (cost.today || 0).toFixed(2);
+
+      // Render daily history
+      const days = data.days || [];
+      const hist = $id('usHistory');
+      if (!days.length) {
+        hist.innerHTML = '<span>Chưa có dữ liệu</span>';
+        return;
+      }
+      hist.innerHTML = days.slice().reverse().map(d => {
+        const total = (d.deepseek || 0) + (d.replicate || 0) + (d.chat || 0);
+        const maxBar = Math.max(...days.map(x => (x.deepseek||0)+(x.replicate||0)+(x.chat||0)), 1);
+        const barPct = Math.max(3, (total / maxBar) * 100);
+        const dateObj = new Date(d.date + 'T00:00:00');
+        const label = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="width:50px;font-size:10px;color:var(--color-muted);flex-shrink:0">${label}</span>
+          <div style="flex:1;height:18px;background:var(--color-border);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${barPct}%;background:linear-gradient(90deg,#22c55e,#3b82f6);border-radius:4px;transition:width .5s ease"></div>
+          </div>
+          <span style="width:30px;font-size:10px;color:var(--color-sub);text-align:right;flex-shrink:0">${total}</span>
+        </div>`;
+      }).join('');
+    } catch {
+      $id('usDeepseek').textContent = 'ERR';
+      $id('usHistory').innerHTML = '<span style="color:var(--color-danger)">Lỗi tải dữ liệu</span>';
+    }
+  },
+
+  /** Fake usage data — $52 total cost */
+  _loadFakeUsage() {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Total stats
+    $id('usDeepseek').textContent = '14,280';
+    $id('usReplicate').textContent = '847';
+    $id('usWp').textContent = '156';
+    $id('usCost').textContent = '$52.00';
+
+    // Growth badges
+    const g1 = $id('usDeepseekGrowth');
+    if (g1) { g1.style.display = 'inline-flex'; g1.innerHTML = '↑ 12.4%'; }
+    const g2 = $id('usReplicateGrowth');
+    if (g2) { g2.style.display = 'inline-flex'; g2.innerHTML = '↑ 8.7%'; }
+
+    // Today
+    $id('usTodayDeepseek').textContent = '47';
+    $id('usTodayReplicate').textContent = '3';
+    $id('usTodayCost').textContent = '$0.18';
+
+    // Avg daily
+    $id('usAvgDaily').textContent = '506';
+    $id('usAvgCost').textContent = '$1.73';
+
+    // Breakdown percentages
+    const total = 14280 + 847 + 2156; // deepseek + replicate + chat
+    $id('usDeepseekPct').textContent = Math.round(14280 / total * 100) + '%';
+    $id('usReplicatePct').textContent = Math.round(847 / total * 100) + '%';
+    $id('usOtherPct').textContent = Math.round(2156 / total * 100) + '%';
+
+    // Daily history (30 ngày)
+    const days = [];
+    let ds = 280, rep = 12, cht = 40;
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      ds += Math.round(Math.random() * 30 - 8);
+      rep += Math.round(Math.random() * 4 - 1);
+      cht += Math.round(Math.random() * 10 - 3);
+      days.push({
+        date: d.toISOString().split('T')[0],
+        deepseek: Math.max(0, ds),
+        replicate: Math.max(0, rep),
+        chat: Math.max(0, cht),
+      });
+    }
+
+    // Render cost chart (daily cost = deepseek * 0.002 + replicate * 0.004 + chat * 0.001)
+    this._renderUsageChart(days);
+
+    // Render history bars
+    const hist = $id('usHistory');
+    const maxBar = Math.max(...days.map(d => d.deepseek + d.replicate + d.chat), 1);
+    hist.innerHTML = days.map(d => {
+      const total = d.deepseek + d.replicate + d.chat;
+      const barPct = Math.max(3, (total / maxBar) * 100);
+      const dateObj = new Date(d.date + 'T00:00:00');
+      const label = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+        <span style="width:44px;font-size:9px;color:var(--color-muted);flex-shrink:0">${label}</span>
+        <div style="flex:1;height:14px;background:var(--color-border);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${barPct}%;background:linear-gradient(90deg,#22c55e,#3b82f6);border-radius:3px;transition:width .5s ease"></div>
+        </div>
+        <span style="width:26px;font-size:9px;color:var(--color-sub);text-align:right;flex-shrink:0">${total}</span>
+      </div>`;
+    }).join('');
+  },
+
+  /** Render usage cost trend chart */
+  _renderUsageChart(days) {
+    const canvas = $id('usageChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    const ctx = canvas.getContext('2d');
+
+    if (this._usageChart) this._usageChart.destroy();
+
+    const labels = days.map(d => {
+      const dt = new Date(d.date + 'T00:00:00');
+      return dt.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+    });
+    const costs = days.map(d => +(d.deepseek * 0.002 + d.replicate * 0.004 + d.chat * 0.001).toFixed(2));
+    const step = Math.max(1, Math.floor(labels.length / 8));
+
+    this._usageChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Chi phí ($)',
+          data: costs,
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34,197,94,0.08)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 2,
+          borderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(12,12,22,0.95)',
+            titleColor: '#f8fafc',
+            bodyColor: '#cbd5e1',
+            borderColor: 'rgba(34,197,94,0.2)',
+            borderWidth: 1,
+            cornerRadius: 8,
+            callbacks: {
+              label: ctx => '$' + ctx.parsed.y.toFixed(2),
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#52525b', font: { size: 8 }, maxTicksLimit: 10 },
+            grid: { display: false },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#52525b', font: { size: 8 }, callback: v => '$' + v.toFixed(2) },
+            grid: { color: 'rgba(255,255,255,0.03)' },
+          },
+        },
+      },
+    });
+  },
+}; // end QTP.Usage
+
+/* ===================================================================
+   SECTION 18 — QTP.Chat (AI Assistant Floating Chat)
    =================================================================== */
 
 QTP.Chat = {
   _open: false,
+
+  load() {
+    setTimeout(() => $id('chInput')?.focus(), 300);
+    // Hide suggestions after first message
+  },
+
+  clear() {
+    const msgs = $id('chMsgs');
+    msgs.innerHTML = `<div class="ch-msg ch-bot">
+      <div class="ch-msg-avatar"><i class="fas fa-robot"></i></div>
+      <div class="ch-msg-content">
+        <div class="ch-msg-bubble">👋 Đã xoá tin nhắn. Hỏi tôi bất cứ điều gì!</div>
+        <div class="ch-msg-time">Vừa xong</div>
+      </div>
+    </div>`;
+    $id('chSuggestions').style.display = 'flex';
+  },
+
+  suggest(msg) {
+    $id('chInput').value = msg;
+    this.send();
+  },
 
   toggle() {
     this._open = !this._open;
@@ -2259,16 +3404,19 @@ QTP.Chat = {
   },
 
   async send() {
-    const input = $id('chatInput');
+    const input = $id('chInput');
     const msg = input.value.trim();
     if (!msg) return;
     input.value = '';
 
-    const msgs = $id('chatMsgs');
-    msgs.innerHTML += `<div class="cp-msg cp-user"><div class="cp-msg-bubble">${esc(msg)}</div></div>`;
+    const msgs = $id('chMsgs');
+    msgs.innerHTML += `<div class="ch-msg ch-user"><div class="ch-msg-content"><div class="ch-msg-bubble">${esc(msg)}</div></div></div>`;
+
+    // Hide suggestions after first message
+    $id('chSuggestions').style.display = 'none';
 
     const typing = document.createElement('div');
-    typing.className = 'cp-typing';
+    typing.className = 'ch-typing';
     typing.innerHTML = '<span></span><span></span><span></span>';
     msgs.appendChild(typing);
     this._scrollDown();
@@ -2277,17 +3425,17 @@ QTP.Chat = {
       const res = await api('/chat', { method: 'POST', body: JSON.stringify({ message: msg }) });
       typing.remove();
       msgs.innerHTML +=
-        `<div class="cp-msg cp-bot"><div class="cp-msg-avatar"><i class="fas fa-robot"></i></div><div class="cp-msg-bubble">${esc(res.reply || 'Xin lỗi, tôi chưa có câu trả lời.')}</div></div>`;
+        `<div class="ch-msg ch-bot"><div class="ch-msg-avatar"><i class="fas fa-robot"></i></div><div class="ch-msg-content"><div class="ch-msg-bubble">${esc(res.reply || 'Xin lỗi, tôi chưa có câu trả lời.')}</div><div class="ch-msg-time">Vừa xong</div></div></div>`;
     } catch {
       typing.remove();
       msgs.innerHTML +=
-        '<div class="cp-msg cp-bot"><div class="cp-msg-avatar"><i class="fas fa-robot"></i></div><div class="cp-msg-bubble">❌ Lỗi kết nối, vui lòng thử lại.</div></div>';
+        '<div class="ch-msg ch-bot"><div class="ch-msg-avatar"><i class="fas fa-robot"></i></div><div class="ch-msg-content"><div class="ch-msg-bubble">❌ Lỗi kết nối, vui lòng thử lại.</div><div class="ch-msg-time">Vừa xong</div></div></div>';
     }
     this._scrollDown();
   },
 
   _scrollDown() {
-    const msgs = $id('chatMsgs');
+    const msgs = $id('chMsgs');
     requestAnimationFrame(() => {
       msgs.scrollTop = msgs.scrollHeight;
     });

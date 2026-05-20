@@ -5,6 +5,7 @@
 const express = require('express');
 const axios = require('axios');
 const { authRequired } = require('../middleware/auth');
+const { track } = require('../utils/api-tracker');
 
 const router = express.Router();
 
@@ -43,6 +44,7 @@ router.post('/', authRequired, async (req, res) => {
 
     messages.push({ role: 'user', content: message });
 
+    track('chat');
     const aiRes = await axios.post(
       'https://api.deepseek.com/v1/chat/completions',
       {

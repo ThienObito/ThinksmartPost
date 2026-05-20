@@ -1,12 +1,28 @@
 /**
- * Smart Analytics & Content Intelligence API
- * Provides: content performance, keyword tracking, gap analysis, ROI calculator
- * Uses real article data + generated mock metrics for demo purposes.
+ * Smart Analytics API — Cache-First Backend
+ * 
+ * KIẾN TRÚC:
+ * 1. Client gọi → Backend check DB Cache trước
+ * 2. Cache HIT → Trả về ngay (không gọi Google API)
+ * 3. Cache MISS → Gọi Google API → Lưu Cache → Trả về
+ * 
+ * Endpoints:
+ *   GET /api/analytics/performance?period=30
+ *   GET /api/analytics/keywords?period=30
+ *   GET /api/analytics/gap?period=30
+ *   GET /api/analytics/roi?period=30
+ *   GET /api/analytics/sync-status
+ *   POST /api/analytics/sync (admin only — force refresh)
  */
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 const { authRequired } = require('../middleware/auth');
+const { wpAuth } = require('../utils');
+const { getStats } = require('../utils/api-tracker');
+const db = require('../db/database');
+const googleApi = require('../utils/google-api');
 
 const router = express.Router();
 const DATA_DIR = path.join(__dirname, '..', 'data');
@@ -16,7 +32,7 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 function loadArticles() {
   try {
     return fs.readdirSync(DATA_DIR)
-      .filter(f => f.endsWith('.json') && !f.startsWith('queue') && f !== 'users.json' && f !== 'templates.json')
+      .filter(f => f.endsWith('.json') && !f.startsWith('queue') && f !== 'users.json' && f !== 'templates.json' && f !== 'api-usage.json')
       .map(f => {
         try { return { file: f, ...JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf-8')) }; }
         catch { return null; }
@@ -26,258 +42,454 @@ function loadArticles() {
   } catch { return []; }
 }
 
-function loadUsers() {
-  try { return JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'users.json'), 'utf-8')); }
-  catch { return []; }
-}
-
-// ── Generate realistic mock metrics based on real article data ───
-function generateMetrics(articles) {
-  const baseSeed = articles.length || 1;
-
-  // Each article gets simulated traffic based on title length, recency, published status
-  return articles.map((article, idx) => {
-    const seed = (idx + 1) * (article.title ? article.title.length : 50);
-    const daysSinceCreated = article.createdAt
-      ? Math.max(1, (Date.now() - new Date(article.createdAt).getTime()) / 86400000)
-      : 30;
-
-    // Published articles get more traffic
-    const publishedMultiplier = article.published ? 3.0 : 0.5;
-    const recencyBoost = Math.max(0.3, 1 - daysSinceCreated / 180);
-
-    const views = Math.floor((seed % 500 + 50) * publishedMultiplier * recencyBoost);
-    const uniqueVisitors = Math.floor(views * (0.4 + Math.random() * 0.3));
-    const avgTimeOnPage = Math.floor(60 + (seed % 240) * publishedMultiplier * 0.5);
-    const bounceRate = Math.floor(30 + (seed % 40) - publishedMultiplier * 8);
-
-    return {
-      title: article.title || 'Untitled',
-      category: article.category_slug || 'general',
-      published: article.published || false,
-      createdAt: article.createdAt,
-      hasImages: article.images && article.images.length > 0,
-      wpId: article.wpId || null,
-      metrics: {
-        views: Math.max(0, views),
-        uniqueVisitors: Math.max(0, uniqueVisitors),
-        avgTimeOnPage: Math.max(30, avgTimeOnPage),
-        bounceRate: Math.max(10, Math.min(95, bounceRate)),
-        engagementScore: Math.floor((uniqueVisitors / Math.max(1, views)) * 100),
-      },
-    };
-  });
-}
-
-// ── Generate daily traffic for chart (last N days) ──────────────
-function generateTrafficHistory(days = 30, articlesCount = 10) {
-  const history = [];
-  const now = new Date();
-  const base = Math.max(10, articlesCount * 3);
-
-  for (let i = days - 1; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-    const dayStr = date.toISOString().split('T')[0];
-    // Weekend dip + weekday spike pattern
-    const dayOfWeek = date.getDay();
-    const weekendFactor = (dayOfWeek === 0 || dayOfWeek === 6) ? 0.6 : 1.2;
-    const noise = 0.7 + Math.random() * 0.6;
-    const growth = 1 + (days - i) * 0.008; // slight upward trend
-
-    const dailyViews = Math.floor(base * weekendFactor * noise * growth);
-    const dailyVisitors = Math.floor(dailyViews * (0.5 + Math.random() * 0.2));
-    const dailyArticles = Math.floor(Math.random() * Math.min(3, Math.ceil(articlesCount / 10)) + 1);
-
-    history.push({
-      date: dayStr,
-      views: dailyViews,
-      visitors: dailyVisitors,
-      articlesCreated: dailyArticles,
-    });
-  }
-  return history;
-}
-
-// ── Mock keyword data ───────────────────────────────────────────
-function generateKeywords(articles) {
-  const keywordPool = [
-    { keyword: 'in 3D công nghiệp', volume: 2400, difficulty: 45, trend: 'up' },
-    { keyword: 'máy in 3D resin', volume: 1800, difficulty: 32, trend: 'up' },
-    { keyword: 'FDM vs SLA', volume: 1200, difficulty: 28, trend: 'stable' },
-    { keyword: 'phần mềm mô phỏng 3D', volume: 960, difficulty: 52, trend: 'up' },
-    { keyword: 'vật liệu in 3D y tế', volume: 720, difficulty: 38, trend: 'up' },
-    { keyword: 'in 3D kim loại', volume: 3200, difficulty: 68, trend: 'up' },
-    { keyword: '3D printing automotive', volume: 1800, difficulty: 55, trend: 'stable' },
-    { keyword: 'in 3D hàng không', volume: 480, difficulty: 62, trend: 'down' },
-    { keyword: 'thiết kế 3D cho UAV', volume: 340, difficulty: 42, trend: 'up' },
-    { keyword: 'in 3D giá rẻ', volume: 2800, difficulty: 22, trend: 'down' },
-    { keyword: 'tạo mẫu nhanh', volume: 1500, difficulty: 35, trend: 'stable' },
-    { keyword: 'sản xuất phụ gia', volume: 900, difficulty: 48, trend: 'up' },
-  ];
-
-  // Match keywords to existing article categories
-  const articleCategories = [...new Set(articles.map(a => a.category_slug).filter(Boolean))];
-  const catKeywords = articleCategories.map((cat, idx) => ({
-    keyword: keywordPool[idx % keywordPool.length],
-    category: cat,
-    articlesCovered: articles.filter(a => a.category_slug === cat).length,
-    competitorsHave: Math.floor(Math.random() * 5) + 1,
-  }));
-
-  return {
-    tracked: keywordPool,
-    rising: keywordPool.filter(k => k.trend === 'up').slice(0, 5),
-    byCategory: catKeywords,
-    totalKeywords: keywordPool.length,
-    topRankingPages: keywordPool.slice(0, 4).map((k, i) => ({
-      keyword: k.keyword,
-      currentPosition: Math.floor(Math.random() * 15) + 3,
-      bestPosition: 2 + Math.floor(Math.random() * 3),
-      volume: k.volume,
-      url: `/${k.keyword.replace(/\s+/g, '-')}`,
-    })),
-  };
-}
-
-// ── Content Gap Analysis ────────────────────────────────────────
-function generateGapAnalysis(articles) {
-  const ourTopics = [...new Set(articles.map(a => a.title ? a.title.split(' ').slice(0, 3).join(' ') : '').filter(Boolean))];
-  const gapPool = [
-    { topic: 'Hướng dẫn cài đặt máy in 3D từ A-Z', volume: 1800, difficulty: 18, opportunity: 'Cao' },
-    { topic: 'So sánh 10 phần mềm slice 3D phổ biến 2026', volume: 1200, difficulty: 22, opportunity: 'Cao' },
-    { topic: 'In 3D bằng sợi carbon: Kỹ thuật và ứng dụng', volume: 2400, difficulty: 45, opportunity: 'Cao' },
-    { topic: 'Chi phí vận hành máy in 3D: Phân tích toàn diện', volume: 900, difficulty: 28, opportunity: 'Trung bình' },
-    { topic: 'Bảo trì và vệ sinh máy in 3D định kỳ', volume: 600, difficulty: 12, opportunity: 'Trung bình' },
-    { topic: 'Tiêu chuẩn ISO cho in 3D công nghiệp', volume: 340, difficulty: 65, opportunity: 'Thấp' },
-    { topic: 'Tối ưu hóa thông số in 3D: Nhiệt độ, tốc độ, layer height', volume: 2800, difficulty: 35, opportunity: 'Cao' },
-    { topic: 'In 3D trong giáo dục: Chương trình giảng dạy', volume: 450, difficulty: 20, opportunity: 'Trung bình' },
-    { topic: 'Xử lý hậu kỳ sản phẩm in 3D', volume: 1500, difficulty: 25, opportunity: 'Cao' },
-    { topic: 'Thiết kế cho in 3D: Nguyên tắc vàng (DFAM)', volume: 2000, difficulty: 40, opportunity: 'Cao' },
-  ];
-
-  // Determine which topics we already cover (simulate)
-  const covered = gapPool.filter(() => Math.random() > 0.6).map(g => g.topic);
-
-  return {
-    gaps: gapPool.filter(g => !covered.includes(g.topic)),
-    covered: gapPool.filter(g => covered.includes(g.topic)),
-    totalOpportunities: gapPool.filter(g => g.opportunity === 'Cao').length,
-    estimatedTrafficGain: gapPool.reduce((sum, g) => sum + (g.opportunity === 'Cao' ? g.volume * 0.3 : g.volume * 0.1), 0),
-    competitorDomains: ['3dprinter.vn', 'in3d.vn', 'tech3d.com.vn', '3dinnovation.vn'],
-  };
-}
-
-// ── ROI Calculator Data ─────────────────────────────────────────
-function generateROIData(articles) {
-  const totalArticles = articles.length;
-  const publishedArticles = articles.filter(a => a.published).length;
-  const manualHoursPerArticle = 4; // hours to write manually
-  const aiHoursPerArticle = 0.5;  // hours with tool
-  const hoursSaved = totalArticles * (manualHoursPerArticle - aiHoursPerArticle);
-  const hourlyRate = 150000; // VND/h — giá trị lao động content
-  const moneySaved = hoursSaved * hourlyRate;
-  const totalCost = totalArticles * 10000; // approximate API cost per article
-  const contentValue = totalArticles * 200000; // value per article (SEO traffic)
-
-  return {
-    period: 'all-time',
-    totalArticles,
-    publishedArticles,
-    manualTimePerArticle: manualHoursPerArticle,
-    aiTimePerArticle: aiHoursPerArticle,
-    totalTimeManual: totalArticles * manualHoursPerArticle,
-    totalTimeAI: totalArticles * aiHoursPerArticle,
-    hoursSaved,
-    hourlyRate,
-    moneySaved,
-    totalCost,
-    contentValue,
-    roi: ((contentValue - totalCost) / Math.max(1, totalCost)) * 100,
-    qualityScore: Math.min(95, 65 + publishedArticles * 2 + Math.floor(totalArticles * 0.5)),
-    beforeAfter: {
-      before: { timePerArticle: manualHoursPerArticle * 60, monthlyOutput: Math.floor(30 / manualHoursPerArticle) },
-      after: { timePerArticle: aiHoursPerArticle * 60, monthlyOutput: Math.floor(30 / aiHoursPerArticle) },
-    },
-  };
-}
-
-// ═══════════════════════════════════════════════════════════════
-// ROUTES
-// ═══════════════════════════════════════════════════════════════
-
-// ── GET /api/analytics/overview ─────────────────────────────────
-router.get('/overview', authRequired, async (req, res) => {
+async function fetchWpPosts() {
   try {
-    const articles = loadArticles();
-    const days = parseInt(req.query.days) || 30;
-    const userArticles = req.user.role === 'admin' ? articles : articles.filter(a => !a.userId || a.userId === req.user.id);
+    const auth = wpAuth();
+    if (!auth) return [];
+    const res = await axios.get(`${auth.url}/wp-json/wp/v2/posts?per_page=100`, {
+      headers: { Authorization: auth.header },
+      timeout: 10000,
+    });
+    return Array.isArray(res.data) ? res.data : [];
+  } catch { return []; }
+}
 
-    const metrics = generateMetrics(userArticles);
-    const trafficHistory = generateTrafficHistory(days, userArticles.length);
+async function fetchWpCategories() {
+  try {
+    const auth = wpAuth();
+    if (!auth) return [];
+    const res = await axios.get(`${auth.url}/wp-json/wp/v2/categories?per_page=50`, {
+      headers: { Authorization: auth.header },
+      timeout: 10000,
+    });
+    return Array.isArray(res.data) ? res.data : [];
+  } catch { return []; }
+}
 
-    const totalViews = metrics.reduce((sum, m) => sum + m.metrics.views, 0);
-    const totalVisitors = metrics.reduce((sum, m) => sum + m.metrics.uniqueVisitors, 0);
-    const avgBounce = metrics.length > 0 ? Math.round(metrics.reduce((sum, m) => sum + m.metrics.bounceRate, 0) / metrics.length) : 0;
-    const avgEngagement = metrics.length > 0 ? Math.round(metrics.reduce((sum, m) => sum + m.metrics.engagementScore, 0) / metrics.length) : 0;
+/** Helper: parse period query → { startDate, endDate, period } */
+function getPeriodRange(req) {
+  const period = parseInt(req.query.period) || 30;
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - period);
+  return {
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0],
+    period,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  1. GET /api/analytics/performance
+//  Trả về: KPI cards, trafficChart, topArticles, articlesTable
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/performance', authRequired, async (req, res) => {
+  try {
+    const { startDate, endDate, period } = getPeriodRange(req);
+    const localArticles = loadArticles();
+    const forceRefresh = req.query.refresh === 'true' && req.user.role === 'admin';
+
+    // ── 1. GA4 Data (cache-first) ──
+    const ga4Result = await googleApi.getGA4Data(startDate, endDate, period, forceRefresh);
+    const ga4 = ga4Result.data;
+
+    // ── 2. Local article stats (luôn real-time) ──
+    const userArticles = req.user.role === 'admin'
+      ? localArticles
+      : localArticles.filter(a => !a.userId || a.userId === req.user.id);
+
+    // Timeline: bài tạo mới vs bài xuất bản theo ngày
+    const timeline = [];
+    const now = new Date();
+    for (let i = period - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dayStr = d.toISOString().split('T')[0];
+      const created = userArticles.filter(a => a.createdAt?.startsWith(dayStr)).length;
+      const published = userArticles.filter(a => a.publishedAt?.startsWith(dayStr)).length;
+      // Merge với GA4 data nếu có
+      const ga4Row = (ga4.rows || []).find(r => r.date === dayStr.replace(/-/g, ''));
+      timeline.push({
+        date: dayStr,
+        articlesCreated: created,
+        articlesPublished: published,
+        views: ga4Row?.views || 0,
+        visitors: ga4Row?.visitors || 0,
+      });
+    }
+
+    // ── 3. Top articles (published, có WP link) ──
+    const topArticles = userArticles
+      .filter(a => a.published && a.wpId)
+      .slice(0, 10)
+      .map(a => ({
+        title: a.title || 'Untitled',
+        category: a.category_slug || 'general',
+        publishedAt: a.publishedAt || a.createdAt,
+        wpId: a.wpId,
+        url: a.wpUrl || '',
+        hasImages: !!(a.images?.length),
+        // GA4 metrics per-article không lấy được từ GA4 API cơ bản
+        // Cần dùng dimension pagePath — tạm thời tính từ aggregate
+        metrics: { views: 0, visitors: 0, avgTime: 0, bounceRate: 0 },
+      }));
+
+    // ── 4. Articles Table — all articles with status ──
+    const articlesTable = userArticles.map(a => ({
+      title: a.title || 'Untitled',
+      category: a.category_slug || 'general',
+      createdAt: a.createdAt,
+      status: a.published ? 'published' : 'draft',
+      wpId: a.wpId || null,
+      wpUrl: a.wpUrl || '',
+      hasImages: !!(a.images?.length),
+    }));
 
     res.json({
       success: true,
-      overview: {
-        totalViews,
-        totalVisitors,
-        avgBounceRate: avgBounce,
-        avgEngagementScore: avgEngagement,
-        totalArticles: userArticles.length,
-        publishedArticles: userArticles.filter(a => a.published).length,
-        totalViewsFormatted: totalViews.toLocaleString(),
-        totalVisitorsFormatted: totalVisitors.toLocaleString(),
+      period,
+      startDate,
+      endDate,
+      cacheInfo: {
+        fromCache: ga4Result.fromCache,
+        configured: ga4Result.configured !== false,
+        updatedAt: ga4Result.updatedAt || null,
       },
-      trafficHistory,
-      topArticles: metrics
-        .filter(m => m.published)
-        .sort((a, b) => b.metrics.views - a.metrics.views)
-        .slice(0, 5),
-      allMetrics: metrics,
+      kpis: {
+        anTotalViews: ga4.total.views,
+        anTotalVisitors: ga4.total.visitors,
+        anEngagement: parseFloat((ga4.total.engagementRate * 100).toFixed(1)),
+        anBounce: parseFloat(ga4.total.bounceRate.toFixed(1)),
+      },
+      trafficChart: timeline,
+      topArticles,
+      articlesTable,
+      anArticlesCount: articlesTable.length,
     });
   } catch (error) {
-    console.error('Analytics overview error:', error);
+    console.error('Analytics performance error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// ── GET /api/analytics/keywords ─────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  2. GET /api/analytics/keywords
+//  Trả về: keywords table, rising, ranking pages (GSC cache-first)
+// ═══════════════════════════════════════════════════════════════
+
 router.get('/keywords', authRequired, async (req, res) => {
   try {
-    const articles = loadArticles();
-    const keywords = generateKeywords(articles);
-    res.json({ success: true, ...keywords });
+    const { startDate, endDate, period } = getPeriodRange(req);
+    const forceRefresh = req.query.refresh === 'true' && req.user.role === 'admin';
+
+    // GSC data (cache-first)
+    const gscResult = await googleApi.getGSCData(startDate, endDate, period, forceRefresh);
+    const gsc = gscResult.data;
+
+    // Kiểm tra fallback nếu chưa config Google
+    if (!gscResult.configured) {
+      // Dùng keywords từ local articles
+      const articles = loadArticles();
+      const wordCount = {};
+      const stopWords = ['và', 'của', 'các', 'cho', 'với', 'trong', 'một', 'những', 'được', 'có', 'không', 'khi', 'từ', 'đã', 'sẽ', 'để', 'vào', 'trên', 'bài', 'này', 'hoặc', 'công', 'nghệ', 'dụng', 'phẩm', 'sản'];
+      for (const a of articles) {
+        const words = (a.title || '').toLowerCase().split(/[\s,.\-:;!?()]+/);
+        for (const w of words) {
+          if (w.length >= 4 && !stopWords.includes(w)) {
+            wordCount[w] = (wordCount[w] || 0) + 1;
+          }
+        }
+      }
+      const localKeywords = Object.entries(wordCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 50)
+        .map(([keyword, count]) => ({
+          keyword,
+          impressions: count * 10,
+          clicks: Math.round(count * 2.5),
+          ctr: 25,
+          position: '—',
+        }));
+
+      return res.json({
+        success: true,
+        period, startDate, endDate,
+        cacheInfo: { fromCache: false, configured: false },
+        keywords: localKeywords,
+        anKwCount: localKeywords.length,
+        rising: localKeywords.filter(k => k.impressions > 50).slice(0, 10),
+        rankingPages: [],
+      });
+    }
+
+    res.json({
+      success: true,
+      period, startDate, endDate,
+      cacheInfo: {
+        fromCache: gscResult.fromCache,
+        configured: true,
+        updatedAt: gscResult.updatedAt || null,
+      },
+      keywords: gsc.keywords || [],
+      anKwCount: (gsc.keywords || []).length,
+      rising: gsc.rising || [],
+      rankingPages: (gsc.pages || []).slice(0, 20).map(p => ({
+        url: p.keys[0] || '',
+        impressions: p.impressions,
+        clicks: p.clicks,
+        ctr: p.ctr,
+        position: p.position,
+      })),
+      totals: gsc.totals || { impressions: 0, clicks: 0, ctr: 0, position: 0 },
+    });
   } catch (error) {
     console.error('Analytics keywords error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// ── GET /api/analytics/gap-analysis ──────────────────────────────
-router.get('/gap-analysis', authRequired, async (req, res) => {
+// ═══════════════════════════════════════════════════════════════
+//  3. GET /api/analytics/gap
+//  Trả về: gaps, covered, competitor analysis
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/gap', authRequired, async (req, res) => {
   try {
     const articles = loadArticles();
-    const gap = generateGapAnalysis(articles);
-    res.json({ success: true, ...gap });
+    const categories = await fetchWpCategories();
+
+    // Lấy GSC data để biết keyword nào có volume cao
+    const { startDate, endDate } = getPeriodRange(req);
+    const gscResult = await googleApi.getGSCData(startDate, endDate, 30);
+    const gscKeywords = (gscResult.data?.keywords || []).filter(k => k.impressions > 0);
+
+    // Tìm keyword từ GSC mà chưa có article nào đề cập
+    const articleTexts = articles.map(a => ((a.title || '') + ' ' + (a.summary || '')).toLowerCase());
+
+    const gaps = [];
+    for (const kw of gscKeywords) {
+      const kwLower = (kw.keys[0] || '').toLowerCase();
+      const isCovered = articleTexts.some(t => t.includes(kwLower));
+      if (!isCovered && kw.impressions > 20) {
+        gaps.push({
+          keyword: kw.keys[0] || '',
+          impressions: kw.impressions,
+          clicks: kw.clicks,
+          ctr: kw.ctr,
+          position: kw.position,
+          opportunity: kw.impressions > 100 ? 'Cao' : kw.impressions > 50 ? 'Trung bình' : 'Thấp',
+          estimatedTraffic: Math.round(kw.impressions * 0.15 * (parseFloat(kw.ctr) / 100 || 0.03)),
+        });
+      }
+    }
+
+    // Thêm gaps từ WP categories chưa có bài
+    const usedSlugs = [...new Set(articles.map(a => a.category_slug).filter(Boolean))];
+    for (const cat of categories) {
+      if (!usedSlugs.includes(cat.slug) && cat.count > 0) {
+        gaps.push({
+          keyword: `Chủ đề: ${cat.name}`,
+          category: cat.slug,
+          impressions: cat.count * 50,
+          clicks: 0,
+          ctr: 0,
+          position: '—',
+          opportunity: cat.count > 10 ? 'Cao' : 'Trung bình',
+          estimatedTraffic: Math.round(cat.count * 8),
+        });
+      }
+    }
+
+    // Covered topics
+    const covered = {};
+    for (const a of articles) {
+      const slug = a.category_slug || 'other';
+      covered[slug] = (covered[slug] || 0) + 1;
+    }
+    const coveredList = Object.entries(covered).map(([slug, count]) => ({
+      slug,
+      name: categories.find(c => c.slug === slug)?.name || slug,
+      count,
+    }));
+
+    // Competitor analysis (simulated — cần data thật từ Ahrefs/SEMrush)
+    const competitorList = [
+      { domain: 'thinksmart.vn', articles: articles.length, keywords: gscKeywords.length, score: 85 },
+      { domain: 'Đối thủ A', articles: '—', keywords: '—', score: 0 },
+      { domain: 'Đối thủ B', articles: '—', keywords: '—', score: 0 },
+    ];
+
+    const sortedGaps = gaps.sort((a, b) => b.estimatedTraffic - a.estimatedTraffic);
+    const totalEstTraffic = sortedGaps.reduce((s, g) => s + (g.estimatedTraffic || 0), 0);
+
+    res.json({
+      success: true,
+      gaps: sortedGaps.slice(0, 50),
+      anGapCount: sortedGaps.length,
+      anGapEstTraffic: totalEstTraffic,
+      covered: coveredList,
+      competitorList,
+    });
   } catch (error) {
-    console.error('Analytics gap analysis error:', error);
+    console.error('Analytics gap error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// ── GET /api/analytics/roi ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  4. GET /api/analytics/roi
+//  Trả về: hoursSaved, moneySaved, qualityScore, beforeAfter
+// ═══════════════════════════════════════════════════════════════
+
 router.get('/roi', authRequired, async (req, res) => {
   try {
     const articles = loadArticles();
-    const roi = generateROIData(articles);
-    res.json({ success: true, ...roi });
+    const totalArticles = articles.length;
+    const publishedArticles = articles.filter(a => a.published).length;
+    const usageStats = getStats();
+
+    // ══ Tham số tính toán ══
+    const manualHoursPerArticle = 4;    // giờ viết 1 bài thủ công
+    const aiHoursPerArticle = 0.5;      // giờ viết 1 bài bằng AI
+    const hourlyRateVND = 150000;       // lương/giờ (VND)
+    const contentValuePerArticle = 200000; // giá trị mỗi bài (VND)
+
+    // ══ Hours Saved ══
+    const hoursSaved = totalArticles * (manualHoursPerArticle - aiHoursPerArticle);
+
+    // ══ Money Saved ══
+    const moneySaved = hoursSaved * hourlyRateVND;
+
+    // ══ AI Cost (USD → VND) ══
+    const totalCostUSD = (
+      (usageStats.total.deepseek || 0) * 0.002 +
+      (usageStats.total.replicate || 0) * 0.004 +
+      (usageStats.total.chat || 0) * 0.001
+    );
+    const totalCostVND = Math.round(totalCostUSD * 25500);
+
+    // ══ Content Value ══
+    const contentValue = totalArticles * contentValuePerArticle;
+
+    // ══ ROI % ══
+    const netProfit = contentValue - totalCostVND;
+    const roi = totalCostVND > 0 ? Math.round((netProfit / totalCostVND) * 100) : 0;
+
+    // ══ Quality Score (dựa trên readability/SEO heuristic) ══
+    // Tính từ nội dung bài viết thật
+    let totalScore = 0;
+    let scoredArticles = 0;
+    for (const a of articles) {
+      const body = (a.content || a.summary || '').toLowerCase();
+      if (body.length < 50) continue;
+      let score = 65; // base
+
+      // Tiêu chí: độ dài nội dung
+      const wordCount = body.split(/\s+/).length;
+      if (wordCount >= 800) score += 10;
+      else if (wordCount >= 500) score += 5;
+
+      // Tiêu chí: có heading
+      if (body.includes('<h2') || body.includes('<h3') || body.includes('## ')) score += 8;
+
+      // Tiêu chí: có hình ảnh
+      if (a.images?.length > 0) score += 7;
+
+      // Tiêu chí: có link
+      if (body.includes('<a ') || body.includes('[link') || body.includes('href=')) score += 5;
+
+      // Tiêu chí: có bullet list
+      if (body.includes('<li>') || body.includes('- ') || body.includes('* ')) score += 5;
+
+      // Giới hạn tối đa
+      score = Math.min(score, 100);
+
+      totalScore += score;
+      scoredArticles++;
+    }
+
+    const qualityScore = scoredArticles > 0 ? Math.round(totalScore / scoredArticles) : 70;
+
+    // ══ Before/After Comparison ══
+    const beforeAfter = {
+      before: {
+        timePerArticle: manualHoursPerArticle * 60,   // phút
+        monthlyOutput: Math.floor(30 / manualHoursPerArticle),  // bài/tháng
+        monthlyCost: Math.round(manualHoursPerArticle * hourlyRateVND * 30),
+      },
+      after: {
+        timePerArticle: aiHoursPerArticle * 60,
+        monthlyOutput: Math.floor(30 / aiHoursPerArticle),
+        monthlyCost: Math.round(aiHoursPerArticle * hourlyRateVND * 30 + totalCostVND),
+      },
+    };
+
+    res.json({
+      success: true,
+      kpis: {
+        anHoursSaved: Math.round(hoursSaved),
+        anMoneySaved: Math.round(moneySaved),
+        anQualityScore: qualityScore,
+        anQualityNum: `${qualityScore}/100`,
+        anQualityBar: qualityScore,
+      },
+      totalArticles,
+      publishedArticles,
+      totalCost: totalCostVND,
+      contentValue,
+      roi,
+      beforeAfter,
+    });
   } catch (error) {
     console.error('Analytics ROI error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  5. GET /api/analytics/sync-status
+//  Trả về trạng thái đồng bộ gần nhất
+// ═══════════════════════════════════════════════════════════════
+
+router.get('/sync-status', authRequired, async (req, res) => {
+  try {
+    const ga4Status = db.getLastSyncStatus('ga4');
+    const gscStatus = db.getLastSyncStatus('gsc');
+    const fullStatus = db.getLastSyncStatus('full');
+
+    const googleConfigured = googleApi.isConfigured();
+
+    res.json({
+      success: true,
+      googleConfigured,
+      lastSync: fullStatus || ga4Status || gscStatus,
+      ga4: ga4Status || { status: 'never' },
+      gsc: gscStatus || { status: 'never' },
+      syncHistory: [],
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  6. POST /api/analytics/sync (admin only)
+//  Force refresh dữ liệu Google API
+// ═══════════════════════════════════════════════════════════════
+
+router.post('/sync', authRequired, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Chỉ admin mới được force sync' });
+  }
+  try {
+    const result = await googleApi.syncAll();
+    res.json({
+      success: result.success,
+      message: result.success ? `Đồng bộ hoàn tất: ${result.rowsSynced} rows` : `Lỗi: ${result.error}`,
+      ...result,
+    });
+  } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 });

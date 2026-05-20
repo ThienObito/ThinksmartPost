@@ -9,12 +9,12 @@
  * When creating article, front-end shows fields for each variable.
  */
 
-const express = require('express');
+const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
-const axios = require('axios');
+const express = require('express');
 const { authRequired } = require('../middleware/auth');
+const { track } = require('../utils/api-tracker');
 
 const router = express.Router();
 const DATA_FILE = path.join(__dirname, '..', 'data', 'templates.json');
@@ -196,6 +196,7 @@ HÃY TRẢ VỀ JSON CHÍNH XÁC (không thêm text ngoài JSON):
   "prompt_template": "Full prompt cho AI, dùng {{variable}} cho các biến cần điền. Bắt đầu bằng: 'Bạn là...'"
 }`;
 
+    track('deepseek');
     const aiRes = await axios.post(
       'https://api.deepseek.com/v1/chat/completions',
       { model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature: 0.8, max_tokens: 3000 },

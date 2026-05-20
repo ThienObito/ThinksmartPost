@@ -1,6 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { track } = require('../utils/api-tracker');
 
 const DATA_DIR = path.join(__dirname, '../data');
 
@@ -237,6 +238,7 @@ async function createArticleHandler(req, res) {
         try {
           const prompt = attempt === 1 ? finalPrompt : SIMPLE_PROMPT(topic, ti, totalCount);
           const temperature = totalCount > 1 ? 1.0 : 0.7;
+          track('deepseek');
           const aiRes = await axios.post(
             'https://api.deepseek.com/v1/chat/completions',
             { model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature, max_tokens: 8000 },

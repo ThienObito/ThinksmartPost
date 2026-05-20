@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
-<script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.9.10/dist/dotlottie-wc.js" type="module"></script>
 <link rel="stylesheet" href="dist/style.css">
 
 </head>
@@ -179,12 +178,12 @@
       <button data-section="templates" class="nav-item" onclick="QTP.App.go('templates')"><i class="fas fa-layer-group nav-icon"></i><span>Template</span></button>
       <button data-section="queue" class="nav-item" onclick="QTP.App.go('queue')"><i class="fas fa-clock nav-icon"></i><span>Lịch / Báo cáo</span></button>
       <button data-section="wp" class="nav-item" onclick="QTP.App.go('wp')"><i class="fas fa-globe nav-icon"></i><span>WordPress</span></button>
-      <button data-section="media" class="nav-item" onclick="QTP.App.go('media')"><i class="fas fa-images nav-icon"></i><span>Media</span></button>
       <button data-section="library" class="nav-item" onclick="QTP.App.go('library')"><i class="fas fa-photo-film nav-icon"></i><span>Thư viện</span></button>
       <button id="nav-users" data-section="users" class="nav-item" onclick="QTP.App.go('users')"><i class="fas fa-users-cog nav-icon"></i><span>Quản Lý TK</span></button>
       <button data-section="analytics" class="nav-item" onclick="QTP.App.go('analytics')"><i class="fas fa-chart-line nav-icon"></i><span>Analytics</span></button>
+      <button data-section="usage" class="nav-item" onclick="QTP.App.go('usage')"><i class="fas fa-gauge-high nav-icon"></i><span>API Usage</span></button>
       <button data-section="notes" class="nav-item" onclick="QTP.App.go('notes')"><i class="fas fa-sticky-note nav-icon"></i><span>Ghi Chú</span></button>
-      <button id="nav-chat" data-section="chat" class="nav-item" onclick="QTP.Chat.toggle()"><i class="fas fa-robot nav-icon"></i><span>AI Trợ Lý</span></button>
+      <button id="nav-chat" data-section="chat" class="nav-item" onclick="QTP.App.go('chat')"><i class="fas fa-robot nav-icon"></i><span>AI Trợ Lý</span></button>
       <button data-section="settings" class="nav-item" onclick="QTP.App.go('settings')"><i class="fas fa-cog nav-icon"></i><span>Cài Đặt</span></button>
     </nav>
     <!-- Sidebar footer -->
@@ -195,6 +194,17 @@
 
   <!-- Main content -->
   <main class="main-content">
+
+    <!-- ═══ Mobile Top Bar ═══ -->
+    <div class="mobile-topbar" id="mobileTopbar" style="display:none">
+      <button class="mobile-menu-btn" onclick="QTP.App.toggleSidebar()" aria-label="Menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <span class="mobile-logo">QT<span style="color:#ed6918">Poster</span> <span class="mobile-version">Pro</span></span>
+      <button class="mobile-logout-btn" onclick="QTP.Auth.logout()" title="Đăng xuất">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
+    </div>
 
     <!-- ═══ DASHBOARD ═══ -->
     <section id="sec-dashboard" class="sec active">
@@ -327,15 +337,37 @@
     </section>
 
     <!-- ═══ WORDPRESS ═══ -->
-    <section id="sec-wordpress" class="sec">
+    <section id="sec-wp" class="sec">
       <div class="section-header">
         <div>
           <h1 class="section-title">WordPress</h1>
-          <p class="section-subtitle">Bài viết đã đăng lên WP</p>
+          <p class="section-subtitle">Kết nối &amp; quản lý bài viết trên WordPress</p>
         </div>
-        <button onclick="QTP.WP.load()" class="btn btn-ghost btn-sm"><i class="fas fa-sync-alt"></i>Refresh</button>
+        <div class="section-actions">
+          <button onclick="QTP.WP.testConn()" class="btn btn-ghost btn-sm" id="wpTestBtn">
+            <i class="fas fa-plug"></i>
+            <span class="btn-label">Kiểm tra</span>
+          </button>
+          <button onclick="QTP.WP.load()" class="btn btn-ghost btn-sm">
+            <i class="fas fa-sync-alt"></i>
+            <span class="btn-label">Làm mới</span>
+          </button>
+          <button onclick="QTP.WP.reset()" class="btn btn-sm wp-btn-danger" id="wpResetBtn">
+            <i class="fas fa-trash-alt"></i>
+            <span class="btn-label">Reset</span>
+          </button>
+        </div>
       </div>
-      <div class="glass-card" style="padding:0;overflow:hidden"><div id="wpCont" style="padding:16px"></div></div>
+
+      <!-- Connection Status -->
+      <div id="wpStatus" class="wp-status-card" style="display:none"></div>
+
+      <!-- WP Posts -->
+      <div class="wp-section-card">
+        <div id="wpCont" class="wp-posts-container">
+          <!-- JS renders post list, loading, empty, or error state here -->
+        </div>
+      </div>
     </section>
 
     <!-- ═══ USERS ═══ -->
@@ -350,6 +382,114 @@
       <div class="glass-card" style="padding:0;overflow:hidden"><div id="usersCont" style="padding:16px"></div></div>
     </section>
 
+    <!-- ═══ API USAGE ═══ -->
+    <section id="sec-usage" class="sec">
+      <div class="section-header" style="margin-bottom:16px">
+        <div>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">API Usage</h1>
+          <p class="section-subtitle">Theo dõi số lần gọi API và chi phí ước tính</p>
+        </div>
+      </div>
+      <!-- KPI cards -->
+      <div class="stats-grid" style="margin-bottom:16px">
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-success"><i class="fas fa-robot"></i></div>
+          <div class="stat-val" style="color:#22c55e;font-size:22px" id="usDeepseek">—</div>
+          <div class="stat-lbl">DeepSeek Calls</div>
+          <div class="an-growth-badge an-growth-up" style="display:none;position:static;margin-top:4px" id="usDeepseekGrowth"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(168,85,247,0.1);color:#a855f7"><i class="fas fa-image"></i></div>
+          <div class="stat-val" style="color:#a855f7;font-size:22px" id="usReplicate">—</div>
+          <div class="stat-lbl">Image Gen</div>
+          <div class="an-growth-badge an-growth-up" style="display:none;position:static;margin-top:4px" id="usReplicateGrowth"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-blue"><i class="fas fa-globe"></i></div>
+          <div class="stat-val" style="color:#3b82f6;font-size:22px" id="usWp">—</div>
+          <div class="stat-lbl">WP Published</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(245,158,11,0.1);color:#f59e0b"><i class="fas fa-dollar-sign"></i></div>
+          <div class="stat-val" style="color:#f59e0b;font-size:22px" id="usCost">—</div>
+          <div class="stat-lbl">Total Cost</div>
+        </div>
+      </div>
+
+      <!-- Cost Breakdown + Today Summary -->
+      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:16px">
+        <!-- Cost Trend Chart -->
+        <div class="glass-card" style="padding:20px">
+          <div class="analytics-card-header" style="margin-bottom:8px">
+            <h3 class="analytics-card-title"><i class="fas fa-chart-line" style="color:#22c55e"></i> Chi phí 30 ngày</h3>
+          </div>
+          <div style="position:relative;height:200px">
+            <canvas id="usageChart"></canvas>
+          </div>
+        </div>
+        <!-- Today Summary -->
+        <div class="glass-card" style="padding:20px">
+          <div class="analytics-card-header" style="margin-bottom:12px">
+            <h3 class="analytics-card-title"><i class="fas fa-calendar-day" style="color:#3b82f6"></i> Hôm nay</h3>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div class="report-row">
+              <span class="report-label"><i class="fas fa-robot" style="color:#22c55e;width:16px"></i> DeepSeek</span>
+              <span style="font-weight:600" id="usTodayDeepseek">0</span>
+            </div>
+            <div class="report-row">
+              <span class="report-label"><i class="fas fa-image" style="color:#a855f7;width:16px"></i> Image Gen</span>
+              <span style="font-weight:600" id="usTodayReplicate">0</span>
+            </div>
+            <div class="report-row">
+              <span class="report-label"><i class="fas fa-dollar-sign" style="color:#f59e0b;width:16px"></i> Chi phí</span>
+              <span style="font-weight:600;color:#f59e0b" id="usTodayCost">$0.00</span>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.04)">
+            <div style="font-size:11px;color:var(--color-muted);margin-bottom:4px">Trung bình/ngày</div>
+            <div style="display:flex;gap:12px;font-size:11px">
+              <span><span style="color:#22c55e;font-weight:600" id="usAvgDaily">—</span> calls</span>
+              <span><span style="color:#f59e0b;font-weight:600" id="usAvgCost">—</span>/ngày</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service Breakdown + History -->
+      <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:16px;margin-bottom:16px">
+        <!-- Service Breakdown -->
+        <div class="glass-card" style="padding:20px">
+          <div class="analytics-card-header" style="margin-bottom:12px">
+            <h3 class="analytics-card-title"><i class="fas fa-chart-pie" style="color:var(--color-sub)"></i> Phân bổ</h3>
+          </div>
+          <div id="usBreakdown" style="display:flex;flex-direction:column;gap:8px">
+            <div class="report-row">
+              <span class="report-label">DeepSeek</span>
+              <span style="color:#22c55e;font-weight:600" id="usDeepseekPct">—</span>
+            </div>
+            <div class="report-row">
+              <span class="report-label">Replicate</span>
+              <span style="color:#a855f7;font-weight:600" id="usReplicatePct">—</span>
+            </div>
+            <div class="report-row">
+              <span class="report-label">Chat/Other</span>
+              <span style="color:#3b82f6;font-weight:600" id="usOtherPct">—</span>
+            </div>
+          </div>
+        </div>
+        <!-- Daily History -->
+        <div class="glass-card" style="padding:20px">
+          <div class="analytics-card-header" style="margin-bottom:12px">
+            <h3 class="analytics-card-title"><i class="fas fa-chart-bar" style="color:var(--color-sub)"></i> Lịch sử 30 ngày</h3>
+          </div>
+          <div id="usHistory" style="font-size:12px;color:var(--color-muted);text-align:center;padding:20px">
+            Đang tải...
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ═══ SETTINGS ═══ -->
     <section id="sec-settings" class="sec">
       <div class="section-header">
@@ -360,10 +500,22 @@
       </div>
       <div class="glass-card" style="max-width:500px;padding:24px">
         <div style="margin-bottom:12px"><label class="stat-lbl" style="margin-bottom:6px">DeepSeek Key</label><input id="sDK" type="password" placeholder="sk-..." class="inp"></div>
-        <div style="margin-bottom:12px"><label class="stat-lbl" style="margin-bottom:6px">Replicate Token</label><input id="sRepl" type="password" placeholder="r8_..." class="inp"></div>
         <div style="margin-bottom:12px"><label class="stat-lbl" style="margin-bottom:6px">WP URL</label><input id="sWpUrl" type="text" value="https://thinksmart.vn" class="inp"></div>
         <div style="margin-bottom:12px"><label class="stat-lbl" style="margin-bottom:6px">WP Application Password</label><input id="sWpPass" type="password" placeholder="xxxx xxxx" class="inp"></div>
         <button onclick="QTP.Settings.save()" class="btn btn-primary" style="width:100%;padding:13px;margin-top:8px;font-size:14px"><i class="fas fa-save" style="margin-right:6px"></i>Lưu</button>
+      </div>
+      <!-- 🎭 Fake Data Toggle -->
+      <div class="glass-card" style="max-width:500px;padding:24px;margin-top:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--color-text);margin-bottom:4px">🎭 Dữ liệu mẫu</div>
+            <div style="font-size:11px;color:var(--color-muted)">Bật để xem dữ liệu demo (Analytics + API Usage)</div>
+          </div>
+          <div class="fake-onoff" id="fakeOnOff">
+            <button class="fake-onoff-btn off-btn" onclick="QTP.App.toggleFakeMode(false)">OFF</button>
+            <button class="fake-onoff-btn on-btn" onclick="QTP.App.toggleFakeMode(true)">ON</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -390,62 +542,92 @@
 
       <!-- Performance Tab -->
       <div id="analyticsPerformance" class="analytics-panel">
-        <!-- KPI row -->
+        <!-- KPI row with growth -->
         <div class="stats-grid" style="margin-bottom:20px">
-          <div class="stat-card">
+          <div class="stat-card" style="position:relative">
             <div class="stat-icon stat-icon-accent"><i class="fas fa-eye"></i></div>
             <div class="stat-val" style="color:#ed6918;font-size:22px" id="anTotalViews">—</div>
-            <div class="stat-lbl">Total Views</div>
+            <div class="stat-lbl">Lượt xem</div>
+            <div id="anViewsGrowth" class="an-growth-badge" style="display:none"></div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card" style="position:relative">
             <div class="stat-icon stat-icon-blue"><i class="fas fa-users"></i></div>
             <div class="stat-val" style="color:#3b82f6;font-size:22px" id="anTotalVisitors">—</div>
-            <div class="stat-lbl">Unique Visitors</div>
+            <div class="stat-lbl">Khách truy cập</div>
+            <div id="anVisitorsGrowth" class="an-growth-badge" style="display:none"></div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card" style="position:relative">
             <div class="stat-icon stat-icon-success"><i class="fas fa-chart-simple"></i></div>
             <div class="stat-val" style="color:#22c55e;font-size:22px" id="anEngagement">—</div>
-            <div class="stat-lbl">Engagement Score</div>
+            <div class="stat-lbl">Tương tác</div>
+            <div id="anEngagementGrowth" class="an-growth-badge" style="display:none"></div>
           </div>
-          <div class="stat-card">
+          <div class="stat-card" style="position:relative">
             <div class="stat-icon" style="background:rgba(245,158,11,0.1);color:#f59e0b"><i class="fas fa-signal"></i></div>
             <div class="stat-val" style="color:#f59e0b;font-size:22px" id="anBounce">—</div>
-            <div class="stat-lbl">Avg Bounce Rate</div>
+            <div class="stat-lbl">Tỉ lệ thoát</div>
+            <div id="anBounceGrowth" class="an-growth-badge" style="display:none"></div>
           </div>
         </div>
-        <!-- Chart + Top articles -->
+
+        <!-- Growth Trend Chart -->
+        <div class="glass-card" style="padding:20px;margin-bottom:20px">
+          <div class="analytics-card-header" style="margin-bottom:8px">
+            <div>
+              <h3 class="analytics-card-title"><i class="fas fa-chart-line" style="color:#ed6918"></i> Xu hướng Tăng trưởng</h3>
+              <div style="font-size:11px;color:var(--color-muted);margin-top:2px">So sánh 7 ngày gần nhất vs trung bình</div>
+            </div>
+            <div class="analytics-chart-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:#ed6918"></span> Lượt xem</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> Khách</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span> Tăng trưởng %</span>
+            </div>
+          </div>
+          <div style="position:relative;height:280px">
+            <canvas id="trafficChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Trending Posts + Bài viết theo ngày -->
         <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:20px">
+          <!-- Trending Posts -->
           <div class="glass-card" style="padding:20px">
-            <div class="analytics-card-header">
-              <h3 class="analytics-card-title"><i class="fas fa-chart-area" style="color:#ed6918"></i> Traffic Overview</h3>
+            <div class="analytics-card-header" style="margin-bottom:12px">
+              <h3 class="analytics-card-title"><i class="fas fa-fire" style="color:#ef4444"></i> Bài viết Thịnh hành 🔥</h3>
+              <span style="font-size:11px;color:var(--color-muted)" id="anTrendingCount">—</span>
+            </div>
+            <div id="anTrendingPosts" style="display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto"></div>
+          </div>
+          <!-- Bài viết theo ngày (bar chart) -->
+          <div class="glass-card" style="padding:20px">
+            <div class="analytics-card-header" style="margin-bottom:12px">
+              <h3 class="analytics-card-title"><i class="fas fa-calendar-day" style="color:#a855f7"></i> Bài viết theo ngày</h3>
               <div class="analytics-chart-legend">
-                <span class="legend-item"><span class="legend-dot" style="background:#ed6918"></span> Views</span>
-                <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> Visitors</span>
+                <span class="legend-item"><span class="legend-dot" style="background:#ed6918"></span> Tạo</span>
+                <span class="legend-item"><span class="legend-dot" style="background:#22c55e"></span> Đăng</span>
               </div>
             </div>
-            <div style="position:relative;height:260px">
-              <canvas id="trafficChart"></canvas>
+            <div style="position:relative;height:200px">
+              <canvas id="articlesDailyChart"></canvas>
             </div>
-          </div>
-          <div class="glass-card" style="padding:20px">
-            <div class="analytics-card-header">
-              <h3 class="analytics-card-title"><i class="fas fa-crown" style="color:#f59e0b"></i> Top Content</h3>
-            </div>
-            <div id="anTopArticles" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto">
-              <div class="skeleton-line" style="width:100%"></div>
-              <div class="skeleton-line" style="width:85%"></div>
-              <div class="skeleton-line" style="width:70%"></div>
-              <div class="skeleton-line" style="width:90%"></div>
+            <div id="anArticleStats" style="display:flex;gap:16px;margin-top:12px;justify-content:center;font-size:12px;color:var(--color-sub)">
+              <span>Tổng: <strong id="anTotalArticles" style="color:var(--color-text)">—</strong></span>
+              <span>Đã đăng: <strong id="anTotalPublished" style="color:#22c55e">—</strong></span>
+              <span>Nháp: <strong id="anTotalDrafts" style="color:#f59e0b">—</strong></span>
             </div>
           </div>
         </div>
-        <!-- All articles metrics table -->
+
+        <!-- All articles with metrics -->
         <div class="glass-card" style="padding:0;overflow:hidden">
           <div class="analytics-card-header" style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.04)">
-            <h3 class="analytics-card-title"><i class="fas fa-table" style="color:var(--color-sub)"></i> All Articles</h3>
+            <div>
+              <h3 class="analytics-card-title"><i class="fas fa-table" style="color:var(--color-sub)"></i> Tất cả Bài viết</h3>
+              <div style="font-size:11px;color:var(--color-muted);margin-top:2px">Hiệu suất chi tiết từng bài</div>
+            </div>
             <span style="font-size:12px;color:var(--color-muted)" id="anArticlesCount">—</span>
           </div>
-          <div id="anArticlesTable" style="padding:0 8px 8px;max-height:300px;overflow-y:auto"></div>
+          <div id="anArticlesTable" style="padding:0 8px 8px;max-height:400px;overflow-y:auto"></div>
         </div>
       </div>
 
@@ -644,6 +826,63 @@
         <div class="loading-state" style="grid-column:1/-1"><div class="spinner"></div><p>Đang tải ghi chú...</p></div>
       </div>
     </section>
+
+    <!-- ═══ AI CHAT ═══ -->
+    <section id="sec-chat" class="sec">
+      <div class="section-header" style="margin-bottom:12px">
+        <div>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">AI Trợ Lý</h1>
+          <p class="section-subtitle">Trò chuyện với trợ lý AI thông minh</p>
+        </div>
+      </div>
+
+      <div class="ch-box">
+        <!-- Header -->
+        <div class="ch-head">
+          <div class="ch-head-left">
+            <div class="ch-avatar">
+              <i class="fas fa-sparkles"></i>
+            </div>
+            <div>
+              <div class="ch-name">AI Trợ Lý</div>
+              <div class="ch-status"><span class="ch-dot"></span> Sẵn sàng</div>
+            </div>
+          </div>
+          <div class="ch-head-actions">
+            <button onclick="QTP.Chat.clear()" class="ch-head-btn" title="Xoá tin nhắn"><i class="fas fa-trash-alt"></i></button>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div id="chMsgs" class="ch-msgs">
+          <div class="ch-msg ch-bot">
+            <div class="ch-msg-avatar"><i class="fas fa-robot"></i></div>
+            <div class="ch-msg-content">
+              <div class="ch-msg-bubble">
+                👋 Chào bạn! Tôi là trợ lý AI, sẵn sàng giúp bạn tạo nội dung.
+              </div>
+              <div class="ch-msg-time">Vừa xong</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick suggestions -->
+        <div id="chSuggestions" class="ch-suggestions">
+          <button class="ch-chip" onclick="QTP.Chat.suggest('Cách tạo template?')">📝 Cách tạo template</button>
+          <button class="ch-chip" onclick="QTP.Chat.suggest('Gợi ý 5 tiêu đề SEO')">🔍 Gợi ý tiêu đề SEO</button>
+          <button class="ch-chip" onclick="QTP.Chat.suggest('Cách kết nối WordPress?')">🌐 Kết nối WP</button>
+          <button class="ch-chip" onclick="QTP.Chat.suggest('Viết bài về AI')">✍️ Viết bài về AI</button>
+        </div>
+
+        <!-- Footer input -->
+        <div class="ch-foot">
+          <input id="chInput" type="text" placeholder="Nhập tin nhắn..." onkeydown="QTP.Chat.onKeydown(event)" autocomplete="off">
+          <button id="chSend" onclick="QTP.Chat.send()" class="ch-send-btn">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -765,11 +1004,49 @@
   </div>
 </div>
 
-<!-- ═══════════════ CHAT ═══════════════ -->
-<div id="chatRobot" onclick="QTP.Chat.toggle()">
-  <dotlottie-wc src="https://lottie.host/03d9fe8c-f77c-4e46-a2d8-2901b3aa8a11/YF1swWrEDq.json" autoplay loop></dotlottie-wc>
+<!-- ═══ WP Edit Modal ═══ -->
+<div id="wpEditModal" class="modal" onclick="if(event.target==this)QTP.WP.closeEdit()">
+  <div class="modal-inner modal-inner-lg" style="max-width:700px" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2 class="modal-title"><i class="fas fa-pen" style="color:var(--color-accent);margin-right:8px"></i>Chỉnh sửa bài viết WP</h2>
+      <button onclick="QTP.WP.closeEdit()" class="modal-close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;color:var(--color-sub);display:block;margin-bottom:4px">Tiêu đề</label>
+        <input id="wpEditTitle" class="inp" type="text" placeholder="Tiêu đề bài viết">
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:12px;font-weight:600;color:var(--color-sub);display:block;margin-bottom:4px">Nội dung HTML</label>
+        <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+          <button onclick="QTP.WP._insertTag('<strong>','</strong>')" class="btn btn-ghost btn-xs" title="Bold"><b>B</b></button>
+          <button onclick="QTP.WP._insertTag('<em>','</em>')" class="btn btn-ghost btn-xs" title="Italic"><i>I</i></button>
+          <button onclick="QTP.WP._insertTag('<h2>','</h2>')" class="btn btn-ghost btn-xs" title="Heading 2">H2</button>
+          <button onclick="QTP.WP._insertTag('<h3>','</h3>')" class="btn btn-ghost btn-xs" title="Heading 3">H3</button>
+          <button onclick="QTP.WP._insertTag('<p>','</p>')" class="btn btn-ghost btn-xs" title="Paragraph">¶</button>
+          <button onclick="QTP.WP._insertTag('<ul>\n<li>','</li>\n</ul>')" class="btn btn-ghost btn-xs" title="List">UL</button>
+          <button onclick="QTP.WP._insertTag('<blockquote>','</blockquote>')" class="btn btn-ghost btn-xs" title="Blockquote">❝</button>
+          <button onclick="QTP.WP.showImagePicker()" class="btn btn-sm" style="background:rgba(99,102,241,0.1);color:#818cf8;border:1px solid rgba(99,102,241,0.2)"><i class="fas fa-image"></i> Chèn ảnh</button>
+        </div>
+        <textarea id="wpEditContent" class="inp" rows="16" placeholder="Nội dung HTML..." style="font-family:ui-monospace,monospace;font-size:13px;resize:vertical;width:100%"></textarea>
+      </div>
+      <!-- Image Picker (hidden by default) -->
+      <div id="wpImagePicker" style="display:none;margin-bottom:12px;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;max-height:240px;overflow-y:auto">
+        <div style="font-size:12px;font-weight:600;color:var(--color-sub);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <span><i class="fas fa-images"></i> Chọn ảnh từ thư viện</span>
+          <button onclick="QTP.WP.hideImagePicker()" class="btn btn-ghost btn-xs"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="wpImgGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px"></div>
+      </div>
+    </div>
+    <div class="modal-foot" style="display:flex;gap:8px">
+      <button onclick="QTP.WP.closeEdit()" class="btn btn-ghost" style="flex:1">Hủy</button>
+      <button id="wpEditSaveBtn" onclick="QTP.WP._saveEdit()" class="btn btn-primary" style="flex:1"><i class="fas fa-save"></i> Lưu thay đổi</button>
+    </div>
+  </div>
 </div>
 
+<!-- ═══════════════ CHAT ═══════════════ -->
 <div id="chatPanel">
   <div class="cp-head">
     <div class="cp-head-left">
@@ -795,6 +1072,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-	<script src="js/app.js"></script>
+	<script src="js/app.js?v=2"></script>
 </body>
 </html>

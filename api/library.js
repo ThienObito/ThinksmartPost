@@ -492,8 +492,9 @@ Trả về JSON:
   "explanation": "Giải thích ngắn tại sao chọn những ảnh này (tiếng Việt)"
 }`;
 
-    const aiRes = await axios.post(
-      'https://api.deepseek.com/v1/chat/completions',
+      track('deepseek');
+      const aiRes = await axios.post(
+        'https://api.deepseek.com/v1/chat/completions',
       {
         model: 'deepseek-chat',
         messages: [{ role: 'user', content: prompt }],

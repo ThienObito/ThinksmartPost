@@ -4,13 +4,25 @@
  */
 
 const path = require('path');
+const fs = require('fs');
 const DATA_DIR = path.join(__dirname, '..', 'data');
+
+// ── WP config file (written by Settings UI, read before .env) ──
+const WP_CONFIG_PATH = path.join(__dirname, '..', 'data', 'wp-config.json');
+
+function loadWpConfig() {
+  try {
+    return JSON.parse(fs.readFileSync(WP_CONFIG_PATH, 'utf-8'));
+  } catch { return null; }
+}
 
 // ── WordPress Auth ──────────────────────────────────────────────
 function wpAuth() {
-  const url = process.env.WP_URL || 'https://thinksmart.vn';
+  // Priority: config file > .env > default
+  const cfg = loadWpConfig();
+  const url = cfg?.wpUrl || process.env.WP_URL || 'https://thinksmart.vn';
+  const pass = cfg?.wpPass || process.env.WP_APP_PASSWORD || '';
   const user = process.env.WP_USERNAME || 'admin';
-  const pass = process.env.WP_APP_PASSWORD || '';
   if (!pass) return null;
   return {
     header: `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`,

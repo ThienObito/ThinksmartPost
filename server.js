@@ -17,6 +17,11 @@ const {
   getCategoryId,
   refreshCategoryCache,
 } = require('./utils');
+const { track } = require('./utils/api-tracker');
+
+// ── Database Init ────────────────────────────────────────────────
+const db = require('./db/database');
+db.initDatabase();
 
 // ── Routes ──────────────────────────────────────────────────────
 const createArticleHandler = require('./api/create-article');
@@ -35,6 +40,7 @@ const adminRoutes = require('./api/admin');
 const { authRequired, authOptional } = require('./middleware/auth');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 4001;
 const DATA_DIR = path.join(__dirname, 'data');
 
@@ -106,9 +112,37 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/analytics', analyticsRoutes);
+const usageRoutes = require('./api/usage');
+app.use('/api/usage', usageRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/library', libraryRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
+// ── WP Settings API (save/load from config file) ────────────────
+const WP_CONFIG_PATH = path.join(__dirname, 'data', 'wp-config.json');
+
+app.get('/api/settings/wp', authRequired, (req, res) => {
+  try {
+    const cfg = JSON.parse(fs.readFileSync(WP_CONFIG_PATH, 'utf-8'));
+    res.json({ success: true, wpUrl: cfg.wpUrl || '', wpPass: cfg.wpPass ? '••••••' : '' });
+  } catch {
+    res.json({ success: true, wpUrl: process.env.WP_URL || 'https://thinksmart.vn', wpPass: '' });
+  }
+});
+
+app.post('/api/settings/wp', authRequired, (req, res) => {
+  try {
+    const { wpUrl, wpPass } = req.body;
+    if (!wpUrl || !wpPass) {
+      return res.status(400).json({ success: false, message: 'Thiếu WP URL hoặc Password' });
+    }
+    fs.writeFileSync(WP_CONFIG_PATH, JSON.stringify({ wpUrl, wpPass }, null, 2), 'utf-8');
+    console.log(`⚙️ WP config updated: ${wpUrl}`);
+    res.json({ success: true, message: 'Đã lưu cấu hình WordPress!' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 // ── Chat (with AI rate limit) ───────────────────────────────────
 app.use('/api/chat', aiLimiter, chatRoutes);
@@ -247,6 +281,7 @@ app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
         console.log(`  ℹ️ Bài viết có ảnh (${cleanThumb.substring(0, 50)}...) nhưng bỏ qua featured_media — cần upload ảnh lên WP media library trước.`);
       }
 
+      track('wp_publish');
       const data = await wpRequest('POST', 'posts', wpBody);
 
       // Mark as published & save back
@@ -294,7 +329,12 @@ app.get('/api/wp-categories', asyncHandler(async (req, res) => {
 }));
 
 app.get('/api/wp-posts', asyncHandler(async (req, res) => {
-  const data = await wpRequest('GET', 'posts?per_page=50');
+  // Pass through WP query params (include, context, per_page, etc.)
+  const qs = Object.entries(req.query)
+    .map(([k, v]) => `${k}=${v}`)
+    .join('&');
+  const endpoint = qs ? `posts?${qs}` : 'posts?per_page=50';
+  const data = await wpRequest('GET', endpoint);
   res.json(data);
 }));
 

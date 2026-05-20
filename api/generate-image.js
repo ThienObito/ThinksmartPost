@@ -2,9 +2,9 @@
  * Image Generation API — Uses Replicate Flux to generate article illustrations.
  */
 const express = require('express');
-const axios = require('axios');
 const Replicate = require('replicate');
 const { authRequired } = require('../middleware/auth');
+const { track } = require('../utils/api-tracker');
 
 const router = express.Router();
 const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
@@ -71,6 +71,7 @@ router.post('/create', authRequired, async (req, res) => {
     // Generate 4 images
     for (let i = 0; i < 4; i++) {
       try {
+        track('replicate');
         const output = await replicate.run('black-forest-labs/flux-schnell', {
           input: {
             prompt: `${prompt} --ar 16:9`,

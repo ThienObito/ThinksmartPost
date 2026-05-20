@@ -63,12 +63,12 @@ async function processItem(item) {
   }
 
   const article = JSON.parse(fs.readFileSync(resolvedPath, 'utf-8'));
-  await wpPublish(article.title, article.content, article.summary, article.category_slug);
+  const wpResult = await wpPublish(article.title, article.content, article.summary, article.category_slug);
 
   // Mark the local article as published too
   article.published = true;
   article.publishedAt = new Date().toISOString();
-  article.wpId = article.wpId || null;
+  article.wpId = wpResult.id;
   fs.writeFileSync(resolvedPath, JSON.stringify(article, null, 2), 'utf-8');
 
   item.status = 'published';
