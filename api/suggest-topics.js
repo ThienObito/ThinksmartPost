@@ -1,4 +1,8 @@
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+
+const DATA_DIR = path.join(__dirname, '..', 'data');
 
 // ── Helper: extract + validate JSON ──────────────────────────────
 
@@ -40,12 +44,31 @@ async function suggestTopicsHandler(req, res) {
             ? 'Giải pháp công nghệ & In 3D'
             : 'Ứng dụng thực tế & Case Study';
 
-    const prompt = `Bạn là chuyên gia SEO nội dung chuyên ngành.
+    // Load existing article titles to avoid duplicates
+    let existingTitles = [];
+    try {
+        const files = fs.readdirSync(DATA_DIR)
+            .filter(f => f.endsWith('.json') && !f.startsWith('queue') && f !== 'users.json' && f !== 'templates.json');
+        existingTitles = files.map(f => {
+            try {
+                const d = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf-8'));
+                return d.title || '';
+            } catch { return ''; }
+        }).filter(Boolean);
+    } catch { /* ignore */ }
 
-Hãy gợi ý 6 chủ đề bài viết tối ưu nhất cho chuyên mục "${categoryName}" năm 2026.
+    const avoidStr = existingTitles.length > 0
+        ? `\n⚠️ TUYỆT ĐỐI TRÁNH các chủ đề đã từng viết (không trùng lặp):\n${existingTitles.slice(-15).map(t => `- ${t}`).join('\n')}\n`
+        : '';
 
-Yêu cầu:
-- Chủ đề phải hot, có khả năng rank cao Google, mang tính thực tiễn cao
+    const prompt = `Bạn là chuyên gia SEO nội dung chuyên ngành sản xuất và công nghệ.
+
+Hãy gợi ý 8 chủ đề bài viết ĐA DẠNG, KHÔNG TRÙNG LẶP cho chuyên mục "${categoryName}" năm 2026.${avoidStr}
+QUAN TRỌNG - YÊU CẦU ĐA DẠNG HÓA:
+- 8 chủ đề phải thuộc các GÓC NHÌN khác nhau: tổng quan, so sánh, hướng dẫn, case study, xu hướng, phân tích kỹ thuật, tối ưu chi phí, ứng dụng ngành
+- KHÔNG trùng ý tưởng, không diễn giải cùng một nội dung dưới dạng khác
+- Mỗi chủ đề phải HOÀN TOÀN KHÁC BIỆT về nội dung, cách tiếp cận và giá trị mang lại
+- Các chủ đề phải hot, có khả năng rank cao Google, mang tính thực tiễn cao
 - Phân tích loại bài viết tối ưu (Comparison, How-to, Case Study, List, Guide, Trend Report...)
 - Đưa ra lý do tại sao chủ đề này có giá trị cho người đọc
 - Chủ đề chuyên môn, khách quan, không liên quan đến quảng bá thương hiệu
@@ -69,7 +92,7 @@ Trả về đúng JSON (không thêm text nào khác):
             {
                 model: 'deepseek-chat',
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 0.8,
+                temperature: 1.0,
                 max_tokens: 4000,
             },
             {
