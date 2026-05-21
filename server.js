@@ -240,6 +240,14 @@ app.get('/api/stats', authRequired, (req, res) => {
   }
 });
 
+// ── WordPress Categories endpoint ───────────────────────────────
+app.get('/api/categories', authRequired, asyncHandler(async (req, res) => {
+  const { categoryCache } = require('./utils');
+  await refreshCategoryCache(); // refresh before sending
+  const cats = Object.entries(categoryCache).map(([slug, id]) => ({ slug, id }));
+  res.json({ success: true, categories: cats });
+}));
+
 // ── Post to WordPress ───────────────────────────────────────────
 app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
   const { files, deleteAfterPublish = false } = req.body;

@@ -428,6 +428,44 @@ QTP.App = {
     const mb = $id('mobileTopbar');
     if (mb) mb.style.display = window.innerWidth <= 767 ? 'flex' : 'none';
     this.setUserInfo();
+    this.loadCategories();
+  },
+
+  /** Load WP categories into Danh Mục dropdown */
+  async loadCategories() {
+    const sel = $id('cat');
+    // ══ Fake Data ══
+    if (QTP._fakeMode) {
+      const cats = [
+        { slug: 'giai-phap', name: 'Giải pháp' },
+        { slug: 'ung-dung', name: 'Ứng dụng' },
+        { slug: 'huong-dan', name: 'Hướng dẫn' },
+        { slug: 'tin-tuc', name: 'Tin tức' },
+      ];
+      sel.innerHTML = cats.map(c => `<option value="${c.slug}">${c.name}</option>`).join('');
+      return;
+    }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length > 0) {
+        const catNames = {
+          'chua-phan-loai': 'Chưa phân loại',
+          'giai-phap': 'Giải pháp',
+          'ung-dung': 'Ứng dụng',
+          'huong-dan': 'Hướng dẫn',
+          'tin-tuc': 'Tin tức',
+          'cong-nghe': 'Công nghệ',
+          'san-pham': 'Sản phẩm',
+        };
+        sel.innerHTML = res.categories
+          .map(c => `<option value="${c.slug}">${catNames[c.slug] || c.slug}</option>`)
+          .join('');
+      } else {
+        sel.innerHTML = '<option value="giai-phap">Giải pháp</option><option value="ung-dung">Ứng dụng</option>';
+      }
+    } catch {
+      sel.innerHTML = '<option value="giai-phap">Giải pháp</option><option value="ung-dung">Ứng dụng</option>';
+    }
   },
 
   /** Populate sidebar user info */
@@ -948,7 +986,7 @@ QTP.Templates = {
     // Update the select dropdown on the Create page
     const sel = $id('tmplSelect');
     sel.innerHTML =
-      '<option value="">— No template —</option>' +
+      '<option value="">— Chọn tính cách —</option>' +
       templates
         .map((t) => `<option value="${t.id}">${esc(t.name)}</option>`)
         .join('');
