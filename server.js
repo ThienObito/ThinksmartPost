@@ -152,7 +152,7 @@ app.use('/api/chat', aiLimiter, chatRoutes);
 app.get('/api/articles', authRequired, (req, res) => {
   try {
     const files = fs.readdirSync(DATA_DIR)
-      .filter(f => f.endsWith('.json') && !f.startsWith('queue') && f !== 'users.json')
+      .filter(f => f.endsWith('.json') && !f.startsWith('queue') && f !== 'users.json' && f !== 'templates.json' && f !== 'api-usage.json' && f !== 'library.json' && f !== 'notes.json' && f !== 'wp-config.json' && !f.startsWith('.'))
       .map(file => {
         try {
           const data = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), 'utf-8'));
@@ -210,7 +210,7 @@ app.delete('/api/articles/:filename', authRequired, asyncHandler(async (req, res
 app.get('/api/stats', authRequired, (req, res) => {
   try {
     const files = fs.readdirSync(DATA_DIR)
-      .filter(f => f.endsWith('.json') && !f.startsWith('queue') && f !== 'users.json')
+      .filter(f => f.endsWith('.json') && !f.startsWith('queue') && f !== 'users.json' && f !== 'templates.json' && f !== 'api-usage.json' && f !== 'library.json' && f !== 'notes.json' && f !== 'wp-config.json' && !f.startsWith('.'))
       .map(f => {
         try {
           return JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf-8'));

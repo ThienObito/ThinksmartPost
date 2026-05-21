@@ -32,7 +32,7 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 function loadArticles() {
   try {
     return fs.readdirSync(DATA_DIR)
-      .filter(f => f.endsWith('.json') && !f.startsWith('queue') && f !== 'users.json' && f !== 'templates.json' && f !== 'api-usage.json')
+      .filter(f => f.endsWith('.json') && !f.startsWith('queue') && f !== 'users.json' && f !== 'templates.json' && f !== 'api-usage.json' && f !== 'library.json' && f !== 'notes.json' && f !== 'wp-config.json' && !f.startsWith('.'))
       .map(f => {
         try { return { file: f, ...JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf-8')) }; }
         catch { return null; }
