@@ -1010,3 +1010,44 @@ option { background: var(--color-card); }
   .ch-head { padding: 12px 14px; }
   .ch-foot { padding: 8px 14px 10px; }
 }
+
+/* 🔘 Smart Image Toggle (ON/OFF + count) */
+.btn-group {
+  display:flex;
+  border-radius:8px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,0.06);
+}
+.btn-group-item {
+  padding:5px 14px;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+  border:none;
+  transition:all 0.2s;
+}
+.btn-group-off {
+  background:transparent;
+  color:var(--color-sub);
+}
+.btn-group-off.active {
+  background:#ef4444;
+  color:#fff;
+}
+.btn-group-on {
+  background:transparent;
+  color:var(--color-sub);
+}
+.btn-group-on.active {
+  background:#22c55e;
+  color:#fff;
+}
+.img-cnt-btn {
+  width:34px;height:34px;border-radius:8px;
+  border:1px solid rgba(255,255,255,0.08);
+  background:transparent;color:var(--color-sub);
+  font-size:13px;font-weight:600;cursor:pointer;
+  transition:all 0.2s;
+}
+.img-cnt-btn:hover { border-color:var(--color-blue); color:var(--color-blue); }
+.img-cnt-btn.active { background:rgba(59,130,246,0.15); border-color:var(--color-blue); color:var(--color-blue); }

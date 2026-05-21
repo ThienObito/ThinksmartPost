@@ -277,6 +277,36 @@
           <div><label class="stat-lbl" style="margin-bottom:6px">Danh Mục</label><select id="cat"></select></div>
           <div><label class="stat-lbl" style="margin-bottom:6px">Số lượng</label><input id="qty" type="number" value="1" min="1" max="10" class="inp" style="text-align:center;font-weight:600"></div>
         </div>
+
+        <!-- Smart Image Section -->
+        <div style="margin-top:12px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.12)">
+            <div style="display:flex;align-items:center;gap:10px">
+              <i class="fas fa-image" style="color:var(--color-blue);font-size:16px"></i>
+              <span style="font-weight:500;font-size:14px">Ảnh thông minh</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="imgCountLabel" style="font-size:12px;color:var(--color-sub);min-width:50px;text-align:right">0 ảnh</span>
+              <div class="btn-group" id="imgSmartGroup">
+                <button id="imgOff" class="btn-group-item btn-group-off active" onclick="QTP.Articles.setImgMode('off')">OFF</button>
+                <button id="imgOn" class="btn-group-item btn-group-on" onclick="QTP.Articles.setImgMode('on')">ON</button>
+              </div>
+            </div>
+          </div>
+          <div id="imgOptions" style="display:none;margin-top:8px;padding:10px 14px;border-radius:10px;background:rgba(59,130,246,0.04);border:1px solid rgba(59,130,246,0.08)">
+            <div style="display:flex;align-items:center;gap:12px">
+              <label class="stat-lbl" style="margin-bottom:0;white-space:nowrap;font-size:12px">Số ảnh / bài:</label>
+              <div style="display:flex;gap:6px" id="imgCountBtns">
+                <button class="img-cnt-btn" data-n="1" onclick="QTP.Articles.setImgCount(1)">1</button>
+                <button class="img-cnt-btn active" data-n="2" onclick="QTP.Articles.setImgCount(2)">2</button>
+                <button class="img-cnt-btn" data-n="3" onclick="QTP.Articles.setImgCount(3)">3</button>
+                <button class="img-cnt-btn" data-n="4" onclick="QTP.Articles.setImgCount(4)">4</button>
+                <button class="img-cnt-btn" data-n="5" onclick="QTP.Articles.setImgCount(5)">5</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <button id="crtBtn" onclick="QTP.Articles.create()" class="btn btn-primary" style="width:100%;padding:13px;font-size:14px"><i class="fas fa-rocket" style="margin-right:6px"></i>Tạo Bài Viết</button>
         <div id="crtProg" style="display:none;margin-top:16px">
           <div class="prog-bar"><div id="progFill" class="prog-fill"></div></div>

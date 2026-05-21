@@ -695,6 +695,24 @@ QTP.Auth = {
    =================================================================== */
 
 QTP.Articles = {
+  /** Smart image state */
+  _imgEnabled: false,
+  _imgCount: 2,
+
+  setImgMode(mode) {
+    QTP.Articles._imgEnabled = mode === 'on';
+    $id('imgOn').classList.toggle('active', mode === 'on');
+    $id('imgOff').classList.toggle('active', mode === 'off');
+    $id('imgOptions').style.display = mode === 'on' ? 'block' : 'none';
+    $id('imgCountLabel').textContent = mode === 'on' ? QTP.Articles._imgCount + ' ảnh' : '0 ảnh';
+  },
+
+  setImgCount(n) {
+    QTP.Articles._imgCount = n;
+    $qa('.img-cnt-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.n) === n));
+    $id('imgCountLabel').textContent = n + ' ảnh';
+  },
+
   /** Load all articles and render grid */
   async load() {
     // ══ Fake Data ══
@@ -808,6 +826,8 @@ QTP.Articles = {
         body: JSON.stringify({
           topics: Array.from({ length: qty }, () => topic),
           category,
+          smart_images: QTP.Articles._imgEnabled,
+          image_count: QTP.Articles._imgCount,
         }),
       });
 

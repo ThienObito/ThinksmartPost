@@ -195,9 +195,82 @@ Trả về JSON CHUẨN (không thêm text nào khác):
 }`;
 };
 
+// ── Image injection helper ──────────────────────────────────────
+function injectImages(htmlContent, count) {
+  const LIB_FILE = path.join(DATA_DIR, 'library.json');
+  let images = [];
+  try {
+    const lib = JSON.parse(fs.readFileSync(LIB_FILE, 'utf-8'));
+    images = lib.images || [];
+  } catch {
+    // Fallback: use hardcoded images from uploads
+    images = [
+      { url: '/uploads/10_anh-1-scaled.jpg', alt: 'Máy in 3D công nghiệp' },
+      { url: '/uploads/10_Engine-Blade.png', alt: 'Chi tiết Engine Blade in 3D' },
+      { url: '/uploads/11_Combustion-Chamber.png', alt: 'Combustion Chamber in 3D' },
+    ];
+  }
+
+  if (images.length === 0) return { content: htmlContent, usedImages: [] };
+
+  // Pick random images, no duplicates
+  const shuffled = [...images].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, Math.min(count, shuffled.length));
+
+  let result = htmlContent;
+  const usedUrls = [];
+
+  // Replace {{img_1}}, {{img_2}}... placeholders
+  for (let i = 0; i < selected.length; i++) {
+    const img = selected[i];
+    const url = img.url || `/uploads/${img.filename}`;
+    const alt = (img.alt || `Hình ảnh minh họa ${i + 1}`)
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const imgTag = `<figure style="margin:20px 0;text-align:center"><img src="${url}" alt="${alt}" style="max-width:100%;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1)" /><figcaption style="font-size:12px;color:#888;margin-top:6px;font-style:italic">${alt}</figcaption></figure>`;
+    const placeholder = `{{img_${i + 1}}}`;
+    if (result.includes(placeholder)) {
+      result = result.replace(placeholder, imgTag);
+      usedUrls.push(url);
+    }
+  }
+
+  // If there are still unmatched placeholders, insert at heading boundaries
+  for (let i = 0; i < selected.length && result.includes('{{img_'); i++) {
+    const match = result.match(/\{\{img_\d+\}\}/);
+    if (match) {
+      // Insert after first </h2> or after <article>
+      const afterH2 = result.indexOf('</h2>');
+      const idx = afterH2 > 0 ? afterH2 + 5 : result.indexOf('<article>') + 9;
+      const url = selected[i].url || `/uploads/${selected[i].filename}`;
+      const alt = (selected[i].alt || `Hình ảnh minh họa ${i + 1}`)
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      const imgTag = `<figure style="margin:20px 0;text-align:center"><img src="${url}" alt="${alt}" style="max-width:100%;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1)" /><figcaption style="font-size:12px;color:#888;margin-top:6px;font-style:italic">${alt}</figcaption></figure>`;
+      result = result.slice(0, idx) + imgTag + result.slice(idx);
+      result = result.replace(/\{\{img_\d+\}\}/, '');
+      usedUrls.push(url);
+    }
+  }
+
+  // Clean up any remaining unreplaced placeholders
+  result = result.replace(/\{\{img_\d+\}\}/g, '');
+  return { content: result, usedImages: usedUrls };
+}
+
+// ── Image placement prompt modifier ─────────────────────────────
+function addImageInstructions(prompt, count) {
+  if (!count || count < 1) return prompt;
+  return prompt + `\n\nYÊU CẦU CHÈN ẢNH:
+- Chèn ${count} placeholder ảnh vào bài viết ở vị trí thích hợp
+- Dùng {{img_1}}, {{img_2}}${count >= 3 ? ', {{img_3}}' : ''}${count >= 4 ? ', {{img_4}}' : ''}${count >= 5 ? ', {{img_5}}' : ''} giữa các đoạn văn
+- Đặt sau mỗi phần H2, giữa các đoạn nội dung khác nhau
+- KHÔNG đặt ảnh ở đầu bài viết (trước H2 đầu tiên)
+- Mỗi ảnh cách nhau ít nhất 2-3 đoạn văn
+- Đảm bảo bố cục: văn bản → ảnh → văn bản`;
+}
+
 // ── Handler ─────────────────────────────────────────────────────
 async function createArticleHandler(req, res) {
-  const { topics, category = 'giai-phap', prompt_template } = req.body;
+  const { topics, category = 'giai-phap', prompt_template, smart_images = false, image_count = 2 } = req.body;
   const userId = req.user?.id || 'unknown';
 
   if (!topics || !Array.isArray(topics) || topics.length === 0) {
@@ -228,6 +301,13 @@ async function createArticleHandler(req, res) {
         finalPrompt = tp;
       } else {
         finalPrompt = SEO_PROMPT(topic, angleIdx, subDirection, ti, totalCount);
+      }
+
+      // Add smart image instructions
+      const imgCount = smart_images ? Math.min(Math.max(parseInt(image_count) || 2, 1), 5) : 0;
+      if (imgCount > 0) {
+        finalPrompt = addImageInstructions(finalPrompt, imgCount);
+        console.log(`  🖼️ Smart images ON: ${imgCount} images/article`);
       }
 
       // 2. Call DeepSeek (text only — no image generation)
@@ -262,10 +342,19 @@ async function createArticleHandler(req, res) {
       if (!article.content) article.content = '';
       console.log(`  ✅ (${ti + 1}/${totalCount}) DeepSeek → "${article.title.substring(0, 50)}…"`);
 
-      // 3. Build HTML content (text only — images can be added later via UI)
-      const htmlContent = buildHtmlContent(article);
+      // 3. Build HTML content
+      let htmlContent = buildHtmlContent(article);
 
-      // 4. Save (no images during creation)
+      // 3b. Smart image injection
+      let usedImages = [];
+      if (imgCount > 0) {
+        const result = injectImages(htmlContent, imgCount);
+        htmlContent = result.content;
+        usedImages = result.usedImages;
+        console.log(`  🖼️ Injected ${usedImages.length} images into article`);
+      }
+
+      // 4. Save
       const ts = new Date().toISOString().replace(/[:T-]/g, '').slice(0, 15);
       const safeTitle = (article.title || topic)
         .replace(/[^a-zA-Z0-9À-ỹ\s]/gi, '').trim().replace(/\s+/g, '_').substring(0, 60);
@@ -275,12 +364,12 @@ async function createArticleHandler(req, res) {
         slug: article.slug || safeTitle.toLowerCase(),
         content: htmlContent,
         summary: article.meta_description || `Bài viết chuyên sâu về ${topic} - kiến thức và phân tích chuyên môn.`,
-        thumbnail: '',
+        thumbnail: usedImages.length > 0 ? usedImages[0] : '',
         category_slug: category,
         keywords: article.keywords || [],
-        altImages: article.alt_images || [],
+        altImages: usedImages,
         relatedPosts: article.related_posts || [],
-        images: [],
+        images: usedImages,
         userId,
         published: false,
         createdAt: new Date().toISOString(),
