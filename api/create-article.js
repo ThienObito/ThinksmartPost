@@ -196,26 +196,60 @@ Trả về JSON CHUẨN (không thêm text nào khác):
 };
 
 // ── Image injection helper ──────────────────────────────────────
-function injectImages(htmlContent, count) {
+function injectImages(htmlContent, count, topic) {
   const LIB_FILE = path.join(DATA_DIR, 'library.json');
   let images = [];
   try {
     const lib = JSON.parse(fs.readFileSync(LIB_FILE, 'utf-8'));
     images = lib.images || [];
   } catch {
-    // Fallback: use hardcoded images from uploads
-    images = [
-      { url: '/uploads/10_anh-1-scaled.jpg', alt: 'Máy in 3D công nghiệp' },
-      { url: '/uploads/10_Engine-Blade.png', alt: 'Chi tiết Engine Blade in 3D' },
-      { url: '/uploads/11_Combustion-Chamber.png', alt: 'Combustion Chamber in 3D' },
-    ];
+    images = [];
   }
 
   if (images.length === 0) return { content: htmlContent, usedImages: [] };
 
-  // Pick random images, no duplicates
-  const shuffled = [...images].sort(() => Math.random() - 0.5);
-  const selected = shuffled.slice(0, Math.min(count, shuffled.length));
+  // Extract keywords from topic for smart matching
+  const topicLower = (topic || '').toLowerCase();
+  const topicWords = topicLower.split(/\s+/).filter(w => w.length > 2);
+
+  // Score each image by how many tags match the topic
+  const scored = images.map(img => {
+    const tags = (img.tags || []).map(t => t.toLowerCase());
+    let score = 0;
+    // Direct tag match
+    for (const word of topicWords) {
+      if (tags.some(t => t.includes(word) || word.includes(t))) score += 5;
+    }
+    // Filename match
+    const fname = (img.filename || '').toLowerCase();
+    for (const word of topicWords) {
+      if (fname.includes(word)) score += 3;
+    }
+    // Boosts for common terms
+    if (topicLower.includes('3d') && tags.some(t => t.includes('3d'))) score += 10;
+    if (topicLower.includes('in') && tags.some(t => t.includes('in'))) score += 8;
+    if (topicLower.includes('ô tô') && tags.some(t => t.includes('ô tô'))) score += 10;
+    if (topicLower.includes('y tế') && tags.some(t => t.includes('y tế'))) score += 10;
+    if (topicLower.includes('hàng không') && tags.some(t => t.includes('hàng không'))) score += 10;
+    return { img, score };
+  });
+
+  // Sort by score (highest first), then shuffle within same score for variety
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return Math.random() - 0.5;
+  });
+
+  // Pick top N unique images
+  const selected = scored.slice(0, Math.min(count, scored.length)).map(s => s.img);
+
+  // If we have fewer than count, fill with random from remaining
+  if (selected.length < count && images.length > selected.length) {
+    const remaining = images.filter(img => !selected.includes(img))
+      .sort(() => Math.random() - 0.5);
+    const fill = remaining.slice(0, count - selected.length);
+    selected.push(...fill);
+  }
 
   let result = htmlContent;
   const usedUrls = [];
@@ -348,7 +382,7 @@ async function createArticleHandler(req, res) {
       // 3b. Smart image injection
       let usedImages = [];
       if (imgCount > 0) {
-        const result = injectImages(htmlContent, imgCount);
+        const result = injectImages(htmlContent, imgCount, topic);
         htmlContent = result.content;
         usedImages = result.usedImages;
         console.log(`  🖼️ Injected ${usedImages.length} images into article`);
