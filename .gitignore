@@ -1,6 +1,8 @@
 logs/
 public/uploads/
 data/
+!data/users.json
+!data/templates.json
 .env
 .env.*
 *.log
