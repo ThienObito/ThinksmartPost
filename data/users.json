@@ -1,0 +1,51 @@
+[
+  {
+    "id": "admin-001",
+    "username": "admin",
+    "password": "$2b$10$R2GpvEaWFtyw59NhVLrdeOq7cr8SG/WyD3Jmav9EumyuOe0cqe11W",
+    "fullName": "Administrator",
+    "role": "dev",
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "user-e13a95f5",
+    "username": "sale01",
+    "password": "$2b$10$8uWCfqbj5V7HWMfPU68zLuWzjNGknTZ.W2xBv2RD6AzSkiwDQrnXi",
+    "fullName": "Sale 01",
+    "role": "sale",
+    "createdAt": "2026-05-09T03:55:27.361Z",
+    "status": "active"
+  },
+  {
+    "id": "user-ca6d14d7",
+    "username": "sale02",
+    "password": "$2b$10$cbC/t2D/tFj4CLtCWKVuTeeMhPrCHJLpK1m7Ul6OGvhxgPWQpF2/q",
+    "fullName": "Sale 02",
+    "role": "sale",
+    "createdAt": "2026-05-09T03:56:06.338Z"
+  },
+  {
+    "id": "user-ee3d406a",
+    "username": "user",
+    "password": "$2b$10$AsUPjRa5Kka76itB/lCdtOP4BopZhbFuv9oxTnj3pcYv.v7BGGKlG",
+    "fullName": "Newbie",
+    "role": "sale",
+    "createdAt": "2026-05-09T08:16:54.734Z"
+  },
+  {
+    "id": "user-8d04b267",
+    "username": "admin2",
+    "password": "$2b$10$1yLyMmmCtMiV4E3mvOnd9uG1YEycrejyfoAU8Rku4W3lSdyjFBm6a",
+    "fullName": "Admin 2",
+    "role": "admin",
+    "createdAt": "2026-05-11T03:14:42.371Z"
+  },
+  {
+    "id": "user-b47f2be5",
+    "username": "testsale",
+    "password": "$2b$10$ivKO7vqNxqnUJMfRemapyePFAgpnw9nuEVyg0LrC40aI4iYcHjdcG",
+    "fullName": "Test Sale",
+    "role": "sale",
+    "createdAt": "2026-05-21T22:13:05.273Z"
+  }
+]
