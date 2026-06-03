@@ -2,10 +2,24 @@
  * JWT Authentication Middleware
  */
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs');
 
-const JWT_SECRET = process.env.JWT_SECRET;
+// ── Robust .env reader (Windows fallback) ────────────────────────
+function loadEnvVar(key) {
+  // 1. Try process.env (dotenv loaded)
+  if (process.env[key]) return process.env[key];
+  // 2. Try reading .env directly (Windows dotenv bug workaround)
+  try {
+    const envPath = path.join(__dirname, '..', '.env');
+    const content = fs.readFileSync(envPath, 'utf-8');
+    const match = content.match(new RegExp(`^${key}=(.+)`, 'm'));
+    if (match) return match[1].trim();
+  } catch {}
+  return null;
+}
+
+const JWT_SECRET = loadEnvVar('JWT_SECRET');
 if (!JWT_SECRET) {
   console.error('❌ CRITICAL: JWT_SECRET not set in .env! Auth will fail.');
 }
