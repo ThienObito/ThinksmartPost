@@ -139,6 +139,9 @@ app.use('/api/library', libraryRoutes);
 app.use('/api/generate-image', imageGenRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
+// ── Multi-site routes ────────────────────────────────────────────
+app.use('/api/sites', authRequired, require('./api/sites'));
+
 // ── WP Settings API (save/load from config file) ────────────────
 const WP_CONFIG_PATH = path.join(__dirname, 'data', 'wp-config.json');
 
@@ -393,6 +396,9 @@ app.put('/api/wp-posts/:id', asyncHandler(async (req, res) => {
 app.post('/api/create-article', authRequired, aiLimiter, createArticleHandler);
 app.post('/api/suggest-topics', authRequired, aiLimiter, suggestTopicsHandler);
 
+// ── Smart Scheduling ────────────────────────────────────────────
+require('./api/schedule-posts')(app);
+
 // ── Global error handler ────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('❌ Unhandled error:', err.message);
@@ -404,6 +410,10 @@ app.use((err, req, res, next) => {
       : err.message,
   });
 });
+
+// ── Multi-site migration ─────────────────────────────────────────
+const { migrateFromEnv } = require('./db/sites');
+migrateFromEnv();
 
 // ── Start ───────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {

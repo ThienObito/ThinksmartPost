@@ -425,6 +425,8 @@ QTP.App = {
       media: 'Media.load',
       chat: 'Chat.load',
       library: 'Library.load',
+      schedule: 'Schedule.load',
+      sites: 'Sites.load',
       settings: 'Settings.load',
     };
     const loader = loaders[section];
@@ -3599,6 +3601,329 @@ QTP.Chat = {
 }; // end QTP.Chat
 
 /* ===================================================================
+   SECTION 16a — QTP.Sites (Multi-site Management)
+   =================================================================== */
+
+QTP.Sites = {
+  async load() {
+    const container = $id('sitesList');
+    try {
+      const res = await api('/sites');
+      if (!res.success || !Array.isArray(res.sites)) {
+        container.innerHTML = '<p style="text-align:center;color:var(--color-muted);padding:40px">Không có site nào</p>';
+        return;
+      }
+      container.innerHTML = res.sites.map(s => `
+        <div class="site-card" style="background:var(--color-card-2);border-radius:12px;padding:18px;margin-bottom:12px;border:1px solid var(--color-border);display:flex;align-items:center;gap:16px">
+          <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--color-accent),#d4550f);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0">${esc(s.name.charAt(0).toUpperCase())}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px">${esc(s.name)}</div>
+            <div style="font-size:12px;color:var(--color-sub);margin-top:2px">${esc(s.url)}</div>
+            <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--color-muted)">
+              <span>👤 ${esc(s.username)}</span>
+              <span>📄 ${s.postCount || 0} bài</span>
+              <span>📅 ${s.createdAt ? new Date(s.createdAt).toLocaleDateString('vi-VN') : ''}</span>
+              <span style="color:${s.isActive ? '#22c55e' : '#ef4444'}">${s.isActive ? '✅ Hoạt động' : '⛔ Tắt'}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button onclick="QTP.Sites.test('${s.id}')" class="btn btn-ghost btn-sm" title="Test kết nối"><i class="fas fa-plug"></i></button>
+            <button onclick="QTP.Sites.edit('${s.id}')" class="btn btn-ghost btn-sm" title="Sửa"><i class="fas fa-edit"></i></button>
+            <button onclick="QTP.Sites.toggleActive('${s.id}')" class="btn btn-ghost btn-sm" title="${s.isActive ? 'Tắt' : 'Bật'}">
+              <i class="fas ${s.isActive ? 'fa-pause' : 'fa-play'}"></i>
+            </button>
+            <button onclick="QTP.Sites.del('${s.id}')" class="btn btn-ghost btn-sm" style="color:#ef4444" title="Xóa"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+      `).join('');
+    } catch {
+      container.innerHTML = '<p style="text-align:center;color:var(--color-danger);padding:40px">Lỗi tải danh sách sites</p>';
+    }
+  },
+
+  showAddForm() {
+    // Modal form
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML = `
+      <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:16px;max-width:500px;width:100%;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.5)">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <i class="fas fa-globe" style="font-size:24px;color:var(--color-accent)"></i>
+          <h3 style="font-size:18px;font-weight:700;margin:0">Thêm WordPress Site</h3>
+        </div>
+        <div style="display:grid;gap:14px">
+          <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">Tên site</label><input id="sFormName" class="inp" placeholder="VD: Blog Công Nghệ"></div>
+          <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">URL WordPress</label><input id="sFormUrl" class="inp" placeholder="VD: https://thinksmart.vn"></div>
+          <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">Username</label><input id="sFormUser" class="inp" placeholder="admin"></div>
+          <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">App Password</label><input id="sFormPass" type="password" class="inp" placeholder="xxxx xxxx xxxx"></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:20px">
+          <button onclick="this.closest('[style*=\\'fixed\\']').remove()" style="flex:1;padding:10px;border-radius:10px;background:var(--color-card-2);border:1px solid var(--color-border);color:var(--color-sub);font-weight:600;font-family:inherit;cursor:pointer">Hủy</button>
+          <button onclick="QTP.Sites.saveNew()" style="flex:1;padding:10px;border-radius:10px;background:linear-gradient(135deg,var(--color-accent),#d4550f);border:none;color:#fff;font-weight:600;font-family:inherit;cursor:pointer">Thêm Site</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+  },
+
+  async saveNew() {
+    const name = $id('sFormName')?.value.trim();
+    const url = $id('sFormUrl')?.value.trim();
+    const username = $id('sFormUser')?.value.trim();
+    const appPassword = $id('sFormPass')?.value.trim();
+
+    if (!name || !url || !username || !appPassword) {
+      showToast('Vui lòng nhập đầy đủ thông tin!', 'error');
+      return;
+    }
+
+    try {
+      const res = await api('/sites', {
+        method: 'POST',
+        body: JSON.stringify({ name, url, username, appPassword }),
+      });
+      if (res.success) {
+        showToast('Đã thêm site!');
+        document.querySelector('[style*="fixed"]')?.remove();
+        this.load();
+      } else {
+        showToast(res.message || 'Lỗi thêm site', 'error');
+      }
+    } catch {
+      showToast('Lỗi kết nối!', 'error');
+    }
+  },
+
+  async test(id) {
+    try {
+      const res = await api(`/sites/${id}/test`, { method: 'POST' });
+      showToast(res.success ? '✅ Kết nối thành công!' : '❌ ' + (res.error || 'Kết nối thất bại'), res.success ? 'success' : 'error');
+    } catch {
+      showToast('Lỗi test kết nối!', 'error');
+    }
+  },
+
+  async toggleActive(id) {
+    try {
+      const res = await api(`/sites/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ isActive: undefined }), // toggle server-side
+      });
+      if (res.success) showToast('Đã thay đổi trạng thái');
+      this.load();
+    } catch { showToast('Lỗi!', 'error'); }
+  },
+
+  async del(id) {
+    showConfirm('Xóa site này?', async () => {
+      try {
+        const res = await api(`/sites/${id}`, { method: 'DELETE' });
+        if (res.success) { showToast('Đã xóa site'); this.load(); }
+      } catch { showToast('Lỗi xóa!', 'error'); }
+    });
+  },
+
+  edit(id) { showToast('Chức năng sửa đang phát triển', 'warning'); },
+};
+
+/* ===================================================================
+   SECTION 16b — QTP.Schedule (Smart Scheduling)
+   =================================================================== */
+
+QTP.Schedule = {
+  _selected: {},
+
+  load() {
+    this._selected = {};
+    this.loadArticles();
+    this.toggleMode();
+  },
+
+  async loadArticles() {
+    const container = $id('scheduleArticles');
+    try {
+      const res = await api('/queue', { method: 'GET' });
+      let articles = Array.isArray(res) ? res : (res.queue || []);
+
+      if (!articles.length) {
+        container.innerHTML = '<p style="text-align:center;color:var(--color-muted);padding:20px">Chưa có bài viết nào để lên lịch. Hãy tạo bài viết trước.</p>';
+        return;
+      }
+
+      container.innerHTML = articles
+        .filter(a => a.filename && a.title)
+        .map((a, i) => `
+          <div class="sched-item ${this._selected[a.filename] ? 'selected' : ''}"
+               onclick="QTP.Schedule.toggle('${esc(a.filename)}', this)">
+            <input type="checkbox" class="sched-checkbox" ${this._selected[a.filename] ? 'checked' : ''}>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:500;font-size:13px">${esc(a.title)}</div>
+              <div style="font-size:11px;color:var(--color-muted)">${esc(a.filename)}</div>
+            </div>
+          </div>
+        `).join('');
+    } catch {
+      container.innerHTML = '<p style="text-align:center;color:var(--color-danger);padding:20px">Lỗi tải danh sách bài viết</p>';
+    }
+  },
+
+  toggle(filename, el) {
+    if (this._selected[filename]) {
+      delete this._selected[filename];
+      el.classList.remove('selected');
+      el.querySelector('input').checked = false;
+    } else {
+      this._selected[filename] = true;
+      el.classList.add('selected');
+      el.querySelector('input').checked = true;
+    }
+  },
+
+  toggleMode() {
+    const mode = $id('schedMode').value;
+    $id('schedPreview').style.display = 'none';
+    $id('schedWarnings').style.display = 'none';
+  },
+
+  async preview() {
+    const files = Object.keys(this._selected);
+    if (!files.length) {
+      showToast('Vui lòng chọn bài viết!', 'error');
+      return;
+    }
+
+    const btn = $id('schedBtn');
+    const prog = $id('schedProg');
+    const fill = $id('schedProgFill');
+    const txt = $id('schedProgTxt');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xem trước…';
+    prog.style.display = 'block';
+    fill.style.width = '30%';
+    txt.textContent = '📊 Đang phân tích lịch tối ưu…';
+
+    try {
+      const res = await api('/schedule-preview', {
+        method: 'POST',
+        body: JSON.stringify({
+          articleFiles: files,
+          mode: $id('schedMode').value,
+        }),
+      });
+
+      fill.style.width = '80%';
+
+      if (res.success && res.schedule.length) {
+        const previewList = $id('schedPreviewList');
+        previewList.innerHTML = res.schedule.map(s => `
+          <div class="sched-line">
+            <span class="time"><i class="far fa-calendar-alt"></i> ${esc(s.display)}</span>
+            <span class="title">${esc(s.file)}</span>
+          </div>
+        `).join('');
+        $id('schedPreview').style.display = 'block';
+
+        if (res.warnings && res.warnings.length) {
+          $id('schedWarnList').innerHTML = res.warnings.map(w =>
+            `<div class="sched-warn"><i class="fas fa-exclamation-triangle"></i> ${esc(w)}</div>`
+          ).join('');
+          $id('schedWarnings').style.display = 'block';
+        } else {
+          $id('schedWarnings').style.display = 'none';
+        }
+      }
+    } catch {
+      showToast('Lỗi xem trước lịch!', 'error');
+    }
+
+    fill.style.width = '100%';
+    txt.textContent = '✅ Hoàn tất xem trước';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-calendar-check"></i> Lên lịch đăng';
+    setTimeout(() => { prog.style.display = 'none'; }, 1000);
+  },
+
+  async execute() {
+    const files = Object.keys(this._selected);
+    if (!files.length) {
+      showToast('Vui lòng chọn bài viết!', 'error');
+      return;
+    }
+
+    // Anti-spam check: nếu có cảnh báo, hỏi trước
+    const mode = $id('schedMode').value;
+    const prog = $id('schedProg');
+    const fill = $id('schedProgFill');
+    const txt = $id('schedProgTxt');
+
+    prog.style.display = 'block';
+    fill.style.width = '20%';
+    txt.textContent = '⏳ Đang lên lịch…';
+
+    try {
+      const res = await api('/schedule-posts', {
+        method: 'POST',
+        body: JSON.stringify({
+          articleFiles: files,
+          mode,
+          force: false,
+        }),
+      });
+
+      if (!res.success && res.canForce) {
+        // Có cảnh báo anti-spam — hỏi user
+        const confirmed = await new Promise(resolve => {
+          showConfirm(
+            `${res.spam.warnings.join('<br>')}\n\nBạn có muốn tiếp tục không?`,
+            () => resolve(true),
+            () => resolve(false)
+          );
+        });
+        if (!confirmed) {
+          prog.style.display = 'none';
+          return;
+        }
+        // Retry with force
+        const res2 = await api('/schedule-posts', {
+          method: 'POST',
+          body: JSON.stringify({
+            articleFiles: files,
+            mode,
+            force: true,
+          }),
+        });
+        return this._showResult(res2, files.length);
+      }
+
+      this._showResult(res, files.length);
+    } catch {
+      showToast('Lỗi lên lịch!', 'error');
+      prog.style.display = 'none';
+    }
+  },
+
+  _showResult(res, total) {
+    const fill = $id('schedProgFill');
+    const txt = $id('schedProgTxt');
+    fill.style.width = '100%';
+
+    if (res.success) {
+      const ok = res.summary?.ok || 0;
+      txt.textContent = `✅ Đã lên lịch ${ok}/${total} bài viết!`;
+      showToast(`Hoàn thành lên lịch ${ok}/${total} bài!`);
+      setTimeout(() => {
+        $id('schedProg').style.display = 'none';
+        fill.style.width = '0%';
+        this.load(); // reload
+      }, 1500);
+    } else {
+      txt.textContent = `❌ ${res.message || 'Lỗi lên lịch'}`;
+      showToast(res.message || 'Lỗi', 'error');
+    }
+  },
+};
+
+/* ===================================================================
    SECTION 17 — Bootstrap (DOMContentLoaded)
    =================================================================== */
 
@@ -3729,6 +4054,18 @@ document.addEventListener('DOMContentLoaded', () => {
     .img-cell img{width:100%;height:100%;object-fit:cover}
     .img-cell-overlay{position:absolute;bottom:0;left:0;right:0;padding:6px;background:linear-gradient(transparent,rgba(0,0,0,0.6));display:flex;justify-content:center;opacity:0;transition:opacity 0.2s;color:#fff;font-size:13px}
     .img-cell:hover .img-cell-overlay{opacity:1}
+    .suggest-tag{font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(237,105,24,0.1);color:var(--color-accent)}
+    .suggest-score{font-size:11px;color:var(--color-muted)}
+
+    /* ── Schedule ── */
+    .sched-checkbox{width:18px;height:18px;accent-color:var(--color-accent);cursor:pointer}
+    .sched-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;transition:background 0.2s}
+    .sched-item:hover{background:rgba(255,255,255,0.03)}
+    .sched-item.selected{background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15)}
+    .sched-line{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
+    .sched-line .time{font-weight:600;color:var(--color-accent);min-width:120px}
+    .sched-line .title{color:var(--color-text)}
+    .sched-warn{font-size:12px;color:#f59e0b;display:flex;align-items:center;gap:6px;padding:4px 0}
   `;
   document.head.appendChild(style);
 
