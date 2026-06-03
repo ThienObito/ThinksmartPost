@@ -975,6 +975,86 @@ QTP.Articles = {
     $id('topic').value = topic;
     this.closeSuggest();
   },
+
+  /** 🎲 Random topics: generate N topics + auto-fill + auto-generate articles */
+  async randomTopic() {
+    const qty = parseInt($id('qty').value) || 1;
+    const cat = $id('cat').value;
+    const tmpl = $id('tmplSelect').value;
+
+    if (!tmpl) {
+      showToast('Vui lòng chọn Tính Cách AI trước!', 'error');
+      return;
+    }
+
+    $id('topic').value = '';
+    const btn = $id('crtBtn');
+    const progress = $id('crtProg');
+    const fill = $id('progFill');
+    const text = $id('progTxt');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-dice"></i> Đang gợi ý topic…';
+    progress.style.display = 'block';
+    fill.style.width = '20%';
+    text.textContent = `🎲 Đang gợi ý ${qty} chủ đề ngẫu nhiên…`;
+
+    try {
+      // Step 1: Get random topics from AI
+      const sugRes = await api('/suggest-topics', {
+        method: 'POST',
+        body: JSON.stringify({
+          category: cat,
+          count: qty,
+          template_id: tmpl,
+          auto_fill: true,
+        }),
+      });
+
+      if (!sugRes.success || !Array.isArray(sugRes.suggestions) || sugRes.suggestions.length === 0) {
+        throw new Error('AI không gợi ý được chủ đề nào');
+      }
+
+      // Pick topics from suggestions
+      const topics = sugRes.suggestions.map(s => s.topic);
+      fill.style.width = '50%';
+      text.textContent = `✅ Đã gợi ý ${topics.length} chủ đề. Đang tạo bài viết…`;
+
+      // Step 2: Automatically generate articles with these topics
+      const res = await api('/create-article', {
+        method: 'POST',
+        body: JSON.stringify({
+          topics,
+          category: cat,
+          template_id: tmpl,
+          smart_images: QTP.Articles._imgEnabled,
+          image_count: QTP.Articles._imgCount,
+        }),
+      });
+
+      if (res.success) {
+        fill.style.width = '100%';
+        const ok = (res.results ?? []).filter((r) => r.success).length;
+        text.textContent = `✅ Đã tạo xong ${ok}/${topics.length} bài viết!`;
+        showToast(`Hoàn thành ${ok}/${topics.length} bài viết!`);
+
+        setTimeout(() => {
+          progress.style.display = 'none';
+          fill.style.width = '0%';
+          QTP.App.go('articles');
+        }, 1200);
+      } else {
+        showToast(res.message || 'Lỗi tạo bài viết', 'error');
+        progress.style.display = 'none';
+      }
+    } catch (e) {
+      showToast(e.message || 'Lỗi kết nối server!', 'error');
+      progress.style.display = 'none';
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-magic"></i> Tạo Bài Viết';
+  },
 }; // end QTP.Articles
 
 /* ===================================================================

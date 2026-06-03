@@ -263,6 +263,7 @@
           <div style="display:flex;gap:8px">
             <input id="topic" type="text" placeholder="e.g. 3D Printing Technology" class="inp">
             <button onclick="QTP.Articles.suggestTopics()" class="btn btn-ghost" style="padding:11px" title="AI Suggest Topics"><i class="fas fa-lightbulb"></i></button>
+            <button onclick="QTP.Articles.randomTopic()" class="btn btn-ghost" style="padding:11px;color:var(--color-accent)" title="🎲 Ngẫu nhiên Topic + Tạo bài"><i class="fas fa-dice"></i></button>
           </div>
         </div>
         <div style="margin-bottom:16px"><label class="stat-lbl" style="margin-bottom:6px">Tính Cách AI</label><select id="tmplSelect" onchange="QTP.Templates.applyTmpl()"><option value="">&mdash; Chọn tính cách &mdash;</option></select></div>
