@@ -5,6 +5,7 @@ const express = require('express');
 const Replicate = require('replicate');
 const { authRequired } = require('../middleware/auth');
 const { track } = require('../utils/api-tracker');
+const { callGemini } = require('../utils/ai-client');
 
 const router = express.Router();
 const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
@@ -36,17 +37,16 @@ TRẢ VỀ JSON:
   ]
 }`;
 
-    const aiRes = await axios.post(
-      'https://api.deepseek.com/v1/chat/completions',
-      { model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature: 0.8, max_tokens: 2000 },
-      { headers: { Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}` } }
-    );
+    track('gemini');
+    const rawContent = await callGemini(prompt, { temperature: 0.8, max_tokens: 2000, timeout: 30000 });
 
-    let text = aiRes.data.choices[0].message.content;
-    text = text.replace(/```(?:json)?\n?/gi, '').replace(/```\s*$/gi, '').trim();
+    let text = rawContent;
+    text = text.replace(/```/g, '').trim();
+    const braceIdx = text.indexOf('{');
+    if (braceIdx >= 0) text = text.slice(braceIdx);
     let result;
     try { result = JSON.parse(text); } catch {
-      const m = text.match(/\{[\s\S]*\}/);
+      const m = text.match(/{[\s\S]*}/);
       result = m ? JSON.parse(m[0]) : { prompts: [text.substring(0, 200)] };
     }
 

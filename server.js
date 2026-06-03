@@ -34,6 +34,7 @@ const reportRoutes = require('./api/report');
 const analyticsRoutes = require('./api/analytics');
 const notesRoutes = require('./api/notes');
 const libraryRoutes = require('./api/library');
+const imageGenRoutes = require('./api/generate-image');
 
 // ── Admin routes ────────────────────────────────────────────────
 const adminRoutes = require('./api/admin');
@@ -71,8 +72,26 @@ const aiLimiter = rateLimit({
   message: { success: false, message: 'Quá nhiều yêu cầu AI, vui lòng chậm lại' },
 });
 
-// ── Middleware ──────────────────────────────────────────────────
-app.use(cors());
+// ── CORS ───────────────────────────────────────────────────────
+const ALLOWED_ORIGINS = [
+  'http://localhost:4001',
+  'https://sotviet.site',
+  'https://iflow.thinksmart.site',
+  'https://thinksmart.vn',
+  'https://app.thinkedu.com.vn',
+];
+app.use(cors({
+  origin: (origin, cb) => {
+    // Allow requests with no origin (mobile apps, curl, same-origin)
+    if (!origin || ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
+      cb(null, true);
+    } else {
+      cb(null, true); // Still allow, just log
+      console.warn('CORS request from unknown origin:', origin);
+    }
+  },
+  credentials: true,
+}));
 app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
@@ -116,6 +135,7 @@ const usageRoutes = require('./api/usage');
 app.use('/api/usage', usageRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/library', libraryRoutes);
+app.use('/api/generate-image', imageGenRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 
 // ── WP Settings API (save/load from config file) ────────────────
@@ -271,6 +291,18 @@ app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
       // Sanitize content (handle double-encoded JSON)
       const cleanContent = sanitizeContent(post.content);
 
+      // Strip <article> wrapper — WP Gutenberg wraps its own blocks
+      let wpContent = cleanContent;
+      const articleStart = wpContent.indexOf('<article');
+      const articleEnd = wpContent.indexOf('</article>');
+      if (articleStart >= 0 && articleEnd > articleStart) {
+        const inner = wpContent.substring(articleStart, articleEnd + 10);
+        // Get everything inside <article>...</article>
+        const startTagEnd = wpContent.indexOf('>', articleStart) + 1;
+        const innerContent = wpContent.substring(startTagEnd, articleEnd).trim();
+        wpContent = wpContent.replace(inner, innerContent);
+      }
+
       // Sanitize thumbnail
       const cleanThumb = sanitizeImageUrl(
         post.thumbnail || (Array.isArray(post.images) && post.images.length > 0 ? post.images[0] : '')
@@ -279,7 +311,7 @@ app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
       // Build WP post body with dynamic category mapping
       const wpBody = {
         title: post.title || 'Untitled',
-        content: cleanContent,
+        content: wpContent,
         excerpt: post.summary || '',
         status: 'publish',
         categories: [getCategoryId(post.category_slug)],

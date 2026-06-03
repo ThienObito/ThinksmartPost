@@ -1,5 +1,5 @@
 /**
- * API Usage Tracker — đếm số lần gọi API (DeepSeek, Replicate, WordPress)
+ * API Usage Tracker — đếm số lần gọi API (Gemini, Replicate, WordPress)
  * Lưu vào data/api-usage.json, tự động reset theo ngày
  */
 const fs = require('fs');
@@ -9,7 +9,7 @@ const USAGE_FILE = path.join(DATA_DIR, 'api-usage.json');
 
 // ── Cost ước tính (USD) ─────────────────────────────────────────
 const COST_PER_CALL = {
-  deepseek: 0.002,    // ~$0.002/call DeepSeek Chat
+  gemini: 0.002,       // ~$0.002/call Gemini Flash
   replicate: 0.004,   // ~$0.004/call Flux Schnell
   wp_publish: 0,      // WordPress REST API (free)
   chat: 0.001,         // Chat có prompt ngắn hơn
@@ -19,7 +19,7 @@ function load() {
   try {
     return JSON.parse(fs.readFileSync(USAGE_FILE, 'utf-8'));
   } catch {
-    return { deepseek: 0, replicate: 0, wp_publish: 0, chat: 0, history: {}, lastUpdated: null };
+    return { gemini: 0, replicate: 0, wp_publish: 0, chat: 0, history: {}, lastUpdated: null };
   }
 }
 
@@ -29,7 +29,7 @@ function save(data) {
 
 /**
  * Track một API call
- * @param {'deepseek'|'replicate'|'wp_publish'|'chat'} service
+ * @param {'gemini'|'replicate'|'wp_publish'|'chat'} service
  */
 function track(service) {
   const data = load();
@@ -54,13 +54,13 @@ function getStats() {
   const todayData = data.history?.[today] || {};
 
   const totalCost = (
-    (data.deepseek || 0) * COST_PER_CALL.deepseek +
+    (data.gemini || 0) * COST_PER_CALL.gemini +
     (data.replicate || 0) * COST_PER_CALL.replicate +
     (data.chat || 0) * COST_PER_CALL.chat
   );
 
   const todayCost = (
-    (todayData.deepseek || 0) * COST_PER_CALL.deepseek +
+    (todayData.gemini || 0) * COST_PER_CALL.gemini +
     (todayData.replicate || 0) * COST_PER_CALL.replicate +
     (todayData.chat || 0) * COST_PER_CALL.chat
   );
@@ -73,13 +73,13 @@ function getStats() {
 
   return {
     total: {
-      deepseek: data.deepseek || 0,
+      gemini: data.gemini || 0,
       replicate: data.replicate || 0,
       wp_publish: data.wp_publish || 0,
       chat: data.chat || 0,
     },
     today: {
-      deepseek: todayData.deepseek || 0,
+      gemini: todayData.gemini || 0,
       replicate: todayData.replicate || 0,
       wp_publish: todayData.wp_publish || 0,
       chat: todayData.chat || 0,

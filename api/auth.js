@@ -107,21 +107,30 @@ router.post('/login', async (req, res) => {
 // ── GET /api/auth/me ────────────────────────────────────────────
 
 router.get('/me', authRequired, (req, res) => {
-  res.json({
-    success: true,
-    user: req.user,
-  });
+  try {
+    res.json({
+      success: true,
+      user: req.user,
+    });
+  } catch (error) {
+    console.error('Me error:', error);
+    res.status(500).json({ success: false, message: 'Lỗi server' });
+  }
 });
 
 // ── GET /api/auth/users (admin only) ────────────────────────────
 
 router.get('/users', authRequired, (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ success: false, message: 'Chỉ admin mới có quyền' });
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'dev') {
+      return res.status(403).json({ success: false, message: 'Chỉ admin/dev mới có quyền' });
+    }
+    const users = loadUsers().map(({ password, ...rest }) => rest);
+    res.json({ success: true, users });
+  } catch (error) {
+    console.error('Users list error:', error);
+    res.status(500).json({ success: false, message: 'Lỗi server' });
   }
-
-  const users = loadUsers().map(({ password, ...rest }) => rest);
-  res.json({ success: true, users });
 });
 
 module.exports = router;

@@ -16,3 +16,5 @@ SOUL.md
 TOOLS.md
 USER.md
 npm-debug.log*
+.tunnel-token
+.backup-pre-gemini

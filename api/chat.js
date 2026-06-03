@@ -1,11 +1,11 @@
 /**
  * Chat API — Internal AI assistant for dashboard users.
- * Uses DeepSeek to answer user questions about the platform.
+ * Uses Gemini to answer user questions about the platform.
  */
 const express = require('express');
-const axios = require('axios');
 const { authRequired } = require('../middleware/auth');
 const { track } = require('../utils/api-tracker');
+const { callGeminiWithSystem } = require('../utils/ai-client');
 
 const router = express.Router();
 
@@ -45,29 +45,19 @@ router.post('/', authRequired, async (req, res) => {
     messages.push({ role: 'user', content: message });
 
     track('chat');
-    const aiRes = await axios.post(
-      'https://api.deepseek.com/v1/chat/completions',
-      {
-        model: 'deepseek-chat',
-        messages,
-        temperature: 0.7,
-        max_tokens: 2000,
-      },
-      {
-        headers: { Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}` },
-        timeout: 30000,
-      }
-    );
+    const rawContent = await callGeminiWithSystem(SYSTEM_PROMPT, message, { temperature: 0.7, max_tokens: 2000, timeout: 30000 });
 
-    let text = aiRes.data.choices[0].message.content;
-    // Try to extract JSON
-    text = text.replace(/```(?:json)?\n?/gi, '').replace(/```\s*$/gi, '').trim();
+    let text = rawContent;
+    // Try to extract JSON — strip backticks then find first {
+    text = text.replace(/```/g, '').trim();
+    const braceIdx = text.indexOf('{');
+    if (braceIdx >= 0) text = text.slice(braceIdx);
     let reply;
     try {
       const parsed = JSON.parse(text);
       reply = parsed.reply || text;
     } catch {
-      const match = text.match(/\{[\s\S]*\}/);
+      const match = text.match(/{[\s\S]*}/);
       if (match) {
         try {
           reply = JSON.parse(match[0]).reply || text;
@@ -83,7 +73,6 @@ router.post('/', authRequired, async (req, res) => {
     res.json({
       success: true,
       reply,
-      usage: aiRes.data.usage,
     });
   } catch (error) {
     console.error('Chat API error:', error.message);

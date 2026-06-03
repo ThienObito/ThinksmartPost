@@ -2,6 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { track } = require('../utils/api-tracker');
+const { callGemini } = require('../utils/ai-client');
 
 const DATA_DIR = path.join(__dirname, '../data');
 
@@ -10,9 +11,13 @@ function extractJSON(text) {
   if (!text) throw new Error('AI trả về nội dung rỗng');
 
   let cleaned = text.trim();
+  // Find first { and strip everything before it (handles backtick+json prefix)
+  const braceIdx = cleaned.indexOf('{');
+  if (braceIdx >= 0) cleaned = cleaned.slice(braceIdx);
+  else throw new Error('No JSON object found in AI response');
 
-  // Strategy 1: Remove markdown code blocks
-  cleaned = cleaned.replace(/```(?:json)?\n?/gi, '').replace(/```\s*$/gi, '').trim();
+  // Remove backtick code block wrappers (if any remain after { extraction)
+  cleaned = cleaned.replace(/```/g, '').trim();
 
   // Strategy 2: Direct JSON parse
   try {
@@ -20,7 +25,7 @@ function extractJSON(text) {
   } catch { /* continue */ }
 
   // Strategy 3: Find first { ... } block (handles extra text before/after JSON)
-  const braceMatch = cleaned.match(/\{[\s\S]*\}/);
+  const braceMatch = cleaned.match(/{[\s\S]*}/);
   if (braceMatch) {
     try {
       return JSON.parse(braceMatch[0]);
@@ -29,7 +34,7 @@ function extractJSON(text) {
 
   // Strategy 4: Try to fix common JSON issues (trailing commas, single quotes, etc.)
   const fixed = cleaned
-    .replace(/([{,])\s*'([^']+)'\s*:/g, '$1"$2":')    // single-quoted keys -> double
+    .replace(/([{,])\s*'([^']+)'\s*:/g, '$1"$2"')    // single-quoted keys -> double
     .replace(/:\s*'([^']+)'/g, ':"$1"')                // single-quoted values -> double
     .replace(/,\s*([}\]])/g, '$1')                      // trailing commas
     .replace(/\/\/.*$/gm, '');                          // line comments
@@ -37,7 +42,7 @@ function extractJSON(text) {
   try { return JSON.parse(fixed); } catch { /* continue */ }
 
   // Strategy 5: Find { ... } block in fixed version
-  const fixedMatch = fixed.match(/\{[\s\S]*\}/);
+  const fixedMatch = fixed.match(/{[\s\S]*}/);
   if (fixedMatch) {
     try { return JSON.parse(fixedMatch[0]); } catch { /* continue */ }
   }
@@ -54,13 +59,16 @@ function extractJSON(text) {
 
   throw new Error('Không thể parse JSON từ AI. AI trả về: ' + text.substring(0, 200) + '...');
 }
-
 // ── Build HTML from structured or flat content ──────────────────
 function buildHtmlContent(article) {
-  if (typeof article.content === 'string' && article.content.startsWith('<')) {
+  // Case 1: article.content is already HTML string
+  if (typeof article.content === 'string' && article.content.trim().startsWith('<') && article.content.trim().length > 20) {
     return article.content;
   }
+  
   const parts = [];
+  
+  // Case 2: intro + sections structure (older prompt format)
   if (article.intro) parts.push(`<p>${article.intro}</p>`);
   if (Array.isArray(article.sections)) {
     for (const sec of article.sections) {
@@ -74,10 +82,32 @@ function buildHtmlContent(article) {
       }
     }
   }
-  // KHÔNG thêm CTA, không thêm footer, không thông tin liên hệ
-  return parts.length > 0
+  
+  // Case 3: if article has a body field
+  if (parts.length === 0 && article.body) {
+    parts.push(`<p>${article.body}</p>`);
+  }
+  
+  // Case 4: if article.content exists but is short/empty, try article.text or body
+  if (parts.length === 0 && typeof article.content === 'string' && article.content.trim().length > 0) {
+    parts.push(article.content);
+  }
+  
+  // Case 5: summary fallback
+  if (parts.length === 0 && article.meta_description) {
+    parts.push(`<p>${article.meta_description}</p>`);
+  }
+  
+  const result = parts.length > 0
     ? `<article>${parts.join('\n')}</article>`
-    : `<article><p>${article.meta_description || ''}</p></article>`;
+    : `<article><p>${article.meta_description || article.summary || 'Nội dung đang được tạo...'}</p></article>`;
+    
+  if (result.length < 30) {
+    console.log('WARNING: buildHtmlContent produced very short content. article keys:', Object.keys(article));
+    console.log('WARNING: content preview:', JSON.stringify(article.content).substring(0, 200));
+  }
+  
+  return result;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -142,19 +172,26 @@ const SEO_PROMPT = (topic, angleIdx, subDirection, articleIndex, totalCount) => 
 => Mỗi bài là một tác phẩm độc lập, không chỉ là biến thể của cùng một nội dung.`
     : '';
 
-  return `Bạn là chuyên gia viết nội dung chuyên ngành, khách quan.
+  return `Bạn là chuyên gia viết nội dung SEO chuyên ngành, khách quan.
 
-Hãy viết một bài viết chất lượng cao bằng tiếng Việt về chủ đề: "${topic}"
+Hãy viết một bài viết CHUẨN SEO chất lượng cao bằng tiếng Việt về chủ đề: "${topic}"
 
 GÓC VIẾT: ${angle}
 
 ${diversityInstruction}
 
-YÊU CẦU NỘI DUNG:
-- Tiêu đề: 50-65 ký tự, hấp dẫn, chứa từ khóa chính, KHÔNG chứa tên công ty hay thương hiệu
-- Nội dung: 1500-2500 từ tiếng Việt, chuyên nghiệp, dễ hiểu
-- Cấu trúc: H2 → H3 → Bullet points/Bảng → Kết luận (KHÔNG có CTA, KHÔNG có thông tin liên hệ)
-- Số liệu mới cập nhật, ví dụ thực tế, khách quan
+YÊU CẦU SEO:
+- Tiêu đề (H1): 50-65 ký tự, hấp dẫn, chứa từ khóa chính ở đầu, KHÔNG chứa tên công ty hay thương hiệu
+- Meta description: 155-160 ký tự, chứa từ khóa chính + từ kêu gọi tự nhiên
+- Thẻ H2: 4-6 thẻ, mỗi thẻ chứa từ khóa phụ (LSI), phân bố đều trong bài
+- Thẻ H3: dùng để chia nhỏ nội dung dưới H2 khi cần
+- Mật độ từ khóa: từ khóa chính xuất hiện 3-5 lần trong bài (tiêu đề + H2 + thân bài)
+- Từ khóa LSI: 5-7 từ khóa liên quan, phân bố tự nhiên
+- Đoạn văn: 2-4 câu/đoạn, tối đa 80 từ/đoạn (mobile-friendly)
+- Bullet points: dùng cho danh sách, so sánh, lợi ích
+- Internal linking: thêm gợi ý liên kết nội bộ dạng "[internal: chủ đề liên quan]"
+- External linking: dẫn nguồn uy tín nếu có số liệu
+- URL slug: gợi ý từ tiêu đề, không dấu, dùng dấu gạch ngang
 
 ⚠️ TUYỆT ĐỐI KHÔNG được:
 - KHÔNG đề cập đến bất kỳ công ty, thương hiệu, website, email, hotline nào
@@ -163,16 +200,17 @@ YÊU CẦU NỘI DUNG:
 - KHÔNG giới thiệu hoặc quảng bá bất kỳ dịch vụ/sản phẩm thương mại nào
 - KHÔNG sử dụng các cụm như "chúng tôi có", "công ty chúng tôi", "hãy liên hệ"
 
-=> Nội dung thuần túy chuyên môn, khách quan, giá trị cho người đọc.
+Xem thêm: [internal: tiêu chuẩn SEO onpage], [internal: tối ưu content chuẩn SEO]
 
 QUAN TRỌNG: Chỉ trả về JSON, không thêm text nào khác.
 
 ĐỊNH DẠNG JSON:
 {
-  "title": "Tiêu đề hấp dẫn (không có tên công ty)",
+  "title": "Tiêu đề hấp dẫn (50-65 ký tự, không có tên công ty)",
+  "slug": "slug-tu-tieu-de-khong-dau",
   "content": "<article><h2>...</h2><p>...</p></article>",
-  "meta_description": "Mô tả 145-160 ký tự",
-  "keywords": ["từ khóa 1", "từ khóa 2"]
+  "meta_description": "Mô tả 155-160 ký tự chuẩn SEO",
+  "keywords": ["từ khóa chính", "từ khóa LSI 1", "từ khóa LSI 2"]
 }`;
 };
 
@@ -181,17 +219,19 @@ const SIMPLE_PROMPT = (topic, articleIndex, totalCount) => {
   const diversityNote = totalCount > 1
     ? `\nBÀI SỐ ${articleIndex + 1}/${totalCount}: Hãy viết với góc nhìn và nội dung KHÁC BIỆT so với các bài khác trong loạt.`
     : '';
-  return `Viết bài chuyên môn bằng tiếng Việt về: "${topic}"${diversityNote}
-
+  return `Viết bài chuẩn SEO bằng tiếng Việt về: "${topic}"${diversityNote}
+Yêu cầu SEO: tiêu đề 50-65 ký tự, H2 4-6 thẻ, meta 155-160 ký tự, từ khóa LSI, đoạn văn ngắn 2-4 câu.
 KHÔNG được đề cập đến bất kỳ công ty, thương hiệu, liên hệ hay quảng cáo nào.
 Nội dung thuần túy chuyên môn, khách quan.
+Thêm gợi ý liên kết nội bộ: [internal: chủ đề liên quan] nếu phù hợp.
 
-Trả về JSON CHUẨN (không thêm text nào khác):
+Trả về JSON CHUẨN (không thêm text nào khác, "content" PHẢI là string HTML bắt đầu bằng <article>):
 {
-  "title": "Tiêu đề",
+  "title": "Tiêu đề (50-65 ký tự)",
+  "slug": "slug-tu-tieu-de",
   "content": "<article><h2>...</h2><p>...</p></article>",
-  "meta_description": "Mô tả",
-  "keywords": ["từ khóa"]
+  "meta_description": "Mô tả 155-160 ký tự",
+  "keywords": ["từ khóa chính", "từ khóa LSI"]
 }`;
 };
 
@@ -344,7 +384,7 @@ async function createArticleHandler(req, res) {
         console.log(`  🖼️ Smart images ON: ${imgCount} images/article`);
       }
 
-      // 2. Call DeepSeek (text only — no image generation)
+      // 2. Call Gemini (text only — no image generation)
       let article = null;
       let lastError = null;
 
@@ -352,14 +392,8 @@ async function createArticleHandler(req, res) {
         try {
           const prompt = attempt === 1 ? finalPrompt : SIMPLE_PROMPT(topic, ti, totalCount);
           const temperature = totalCount > 1 ? 1.0 : 0.7;
-          track('deepseek');
-          const aiRes = await axios.post(
-            'https://api.deepseek.com/v1/chat/completions',
-            { model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature, max_tokens: 8000 },
-            { headers: { Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}` } },
-          );
-
-          const rawContent = aiRes.data.choices[0].message.content;
+          track('gemini');
+          const rawContent = await callGemini(prompt, { temperature, max_tokens: 8000, timeout: 60000 });
           article = extractJSON(rawContent);
           if (article && (article.title || article.content)) break;
         } catch (err) {
@@ -374,7 +408,38 @@ async function createArticleHandler(req, res) {
 
       if (!article.title) article.title = topic;
       if (!article.content) article.content = '';
-      console.log(`  ✅ (${ti + 1}/${totalCount}) DeepSeek → "${article.title.substring(0, 50)}…"`);
+      // Clean content: if Gemini double-wrapped JSON inside content
+      if (typeof article.content === 'string') {
+        const trimmed = article.content.trim();
+        // Check if content starts with HTML + JSON (Gemini sometimes wraps JSON)
+        const jsonStart = trimmed.indexOf('{');
+        if (jsonStart >= 0 && jsonStart < trimmed.indexOf('<article>') + 20) {
+          // Try to find and parse JSON inside content
+          const jsonPart = trimmed.slice(jsonStart);
+          const match = jsonPart.match(/\{[\\s\\S]*\}/);
+          if (match) {
+            try {
+              const reparsed = JSON.parse(match[0]);
+              if (reparsed.content) {
+                article.content = reparsed.content;
+                if (reparsed.title) article.title = reparsed.title;
+                if (reparsed.meta_description) article.meta_description = reparsed.meta_description;
+                if (reparsed.keywords) article.keywords = reparsed.keywords;
+              } else if (reparsed.title) {
+                // This was a re-serialized full article JSON, extract content
+                article.title = reparsed.title;
+                article.content = reparsed.content || article.content;
+              }
+            } catch { /* not valid JSON, use as-is */ }
+          }
+        }
+      }
+      // Log article structure for debugging empty content
+      if (!article.content || article.content.length < 30) {
+        console.log('  ⚠️ Gemini returned empty/short content. Got fields:', Object.keys(article));
+        console.log('  ⚠️ content length:', (article.content || '').length);
+      }
+      console.log(`  ✅ (${ti + 1}/${totalCount}) Gemini → "${article.title.substring(0, 50)}…"`);
 
       // 3. Build HTML content
       let htmlContent = buildHtmlContent(article);

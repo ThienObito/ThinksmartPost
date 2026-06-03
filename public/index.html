@@ -425,7 +425,7 @@
         <div class="stat-card">
           <div class="stat-icon stat-icon-success"><i class="fas fa-robot"></i></div>
           <div class="stat-val" style="color:#22c55e;font-size:22px" id="usDeepseek">—</div>
-          <div class="stat-lbl">DeepSeek Calls</div>
+          <div class="stat-lbl">Gemini Calls</div>
           <div class="an-growth-badge an-growth-up" style="display:none;position:static;margin-top:4px" id="usDeepseekGrowth"></div>
         </div>
         <div class="stat-card">
@@ -464,8 +464,8 @@
           </div>
           <div style="display:flex;flex-direction:column;gap:10px">
             <div class="report-row">
-              <span class="report-label"><i class="fas fa-robot" style="color:#22c55e;width:16px"></i> DeepSeek</span>
-              <span style="font-weight:600" id="usTodayDeepseek">0</span>
+              <span class="report-label"><i class="fas fa-robot" style="color:#22c55e;width:16px"></i> Gemini</span>
+              <span style="font-weight:600" id="usTodayGemini">0</span>
             </div>
             <div class="report-row">
               <span class="report-label"><i class="fas fa-image" style="color:#a855f7;width:16px"></i> Image Gen</span>
@@ -495,8 +495,8 @@
           </div>
           <div id="usBreakdown" style="display:flex;flex-direction:column;gap:8px">
             <div class="report-row">
-              <span class="report-label">DeepSeek</span>
-              <span style="color:#22c55e;font-weight:600" id="usDeepseekPct">—</span>
+              <span class="report-label">Gemini</span>
+              <span style="color:#22c55e;font-weight:600" id="usGeminiPct">—</span>
             </div>
             <div class="report-row">
               <span class="report-label">Replicate</span>
@@ -529,13 +529,13 @@
         </div>
       </div>
       <div class="glass-card" style="max-width:500px;padding:24px">
-        <div style="margin-bottom:12px"><label class="stat-lbl" style="margin-bottom:6px">DeepSeek Key</label><input id="sDK" type="password" placeholder="sk-..." class="inp"></div>
+        <div style="margin-bottom:12px"><label class="stat-lbl" style="margin-bottom:6px">Gemini Key</label><input id="sDK" type="password" placeholder="AIza..." class="inp"></div>
         <div style="margin-bottom:12px"><label class="stat-lbl" style="margin-bottom:6px">WP URL</label><input id="sWpUrl" type="text" value="https://thinksmart.vn" class="inp"></div>
         <div style="margin-bottom:12px"><label class="stat-lbl" style="margin-bottom:6px">WP Application Password</label><input id="sWpPass" type="password" placeholder="xxxx xxxx" class="inp"></div>
         <button onclick="QTP.Settings.save()" class="btn btn-primary" style="width:100%;padding:13px;margin-top:8px;font-size:14px"><i class="fas fa-save" style="margin-right:6px"></i>Lưu</button>
       </div>
       <!-- 🎭 Fake Data Toggle -->
-      <div class="glass-card" style="max-width:500px;padding:24px;margin-top:12px">
+      <div id="fakeToggleCard" class="glass-card" style="display:none;max-width:500px;padding:24px;margin-top:12px">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
             <div style="font-size:14px;font-weight:600;color:var(--color-text);margin-bottom:4px">🎭 Dữ liệu mẫu</div>
@@ -926,7 +926,7 @@
       <input id="ufName" type="text" placeholder="Full Name" class="inp" style="margin-bottom:12px">
       <input id="ufUser" type="text" placeholder="Username *" class="inp" style="margin-bottom:12px">
       <input id="ufPass" type="password" placeholder="Password" class="inp" style="margin-bottom:12px">
-      <select id="ufRole" style="margin-bottom:12px"><option value="sale">Sale</option><option value="admin">Admin</option></select>
+      <select id="ufRole" style="margin-bottom:12px"><option value="sale">Sale</option><option value="admin">Admin</option><option value="dev">Dev</option></select>
       <div id="ufErr" class="form-err"></div>
     </div>
     <div class="modal-foot"><button id="ufSaveBtn" onclick="QTP.Users.save()" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i>Save</button></div>

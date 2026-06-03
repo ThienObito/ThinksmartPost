@@ -36,6 +36,18 @@ const $q = (sel) => document.querySelector(sel);
 /** Shorthand for document.querySelectorAll */
 const $qa = (sel) => document.querySelectorAll(sel);
 
+/** Auto-detect API base URL: use proxy if embedded in other domain */
+const API_BASE = (() => {
+  // If loaded from iflow or another domain, use sotviet.site
+  if (window.location.hostname !== 'localhost' &&
+      window.location.hostname !== 'sotviet.site' &&
+      window.location.hostname !== '127.0.0.1') {
+    console.warn('Embedded mode detected at', window.location.hostname, '→ using sotviet.site API');
+    return 'https://sotviet.site';
+  }
+  return '';
+})();
+
 /**
  * Generic API client — prepends /api, injects Bearer token,
  * parses JSON response.  One function for the entire app.
@@ -48,11 +60,12 @@ async function api(path, opts = {}) {
   const token = localStorage.getItem('qtp_token');
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`/api${path}`, {
+  const url = `${API_BASE}/api${path}`;
+  const res = await fetch(url, {
     ...opts,
     headers: { ...headers, ...opts.headers },
   });
-  return res.json(); // always JSON (Express json() middleware)
+  return res.json();
 }
 
 /** Escape HTML entities (XSS prevention) */
@@ -192,7 +205,7 @@ function showConfirm(msg, onYes, onNo) {
  */
 const QTP = {
   _token: localStorage.getItem('qtp_token'),
-  _fakeMode: localStorage.getItem('qtp_fake') !== 'false',
+  _fakeMode: localStorage.getItem('qtp_fake') === 'true',
   _user: (() => {
     try {
       const u = localStorage.getItem('qtp_user');
@@ -476,7 +489,7 @@ QTP.App = {
     $id('userAv').textContent = (u.fullName || u.username || 'U')[0].toUpperCase();
     $id('roleT').textContent = u.role || 'user';
     const navUsers = $id('nav-users');
-    if (navUsers) navUsers.style.display = u.role === 'admin' ? 'flex' : 'none';
+    if (navUsers) navUsers.style.display = (u.role === 'admin' || u.role === 'dev') ? 'flex' : 'none';
   },
 
   /** Load dashboard stats & recent articles */
@@ -554,6 +567,10 @@ QTP.App = {
 
   /** Toggle fake/demo data mode (persisted in localStorage) */
   toggleFakeMode(on) {
+    if (QTP._user?.role !== 'dev') {
+      showToast('❌ Chỉ tài khoản Dev mới được bật dữ liệu mẫu', 'error');
+      return;
+    }
     QTP._fakeMode = !!on;
     localStorage.setItem('qtp_fake', QTP._fakeMode ? 'true' : 'false');
     this._syncFakeBtn();
@@ -1711,7 +1728,7 @@ QTP.Users = {
               <tr>
                 <td data-label="User"><strong>${esc(u.fullName || u.username)}</strong></td>
                 <td data-label="Username">${esc(u.username)}</td>
-                <td data-label="Role"><span class="article-status ${u.role === 'admin' ? 'pub' : 'draft'}">${u.role}</span></td>
+                <td data-label="Role"><span class="article-status ${u.role === 'admin' || u.role === 'dev' ? 'pub' : 'draft'}">${u.role}</span></td>
                 <td data-label="Status"><span style="color:${u.status === 'active' ? '#22c55e' : '#ef4444'};font-size:12px">${u.status || 'active'}</span></td>
                 <td data-label="Created" style="font-size:12px;color:var(--color-muted)">${fmtDate(u.createdAt)}</td>
                 <td>
@@ -1746,7 +1763,7 @@ QTP.Users = {
               <tr>
                 <td data-label="User"><strong>${esc(u.fullName || u.username)}</strong></td>
                 <td data-label="Username">${esc(u.username)}</td>
-                <td data-label="Role"><span class="article-status ${u.role === 'admin' ? 'pub' : 'draft'}">${u.role}</span></td>
+                <td data-label="Role"><span class="article-status ${u.role === 'admin' || u.role === 'dev' ? 'pub' : 'draft'}">${u.role}</span></td>
                 <td data-label="Status"><span style="color:${u.status === 'active' ? '#22c55e' : '#ef4444'};font-size:12px">${u.status || 'active'}</span></td>
                 <td data-label="Created" style="font-size:12px;color:var(--color-muted)">${fmtDate(u.createdAt)}</td>
                 <td>
@@ -1870,7 +1887,7 @@ QTP.Users = {
 QTP.Settings = {
   load() {
     const keys = JSON.parse(localStorage.getItem('qtp_settings') || '{}');
-    $id('sDK').value = keys.deepseek || '';
+    $id('sDK').value = keys.gemini || '';
 
     // Load WP config from server API
     api('/settings/wp')
@@ -1886,17 +1903,18 @@ QTP.Settings = {
         $id('sWpPass').value = keys.wpPass || '';
       });
 
-    // Sync fake data toggle
+    // Sync fake data toggle - chỉ dev mới thấy
+    const card = $id('fakeToggleCard');
+    if (card) card.style.display = QTP._user?.role === 'dev' ? '' : 'none';
     QTP.App._syncFakeBtn();
   },
 
   async save() {
-    const deepseek = $id('sDK').value.trim();
+    const gemini = $id('sDK').value.trim();
     const wpUrl = $id('sWpUrl').value.trim();
     const wpPass = $id('sWpPass').value.trim();
 
-    // Save DeepSeek key to localStorage (frontend only)
-    localStorage.setItem('qtp_settings', JSON.stringify({ deepseek }));
+    // Save Gemini key to localStorage (frontend only)\n    localStorage.setItem('qtp_settings', JSON.stringify({ gemini }));
 
     // Save WP config to server
     try {
@@ -3248,12 +3266,12 @@ QTP.Usage = {
       const today = data.today;
       const cost = data.cost;
 
-      $id('usDeepseek').textContent = (t.deepseek || 0).toLocaleString();
+      $id('usGemini').textContent = (t.gemini || 0).toLocaleString();
       $id('usReplicate').textContent = (t.replicate || 0).toLocaleString();
       $id('usWp').textContent = (t.wp_publish || 0).toLocaleString();
       $id('usCost').textContent = '$' + (cost.total || 0).toFixed(2);
 
-      $id('usTodayDeepseek').textContent = today.deepseek || 0;
+      $id('usTodayGemini').textContent = today.gemini || 0;
       $id('usTodayReplicate').textContent = today.replicate || 0;
       $id('usTodayCost').textContent = '$' + (cost.today || 0).toFixed(2);
 
@@ -3265,8 +3283,8 @@ QTP.Usage = {
         return;
       }
       hist.innerHTML = days.slice().reverse().map(d => {
-        const total = (d.deepseek || 0) + (d.replicate || 0) + (d.chat || 0);
-        const maxBar = Math.max(...days.map(x => (x.deepseek||0)+(x.replicate||0)+(x.chat||0)), 1);
+        const total = (d.gemini || 0) + (d.replicate || 0) + (d.chat || 0);
+        const maxBar = Math.max(...days.map(x => (x.gemini||0)+(x.replicate||0)+(x.chat||0)), 1);
         const barPct = Math.max(3, (total / maxBar) * 100);
         const dateObj = new Date(d.date + 'T00:00:00');
         const label = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
@@ -3301,7 +3319,7 @@ QTP.Usage = {
     if (g2) { g2.style.display = 'inline-flex'; g2.innerHTML = '↑ 8.7%'; }
 
     // Today
-    $id('usTodayDeepseek').textContent = '47';
+    $id('usTodayGemini').textContent = '47';
     $id('usTodayReplicate').textContent = '3';
     $id('usTodayCost').textContent = '$0.18';
 
@@ -3310,7 +3328,7 @@ QTP.Usage = {
     $id('usAvgCost').textContent = '$1.73';
 
     // Breakdown percentages
-    const total = 14280 + 847 + 2156; // deepseek + replicate + chat
+    const total = 14280 + 847 + 2156; // gemini + replicate + chat
     $id('usDeepseekPct').textContent = Math.round(14280 / total * 100) + '%';
     $id('usReplicatePct').textContent = Math.round(847 / total * 100) + '%';
     $id('usOtherPct').textContent = Math.round(2156 / total * 100) + '%';
@@ -3326,20 +3344,20 @@ QTP.Usage = {
       cht += Math.round(Math.random() * 10 - 3);
       days.push({
         date: d.toISOString().split('T')[0],
-        deepseek: Math.max(0, ds),
+        gemini: Math.max(0, ds),
         replicate: Math.max(0, rep),
         chat: Math.max(0, cht),
       });
     }
 
-    // Render cost chart (daily cost = deepseek * 0.002 + replicate * 0.004 + chat * 0.001)
+    // Render cost chart (daily cost = gemini * 0.002 + replicate * 0.004 + chat * 0.001)
     this._renderUsageChart(days);
 
     // Render history bars
     const hist = $id('usHistory');
-    const maxBar = Math.max(...days.map(d => d.deepseek + d.replicate + d.chat), 1);
+    const maxBar = Math.max(...days.map(d => d.gemini + d.replicate + d.chat), 1);
     hist.innerHTML = days.map(d => {
-      const total = d.deepseek + d.replicate + d.chat;
+      const total = d.gemini + d.replicate + d.chat;
       const barPct = Math.max(3, (total / maxBar) * 100);
       const dateObj = new Date(d.date + 'T00:00:00');
       const label = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
@@ -3365,7 +3383,7 @@ QTP.Usage = {
       const dt = new Date(d.date + 'T00:00:00');
       return dt.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
     });
-    const costs = days.map(d => +(d.deepseek * 0.002 + d.replicate * 0.004 + d.chat * 0.001).toFixed(2));
+    const costs = days.map(d => +(d.gemini * 0.002 + d.replicate * 0.004 + d.chat * 0.001).toFixed(2));
     const step = Math.max(1, Math.floor(labels.length / 8));
 
     this._usageChart = new Chart(ctx, {

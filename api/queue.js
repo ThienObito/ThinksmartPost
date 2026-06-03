@@ -118,7 +118,7 @@ async function autoProcessQueue() {
       }
     }
 
-    saveQueue(loadQueue()); // Save updated queue
+    saveQueue(queue); // Save updated queue (items were mutated in-place)
     if (results.length > 0) {
       console.log(`⏰ Auto-queue: done (${results.filter(r => r.status === 'published').length}/${results.length} published)`);
     }

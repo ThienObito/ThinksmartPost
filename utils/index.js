@@ -46,10 +46,16 @@ function escapeHtml(str) {
 function sanitizeContent(rawContent) {
   if (!rawContent) return '<p>No content</p>';
 
+  // Strip <article> wrapper since WP adds its own
+  let content = rawContent;
+  if (typeof content === 'string') {
+    content = content.replace(/<\/?article>/gi, '').trim();
+  }
+
   // If it's a JSON string (double-encoded), parse and convert to HTML
-  if (typeof rawContent === 'string' && rawContent.trim().startsWith('{')) {
+  if (typeof content === 'string' && content.trim().startsWith('{')) {
     try {
-      const parsed = JSON.parse(rawContent);
+      const parsed = JSON.parse(content);
       if (parsed.intro || Array.isArray(parsed.sections) || parsed.cta) {
         const parts = [];
         if (parsed.intro) parts.push('<p>' + parsed.intro + '</p>');
@@ -72,7 +78,9 @@ function sanitizeContent(rawContent) {
       if (parsed.content) return parsed.content;
     } catch { /* not JSON, use raw */ }
   }
-  return rawContent;
+  // If content has <article> wrapper after stripping, re-add (defensive)
+  if (!content.trim().startsWith('<')) return '<article>' + content + '</article>';
+  return content || rawContent;
 }
 
 // ── Sanitize image URL ──────────────────────────────────────────

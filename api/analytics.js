@@ -88,14 +88,14 @@ router.get('/performance', authRequired, async (req, res) => {
   try {
     const { startDate, endDate, period } = getPeriodRange(req);
     const localArticles = loadArticles();
-    const forceRefresh = req.query.refresh === 'true' && req.user.role === 'admin';
+    const forceRefresh = req.query.refresh === 'true' && (req.user.role === 'admin' || req.user.role === 'dev');
 
     // ── 1. GA4 Data (cache-first) ──
     const ga4Result = await googleApi.getGA4Data(startDate, endDate, period, forceRefresh);
     const ga4 = ga4Result.data;
 
     // ── 2. Local article stats (luôn real-time) ──
-    const userArticles = req.user.role === 'admin'
+    const userArticles = req.user.role === 'admin' || req.user.role === 'dev'
       ? localArticles
       : localArticles.filter(a => !a.userId || a.userId === req.user.id);
 
@@ -181,44 +181,21 @@ router.get('/performance', authRequired, async (req, res) => {
 router.get('/keywords', authRequired, async (req, res) => {
   try {
     const { startDate, endDate, period } = getPeriodRange(req);
-    const forceRefresh = req.query.refresh === 'true' && req.user.role === 'admin';
+    const forceRefresh = req.query.refresh === 'true' && (req.user.role === 'admin' || req.user.role === 'dev');
 
     // GSC data (cache-first)
     const gscResult = await googleApi.getGSCData(startDate, endDate, period, forceRefresh);
     const gsc = gscResult.data;
 
-    // Kiểm tra fallback nếu chưa config Google
+    // Trả về rỗng nếu chưa config Google
     if (!gscResult.configured) {
-      // Dùng keywords từ local articles
-      const articles = loadArticles();
-      const wordCount = {};
-      const stopWords = ['và', 'của', 'các', 'cho', 'với', 'trong', 'một', 'những', 'được', 'có', 'không', 'khi', 'từ', 'đã', 'sẽ', 'để', 'vào', 'trên', 'bài', 'này', 'hoặc', 'công', 'nghệ', 'dụng', 'phẩm', 'sản'];
-      for (const a of articles) {
-        const words = (a.title || '').toLowerCase().split(/[\s,.\-:;!?()]+/);
-        for (const w of words) {
-          if (w.length >= 4 && !stopWords.includes(w)) {
-            wordCount[w] = (wordCount[w] || 0) + 1;
-          }
-        }
-      }
-      const localKeywords = Object.entries(wordCount)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 50)
-        .map(([keyword, count]) => ({
-          keyword,
-          impressions: count * 10,
-          clicks: Math.round(count * 2.5),
-          ctr: 25,
-          position: '—',
-        }));
-
       return res.json({
         success: true,
         period, startDate, endDate,
         cacheInfo: { fromCache: false, configured: false },
-        keywords: localKeywords,
-        anKwCount: localKeywords.length,
-        rising: localKeywords.filter(k => k.impressions > 50).slice(0, 10),
+        keywords: [],
+        anKwCount: 0,
+        rising: [],
         rankingPages: [],
       });
     }
@@ -284,22 +261,7 @@ router.get('/gap', authRequired, async (req, res) => {
       }
     }
 
-    // Thêm gaps từ WP categories chưa có bài
-    const usedSlugs = [...new Set(articles.map(a => a.category_slug).filter(Boolean))];
-    for (const cat of categories) {
-      if (!usedSlugs.includes(cat.slug) && cat.count > 0) {
-        gaps.push({
-          keyword: `Chủ đề: ${cat.name}`,
-          category: cat.slug,
-          impressions: cat.count * 50,
-          clicks: 0,
-          ctr: 0,
-          position: '—',
-          opportunity: cat.count > 10 ? 'Cao' : 'Trung bình',
-          estimatedTraffic: Math.round(cat.count * 8),
-        });
-      }
-    }
+    // (chỉ trả gaps từ GSC, không fake từ categories)
 
     // Covered topics
     const covered = {};
@@ -313,11 +275,9 @@ router.get('/gap', authRequired, async (req, res) => {
       count,
     }));
 
-    // Competitor analysis (simulated — cần data thật từ Ahrefs/SEMrush)
+    // Competitor analysis (chỉ cần data thật)
     const competitorList = [
       { domain: 'thinksmart.vn', articles: articles.length, keywords: gscKeywords.length, score: 85 },
-      { domain: 'Đối thủ A', articles: '—', keywords: '—', score: 0 },
-      { domain: 'Đối thủ B', articles: '—', keywords: '—', score: 0 },
     ];
 
     const sortedGaps = gaps.sort((a, b) => b.estimatedTraffic - a.estimatedTraffic);
@@ -363,7 +323,7 @@ router.get('/roi', authRequired, async (req, res) => {
 
     // ══ AI Cost (USD → VND) ══
     const totalCostUSD = (
-      (usageStats.total.deepseek || 0) * 0.002 +
+      (usageStats.total.gemini || 0) * 0.002 +
       (usageStats.total.replicate || 0) * 0.004 +
       (usageStats.total.chat || 0) * 0.001
     );
@@ -479,8 +439,8 @@ router.get('/sync-status', authRequired, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════
 
 router.post('/sync', authRequired, async (req, res) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ success: false, message: 'Chỉ admin mới được force sync' });
+  if (req.user.role !== 'admin' && req.user.role !== 'dev') {
+    return res.status(403).json({ success: false, message: 'Chỉ admin/dev mới được force sync' });
   }
   try {
     const result = await googleApi.syncAll();

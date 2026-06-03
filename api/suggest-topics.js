@@ -1,6 +1,6 @@
-const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { callGemini } = require('../utils/ai-client');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 
@@ -9,15 +9,19 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 function extractJSON(text) {
     if (!text) throw new Error("AI returned empty response");
 
-    let cleaned = text
-        .replace(/```(?:json)?\n?/gi, '')
-        .replace(/```\s*$/gi, '')
-        .trim();
+    let cleaned = text.trim();
+    // Find first { and strip everything before it
+    const braceIdx = cleaned.indexOf('{');
+    if (braceIdx >= 0) cleaned = cleaned.slice(braceIdx);
+    else throw new Error("No JSON object found in AI response");
+
+    // Remove backtick code block wrappers (if present after { extraction)
+    cleaned = cleaned.replace(/```/g, '').trim();
 
     try {
         return JSON.parse(cleaned);
     } catch {
-        const match = cleaned.match(/\{[\s\S]*\}/);
+        const match = cleaned.match(/{[\s\S]*}/);
         if (match) {
             try {
                 return JSON.parse(match[0]);
@@ -26,16 +30,13 @@ function extractJSON(text) {
         throw new Error("Cannot parse AI response as JSON");
     }
 }
-
-// ── Handler ──────────────────────────────────────────────────────
-
 async function suggestTopicsHandler(req, res) {
     const { category = 'giai-phap' } = req.body;
 
-    if (!process.env.DEEPSEEK_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
         return res.status(500).json({
             success: false,
-            message: 'Thiếu DEEPSEEK_API_KEY trong file .env',
+            message: 'Thiếu GEMINI_API_KEY trong file .env',
         });
     }
 
@@ -63,47 +64,22 @@ async function suggestTopicsHandler(req, res) {
 
     const prompt = `Bạn là chuyên gia SEO nội dung chuyên ngành sản xuất và công nghệ.
 
-Hãy gợi ý 8 chủ đề bài viết ĐA DẠNG, KHÔNG TRÙNG LẶP cho chuyên mục "${categoryName}" năm 2026.${avoidStr}
-QUAN TRỌNG - YÊU CẦU ĐA DẠNG HÓA:
-- 8 chủ đề phải thuộc các GÓC NHÌN khác nhau: tổng quan, so sánh, hướng dẫn, case study, xu hướng, phân tích kỹ thuật, tối ưu chi phí, ứng dụng ngành
-- KHÔNG trùng ý tưởng, không diễn giải cùng một nội dung dưới dạng khác
-- Mỗi chủ đề phải HOÀN TOÀN KHÁC BIỆT về nội dung, cách tiếp cận và giá trị mang lại
-- Các chủ đề phải hot, có khả năng rank cao Google, mang tính thực tiễn cao
-- Phân tích loại bài viết tối ưu (Comparison, How-to, Case Study, List, Guide, Trend Report...)
-- Đưa ra lý do tại sao chủ đề này có giá trị cho người đọc
-- Chủ đề chuyên môn, khách quan, không liên quan đến quảng bá thương hiệu
-- KHÔNG đề cập đến bất kỳ công ty, thương hiệu, website hay dịch vụ thương mại nào
+Gợi ý 6 chủ đề bài viết KHÔNG TRÙNG cho chuyên mục "${categoryName}" năm 2026.${avoidStr}
+YÊU CẦU:
+- Mỗi chủ đề 1 góc nhìn khác nhau
+- Chủ đề hot, có khả năng SEO cao
+- Phân tích thể loại bài (Comparison/How-to/Case Study/Guide/Trend)
+- Kèm lý do giá trị cho người đọc
+- KHÔNG quảng bá thương hiệu, không đề cập công ty
 
-Trả về đúng JSON (không thêm text nào khác):
-{
-  "suggestions": [
-    {
-      "topic": "Chủ đề bài viết đầy đủ",
-      "type": "Comparison / How-to / Case Study / List / Guide / Trend",
-      "reason": "Lý do tối ưu cho SEO và chuyển đổi",
-      "score": 9
-    }
-  ]
-}`;
+Trả về JSON thuần (không backtick, không text ngoài JSON):
+{"suggestions":[{"topic":"...","type":"...","reason":"...","score":9}]}`;
 
     try {
-        const aiRes = await axios.post(
-            'https://api.deepseek.com/v1/chat/completions',
-            {
-                model: 'deepseek-chat',
-                messages: [{ role: 'user', content: prompt }],
-                temperature: 1.0,
-                max_tokens: 4000,
-            },
-            {
-                headers: {
-                    Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
-
-        const result = extractJSON(aiRes.data.choices[0].message.content);
+        const rawContent = await callGemini(prompt, { temperature: 1.0, max_tokens: 4000, timeout: 60000 });
+        if (!rawContent) throw new Error('Gemini returned empty response');
+        console.log('📥 Gemini raw response (first 500):', rawContent.substring(0, 500));
+        const result = extractJSON(rawContent);
 
         res.json({
             success: true,
@@ -115,7 +91,7 @@ Trả về đúng JSON (không thêm text nào khác):
         console.error('❌ suggest-topics:', errMsg);
         res.status(500).json({
             success: false,
-            message: 'Lỗi khi gọi DeepSeek: ' + errMsg,
+            message: 'Lỗi khi gọi Gemini: ' + errMsg,
         });
     }
 }

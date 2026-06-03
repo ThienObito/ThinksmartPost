@@ -17,6 +17,8 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const sharp = require('sharp');
 const axios = require('axios');
+const { track } = require('../utils/api-tracker');
+const { callGemini } = require('../utils/ai-client');
 const { authRequired } = require('../middleware/auth');
 
 const router = express.Router();
@@ -463,7 +465,7 @@ router.post('/ai-query', authRequired, async (req, res) => {
       });
     }
 
-    // Use DeepSeek to semantically match the query against image metadata
+    // Use Gemini to semantically match the query against image metadata
     const imageCatalog = images.map((img) => ({
       id: img.id,
       alt: img.alt,
@@ -492,32 +494,19 @@ Trả về JSON:
   "explanation": "Giải thích ngắn tại sao chọn những ảnh này (tiếng Việt)"
 }`;
 
-      track('deepseek');
-      const aiRes = await axios.post(
-        'https://api.deepseek.com/v1/chat/completions',
-      {
-        model: 'deepseek-chat',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
-        max_tokens: 2000,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 20000,
-      }
-    );
+      track('gemini');
+      const rawContent = await callGemini(prompt, { temperature: 0.3, max_tokens: 2000, timeout: 20000 });
 
-    let raw = aiRes.data.choices[0].message.content;
-    raw = raw.replace(/```(?:json)?\n?/gi, '').replace(/```\s*$/gi, '').trim();
+    let raw = rawContent;
+    raw = raw.replace(/```/g, '').trim();
+    const braceIdx = raw.indexOf('{');
+    if (braceIdx >= 0) raw = raw.slice(braceIdx);
 
     let result;
     try {
       result = JSON.parse(raw);
     } catch {
-      const m = raw.match(/\{[\s\S]*\}/);
+      const m = raw.match(/{[\s\S]*}/);
       result = m ? JSON.parse(m[0]) : { selectedIds: [], explanation: 'Không thể phân tích kết quả AI' };
     }
 

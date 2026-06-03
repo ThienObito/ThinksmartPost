@@ -12,8 +12,8 @@ const DATA_DIR = require('path').join(__dirname, '..', 'data');
 
 // ── Helper: admin check ─────────────────────────────────────────
 function requireAdmin(req, res, next) {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ success: false, message: 'Chỉ admin mới có quyền' });
+  if (req.user?.role !== 'admin' && req.user?.role !== 'dev') {
+    return res.status(403).json({ success: false, message: 'Chỉ admin/dev mới có quyền' });
   }
   next();
 }
@@ -52,7 +52,7 @@ router.post('/users', authRequired, requireAdmin, async (req, res) => {
       username,
       password: hashed,
       fullName: fullName || username,
-      role: role === 'admin' ? 'admin' : 'sale',
+      role: role === 'admin' ? 'admin' : role === 'dev' ? 'dev' : 'sale',
       status: 'active',
       createdAt: new Date().toISOString(),
     };
@@ -76,7 +76,7 @@ router.put('/users/:id', authRequired, requireAdmin, async (req, res) => {
 
     const { fullName, role, password } = req.body;
     if (fullName !== undefined) users[idx].fullName = fullName;
-    if (role !== undefined) users[idx].role = role === 'admin' ? 'admin' : 'sale';
+    if (role !== undefined) users[idx].role = role === 'admin' ? 'admin' : role === 'dev' ? 'dev' : 'sale';
     if (password) users[idx].password = await bcrypt.hash(password, 10);
 
     saveUsers(users);
@@ -111,8 +111,8 @@ router.delete('/users/:id', authRequired, requireAdmin, (req, res) => {
     let users = loadUsers();
     const idx = users.findIndex(u => u.id === req.params.id);
     if (idx === -1) return res.status(404).json({ success: false, message: 'User not found' });
-    if (users[idx].role === 'admin' && users.filter(u => u.role === 'admin').length <= 1) {
-      return res.status(400).json({ success: false, message: 'Không thể xóa admin cuối cùng' });
+    if ((users[idx].role === 'admin' || users[idx].role === 'dev') && users.filter(u => u.role === users[idx].role).length <= 1) {
+      return res.status(400).json({ success: false, message: 'Không thể xóa admin/dev cuối cùng' });
     }
     users.splice(idx, 1);
     saveUsers(users);

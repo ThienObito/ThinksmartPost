@@ -15,6 +15,7 @@ const path = require('path');
 const express = require('express');
 const { authRequired } = require('../middleware/auth');
 const { track } = require('../utils/api-tracker');
+const { callGemini } = require('../utils/ai-client');
 
 const router = express.Router();
 const DATA_FILE = path.join(__dirname, '..', 'data', 'templates.json');
@@ -184,33 +185,68 @@ router.post('/suggest', authRequired, async (req, res) => {
 
 NGƯỜI DÙNG MÔ TẢ: "${description}"
 
-HÃY TRẢ VỀ JSON CHÍNH XÁC (không thêm text ngoài JSON):
+HÃY TRẢ VỀ JSON CHÍNH XÁC, chỉ JSON, không thêm bất kỳ text nào khác, không dùng markdown, không dùng dấu backtick:
 {
   "name": "Tên template đề xuất",
-  "category": "Blog | Product Review | Case Study | Tin tức | Khuyến mãi",
-  "tags": ["tag1", "tag2", "tag3"],
+  "category": "Blog",
+  "tags": ["tag1", "tag2"],
   "tone": "Giọng văn phù hợp",
   "target_length": 1500,
   "seo_focus": "Chiến lược SEO chính",
-  "structure": "Cấu trúc bài viết dạng JSON array sections",
-  "prompt_template": "Full prompt cho AI, dùng {{variable}} cho các biến cần điền. Bắt đầu bằng: 'Bạn là...'"
+  "structure": "Cấu trúc bài viết",
+  "prompt_template": "Bạn là... Viết bài về {{title}}..."
 }`;
 
-    track('deepseek');
-    const aiRes = await axios.post(
-      'https://api.deepseek.com/v1/chat/completions',
-      { model: 'deepseek-chat', messages: [{ role: 'user', content: prompt }], temperature: 0.8, max_tokens: 3000 },
-      { headers: { Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}` } }
-    );
+    track('gemini');
+    const rawContent = await callGemini(prompt, { temperature: 0.8, max_tokens: 4000, timeout: 90000 });
+    if (!rawContent) throw new Error('Gemini returned empty response');
 
-    let text = aiRes.data.choices[0].message.content;
-    text = text.replace(/```(?:json)?\n?/gi, '').replace(/```\s*$/gi, '').trim();
+    const j5 = require('json5');
+    let text = rawContent;
+    console.log('TEMPLATES SUGGEST raw (first 500):', rawContent.substring(0, 500));
+    text = text.replace(/```/g, '').trim();
+    // Strip any text before first {
+    const firstBrace = text.indexOf('{');
+    if (firstBrace >= 0) text = text.slice(firstBrace);
     let suggestion;
     try {
-      suggestion = JSON.parse(text);
-    } catch {
-      const match = text.match(/\{[\s\S]*\}/);
-      suggestion = match ? JSON.parse(match[0]) : null;
+      suggestion = j5.parse(text);
+    } catch (e) {
+      console.error('SUGGEST JSON5 parse error:', e.message, 'text[0:300]:', text ? text.substring(0, 300) : 'NULL');
+      const match = text.match(/{[\s\S]*}/);
+      if (match) {
+        try { suggestion = j5.parse(match[0]); } catch (e2) {
+          console.error('SUGGEST fallback parse with JSON5 failed:', e2.message);
+          // Field-by-field extraction as last resort
+          try {
+            const fields = {};
+            const nameMatch = text.match(/"name"\s*:\s*"([^"]+)"/);
+            if (nameMatch) fields.name = nameMatch[1];
+            const catMatch = text.match(/"category"\s*:\s*"([^"]+)"/);
+            if (catMatch) fields.category = catMatch[1];
+            const tagsMatch = text.match(/"tags"\s*:\s*(\[[^\]]+\])/);
+            if (tagsMatch) fields.tags = JSON.parse(tagsMatch[1]);
+            const toneMatch = text.match(/"tone"\s*:\s*"([^"]+)"/);
+            if (toneMatch) fields.tone = toneMatch[1];
+            const lenMatch = text.match(/"target_length"\s*:\s*(\d+)/);
+            if (lenMatch) fields.target_length = parseInt(lenMatch[1]);
+            const seoMatch = text.match(/"seo_focus"\s*:\s*"([^"]+)"/);
+            if (seoMatch) fields.seo_focus = seoMatch[1];
+            const ptStart = text.indexOf('"prompt_template"');
+            if (ptStart >= 0) {
+              const valStart = text.indexOf('"', ptStart + 17) + 1;
+              const lastClose = text.lastIndexOf('"}');
+              if (valStart > 0 && lastClose > valStart) {
+                const ptRaw = text.substring(valStart, lastClose);
+                fields.prompt_template = ptRaw.replace(/\\n/g, '\n').replace(/\\"/g, '"');
+              }
+            }
+            if (fields.name && fields.prompt_template) suggestion = fields;
+          } catch (e3) {
+            console.error('Field extraction failed:', e3.message);
+          }
+        }
+      }
     }
     if (!suggestion) {
       return res.status(500).json({ success: false, message: 'AI could not generate suggestion' });
@@ -245,20 +281,20 @@ router.post('/preview/:id', authRequired, async (req, res) => {
     const regex = /\{\{(\w+)\}\}/g;
     filledPrompt = filledPrompt.replace(regex, (m, v) => varValues[v] || `[${v}]`);
 
-    // Request a short sample from DeepSeek
+    // Request a short sample from Gemini
     const previewPrompt = filledPrompt + '\n\nQUAN TRỌNG: Chỉ viết TÓM TẮT ngắn 150-200 từ, không cần bài đầy đủ. Trả về JSON: {"preview": "nội dung tóm tắt"}';
 
-    const aiRes = await axios.post(
-      'https://api.deepseek.com/v1/chat/completions',
-      { model: 'deepseek-chat', messages: [{ role: 'user', content: previewPrompt }], temperature: 0.7, max_tokens: 1000 },
-      { headers: { Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}` } }
-    );
+    const rawContent = await callGemini(previewPrompt, { temperature: 0.7, max_tokens: 1000, timeout: 60000 });
+    if (!rawContent) throw new Error('Gemini returned empty response');
 
-    let text = aiRes.data.choices[0].message.content;
-    text = text.replace(/```(?:json)?\n?/gi, '').replace(/```\s*$/gi, '').trim();
+    let text = rawContent;
+    text = text.replace(/```/g, '').trim();
+    // Strip any text before first {
+    const firstBrace = text.indexOf('{');
+    if (firstBrace >= 0) text = text.slice(firstBrace);
     let result;
     try { result = JSON.parse(text); } catch {
-      const match = text.match(/\{[\s\S]*\}/);
+      const match = text.match(/{[\s\S]*}/);
       result = match ? JSON.parse(match[0]) : { preview: text.substring(0, 500) };
     }
 
