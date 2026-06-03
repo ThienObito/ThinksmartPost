@@ -19,6 +19,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 echo [1/3] Cap nhat code tu GitHub...
+git config user.email "thinksmart@example.com" >nul 2>&1
 git pull
 if %errorlevel% neq 0 (
     echo [!] Git pull that bai. Kiem tra ket noi mang hoac Git.
