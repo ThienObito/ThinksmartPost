@@ -75,6 +75,7 @@ const aiLimiter = rateLimit({
 // ── CORS ───────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
   'http://localhost:4001',
+  'http://localhost:4002',
   'https://sotviet.site',
   'https://iflow.thinksmart.site',
   'https://thinksmart.vn',
