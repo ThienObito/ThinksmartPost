@@ -393,7 +393,7 @@ async function createArticleHandler(req, res) {
           const prompt = attempt === 1 ? finalPrompt : SIMPLE_PROMPT(topic, ti, totalCount);
           const temperature = totalCount > 1 ? 1.0 : 0.7;
           track('gemini');
-          const rawContent = await callGemini(prompt, { temperature, max_tokens: 8000, timeout: 60000 });
+          const rawContent = await callGemini(prompt, { temperature, max_tokens: 12000, timeout: 90000 });
           article = extractJSON(rawContent);
           if (article && (article.title || article.content)) break;
         } catch (err) {

@@ -198,7 +198,7 @@ HÃY TRẢ VỀ JSON CHÍNH XÁC, chỉ JSON, không thêm bất kỳ text nào 
 }`;
 
     track('gemini');
-    const rawContent = await callGemini(prompt, { temperature: 0.8, max_tokens: 4000, timeout: 90000 });
+    const rawContent = await callGemini(prompt, { temperature: 0.8, max_tokens: 8000, timeout: 90000 });
     if (!rawContent) throw new Error('Gemini returned empty response');
 
     const j5 = require('json5');
