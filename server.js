@@ -42,7 +42,7 @@ const { authRequired, authOptional } = require('./middleware/auth');
 
 const app = express();
 app.set('trust proxy', 1);
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 4002;
 const DATA_DIR = path.join(__dirname, 'data');
 
 // ── Rate Limiting ───────────────────────────────────────────────
