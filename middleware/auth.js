@@ -12,9 +12,21 @@ function loadEnvVar(key) {
   // 2. Try reading .env directly (Windows dotenv bug workaround)
   try {
     const envPath = path.join(__dirname, '..', '.env');
-    const content = fs.readFileSync(envPath, 'utf-8');
-    const match = content.match(new RegExp(`^${key}=(.+)`, 'm'));
-    if (match) return match[1].trim();
+    let content = fs.readFileSync(envPath, 'utf-8');
+    // Strip UTF-8 BOM if present (Windows adds it)
+    if (content.charCodeAt(0) === 0xFEFF) content = content.slice(1);
+    // Normalize line endings
+    content = content.replace(/\r\n/g, '\n');
+    // Match key=value — allow # comments, trim
+    const lines = content.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx === -1) continue;
+      const k = trimmed.slice(0, eqIdx).trim();
+      if (k === key) return trimmed.slice(eqIdx + 1).trim();
+    }
   } catch {}
   return null;
 }
