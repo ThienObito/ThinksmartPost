@@ -2813,9 +2813,9 @@ QTP.Media = {
       const allImages = [];
       arts.forEach((a) => {
         if (a.images?.length) {
-          a.images.forEach((img) => allImages.push({ url: img, title: a.title }));
+          a.images.forEach((img) => allImages.push({ url: img, title: a.title, slug: a.slug }));
         }
-        if (a.thumbnail) allImages.push({ url: a.thumbnail, title: a.title + ' (thumb)' });
+        if (a.thumbnail) allImages.push({ url: a.thumbnail, title: a.title + ' (thumb)', slug: a.slug });
       });
 
       if (!allImages.length) {
@@ -2824,19 +2824,21 @@ QTP.Media = {
         return;
       }
 
-      cont.innerHTML = allImages
-        .slice(0, 50)
-        .map(
-          (img) => `
-        <div class="img-cell" onclick="window.open('${img.url}','_blank')">
-          <img src="${esc(img.url)}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
-        </div>`
-        )
-        .join('');
+      this._images = allImages;
+      this._render();
     } catch {
       cont.innerHTML =
         '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--color-danger)">Lỗi tải thư viện ảnh</div>';
     }
+  },
+
+  /** Filter by keyword */
+  filter() {
+    const q = ($id('mediaSearch').value || '').toLowerCase().trim();
+    const filtered = q
+      ? this._images.filter(img => (img.title || '').toLowerCase().includes(q))
+      : this._images;
+    this._renderList(filtered);
   },
 
   refresh() {
@@ -2845,16 +2847,28 @@ QTP.Media = {
 
   /** Render all images with delete button */
   _render() {
+    this._renderList(this._images);
+  },
+
+  _renderList(images) {
     const cont = $id('mediaCont');
-    if (!this._images.length) {
-      cont.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--color-muted)"><i class="fas fa-images" style="font-size:48px;opacity:0.3;display:block;margin-bottom:16px"></i>Chưa có ảnh. Thêm ảnh từ bài viết.</div>';
+    if (!images.length) {
+      cont.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--color-muted)"><i class="fas fa-images" style="font-size:48px;opacity:0.3;display:block;margin-bottom:16px"></i>Không tìm thấy ảnh nào</div>';
       return;
     }
-    cont.innerHTML = this._images.slice(0, 50).map((img, idx) => `
-      <div class="img-cell" onclick="window.open('${img.url}','_blank')">
-        <img src="${esc(img.url)}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
-        <button class="img-del-btn" onclick="event.stopPropagation();QTP.Media.del(${idx})" title="Xóa ảnh">✕</button>
-      </div>`).join('');
+    cont.innerHTML = images
+      .slice(0, 100)
+      .map(
+        (img, idx) => `
+        <div class="img-cell" onclick="window.open('${img.url}','_blank')">
+          <img src="${esc(img.url)}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
+          <div class="img-cell-info">
+            <div class="img-cell-title" title="${esc(img.title)}">${esc(img.title || '')}</div>
+          </div>
+          <button class="img-del-btn" onclick="event.stopPropagation();QTP.Media.del(${idx})" title="Xóa ảnh">✕</button>
+        </div>`
+      )
+      .join('');
   },
 
   /** Delete an image by index */
