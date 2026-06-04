@@ -394,6 +394,50 @@ app.put('/api/wp-posts/:id', asyncHandler(async (req, res) => {
 app.post('/api/create-article', authRequired, aiLimiter, createArticleHandler);
 app.post('/api/suggest-topics', authRequired, aiLimiter, suggestTopicsHandler);
 
+// ── Media — Generate AI title for image ─────────────────────────
+app.post('/api/media/generate-title', authRequired, aiLimiter, asyncHandler(async (req, res) => {
+  const { title, summary } = req.body;
+  if (!title) return res.status(400).json({ success: false, message: 'Thiếu title bài viết' });
+
+  const { callGemini } = require('./utils/ai-client');
+  const prompt = `Bạn là chuyên gia viết alt text cho SEO. Dựa vào tiêu đề bài viết dưới đây, hãy tạo 1 câu mô tả ngắn (tối đa 120 ký tự) cho ảnh minh họa phù hợp với bài viết.
+Tiêu đề: "${title}"
+${summary ? `Tóm tắt: "${summary}"` : ''}
+
+Yêu cầu:
+- Tiếng Việt, tự nhiên, có từ khóa chính
+- Tối đa 120 ký tự
+- Chỉ trả về text, không JSON, không markdown, không ngoặc kép`;
+
+  const raw = await callGemini(prompt, { temperature: 0.5, max_tokens: 200, timeout: 15000 });
+  const alt = raw.replace(/^["'\s]+|["'\s]+$/g, '').substring(0, 120);
+  res.json({ success: true, alt });
+}));
+
+// ── Auto-generate titles for ALL images in an article ────────────
+app.post('/api/media/generate-titles-batch', authRequired, aiLimiter, asyncHandler(async (req, res) => {
+  const { images } = req.body; // [{title, summary}, ...]
+  if (!Array.isArray(images) || !images.length)
+    return res.status(400).json({ success: false, message: 'Danh sách ảnh trống' });
+
+  const { callGemini } = require('./utils/ai-client');
+  const results = [];
+
+  for (const img of images) {
+    if (!img.title) { results.push({ alt: '' }); continue; }
+    try {
+      const prompt = `Bạn là chuyên gia SEO. Tạo 1 alt text ngắn (≤120 ký tự, tiếng Việt) cho ảnh minh họa bài viết.
+Tiêu đề: "${img.title}"
+${img.summary ? `Tóm tắt: "${img.summary}"` : ''}
+Chỉ trả về text, không JSON.`;
+      const raw = await callGemini(prompt, { temperature: 0.5, max_tokens: 200, timeout: 15000 });
+      results.push({ alt: raw.replace(/^["'\s]+|["'\s]+$/g, '').substring(0, 120) });
+    } catch { results.push({ alt: '' }); }
+  }
+
+  res.json({ success: true, results });
+}));
+
 // ── Smart Scheduling ────────────────────────────────────────────
 require('./api/schedule-posts')(app);
 

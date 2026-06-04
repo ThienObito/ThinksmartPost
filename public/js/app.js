@@ -838,17 +838,17 @@ QTP.Articles = {
         <div class="article-card">
           <div class="article-card-head">
             <span class="article-cat">${esc(a.category_slug ?? 'other')}</span>
-            <span class="article-status ${a.published ? 'pub' : 'drf'}">${a.published ? 'Published' : 'Draft'}</span>
+            <span class="article-status ${a.published ? 'pub' : 'drf'}">${a.published ? 'Đã đăng' : 'Bản nháp'}</span>
           </div>
           <h3 class="article-title">${esc(a.title)}</h3>
           <p class="article-summary">${trunc(esc(a.summary ?? ''), 120)}</p>
           <div class="article-meta">
             <span><i class="far fa-calendar"></i> ${fmtDate(a.createdAt)}</span>
-            ${a.images?.length ? `<span><i class="fas fa-image"></i> ${a.images.length}</span>` : ''}
+            ${a.images?.length ? `<span><i class="fas fa-image"></i> ${a.images.length} ảnh</span>` : ''}
             ${a.wpId ? '<span><i class="fas fa-globe"></i> WP</span>' : ''}
           </div>
           <div class="article-actions">
-            <button onclick="QTP.Articles.preview('${a.file}')" class="btn btn-ghost btn-sm" title="Xem trước"><i class="fas fa-eye"></i></button>
+            <button onclick="QTP.Articles.preview('${a.file}')" class="btn btn-ghost btn-sm" title="Xem trước"><i class="fas fa-eye"></i> Xem</button>
             <button onclick="QTP.Articles.publish('${a.file}')" class="btn btn-sm" style="background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2)"><i class="fas fa-upload"></i> Đăng WP</button>
             <button onclick="QTP.Articles.del('${a.file}')" class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)" title="Xóa"><i class="fas fa-trash"></i></button>
           </div>
@@ -883,19 +883,18 @@ QTP.Articles = {
         <div class="article-card">
           <div class="article-card-head">
             <span class="article-cat">${esc(a.category_slug ?? 'other')}</span>
-            <span class="article-status ${a.published ? 'pub' : 'drf'}">${a.published ? 'Published' : 'Draft'}</span>
+            <span class="article-status ${a.published ? 'pub' : 'drf'}">${a.published ? 'Đã đăng' : 'Bản nháp'}</span>
           </div>
           <h3 class="article-title">${esc(a.title)}</h3>
           <p class="article-summary">${trunc(esc(a.summary ?? ''), 120)}</p>
           <div class="article-meta">
             <span><i class="far fa-calendar"></i> ${fmtDate(a.createdAt)}</span>
-            ${a.images?.length ? `<span><i class="fas fa-image"></i> ${a.images.length}</span>` : ''}
+            ${a.images?.length ? `<span><i class="fas fa-image"></i> ${a.images.length} ảnh</span>` : ''}
             ${a.wpId ? '<span><i class="fas fa-globe"></i> WP</span>' : ''}
           </div>
           <div class="article-actions">
-            <button onclick="QTP.Articles.preview('${a.file}')" class="btn btn-ghost btn-sm" title="Xem trước"><i class="fas fa-eye"></i></button>
+            <button onclick="QTP.Articles.preview('${a.file}')" class="btn btn-ghost btn-sm" title="Xem trước"><i class="fas fa-eye"></i> Xem</button>
             <button onclick="QTP.Articles.publish('${a.file}')" class="btn btn-sm" style="background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2)"><i class="fas fa-upload"></i> Đăng WP</button>
-
             <button onclick="QTP.Articles.del('${a.file}')" class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)" title="Xóa"><i class="fas fa-trash"></i></button>
           </div>
         </div>`
@@ -2845,6 +2844,32 @@ QTP.Media = {
     this.load();
   },
 
+  /** Auto-generate titles for all images via Gemini */
+  async autoTitleAll() {
+    if (!this._images.length) return showToast('Không có ảnh nào để tạo tiêu đề', 'error');
+    const count = this._images.length;
+    // Collect unique article titles
+    const uniqueTitles = [...new Set(this._images.map(i => i.title || '').filter(Boolean))];
+    if (!uniqueTitles.length) return showToast('Không có tiêu đề bài viết để làm cơ sở', 'error');
+
+    showToast(`Đang tạo tiêu đề AI cho ${this._images.length} ảnh...`, 'loading');
+    try {
+      const res = await api('/media/generate-titles-batch', {
+        method: 'POST',
+        body: JSON.stringify({ images: this._images.map(i => ({ title: i.title, summary: '' })) }),
+      });
+      if (res.success && Array.isArray(res.results)) {
+        this._images.forEach((img, i) => {
+          if (res.results[i]?.alt) img.generatedAlt = res.results[i].alt;
+        });
+        this._render();
+        showToast(`✅ Đã tạo tiêu đề cho ${res.results.filter(r => r.alt).length}/${count} ảnh`, 'success');
+      }
+    } catch (e) {
+      showToast('Lỗi khi tạo tiêu đề: ' + e.message, 'error');
+    }
+  },
+
   /** Render all images with delete button */
   _render() {
     this._renderList(this._images);
@@ -2863,7 +2888,7 @@ QTP.Media = {
         <div class="img-cell" onclick="window.open('${img.url}','_blank')">
           <img src="${esc(img.url)}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'">
           <div class="img-cell-info">
-            <div class="img-cell-title" title="${esc(img.title)}">${esc(img.title || '')}</div>
+            <div class="img-cell-title" title="${esc(img.generatedAlt || img.title)}">${esc(img.generatedAlt || img.title || '')}</div>
           </div>
           <button class="img-del-btn" onclick="event.stopPropagation();QTP.Media.del(${idx})" title="Xóa ảnh">✕</button>
         </div>`
