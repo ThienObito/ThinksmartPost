@@ -576,7 +576,7 @@ QTP.App = {
     const u = QTP._user;
     if (!u) return;
     $id('userNm').textContent = u.fullName || u.username;
-    $id('userAv').textContent = (u.fullName || u.username || 'U')[0].toUpperCase();
+    $id('userAv').innerHTML = '<img src="img/default-avatar.jpg" class="avatar-img" alt="">';
     $id('roleT').textContent = u.role || 'user';
     const navUsers = $id('nav-users');
     if (navUsers) navUsers.style.display = (u.role === 'admin' || u.role === 'dev') ? 'flex' : 'none';

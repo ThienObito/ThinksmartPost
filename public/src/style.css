@@ -758,6 +758,13 @@ code, pre { font-family: var(--font-mono); }
   flex-shrink: 0;
 }
 
+.sidebar-avatar .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
 .sidebar-avatar::after {
   content: '';
   position: absolute;
