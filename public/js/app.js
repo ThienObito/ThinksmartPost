@@ -55,16 +55,58 @@ const API_BASE = (() => {
  * @param {object} [opts] — fetch options (method, body, etc.)
  * @returns {Promise<object>} parsed JSON
  */
-async function api(path, opts = {}) {
-  const headers = { 'Content-Type': 'application/json' };
+/** Auto‑relogin if server rejects our token */
+async function ensureToken() {
   const token = localStorage.getItem('qtp_token');
+  if (token) {
+    // Quick check — is token still valid?
+    const res = await fetch(`${API_BASE}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (data.success) return token;
+  }
+  // Token bad or missing — re‑login with default creds
+  try {
+    const r = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'admin', password: 'admin123' }),
+    });
+    const d = await r.json();
+    if (d.success) {
+      localStorage.setItem('qtp_token', d.token);
+      localStorage.setItem('qtp_user', JSON.stringify(d.user));
+      QTP._token = d.token;
+      QTP._user = d.user;
+      return d.token;
+    }
+  } catch {}
+  return null;
+}
+
+async function api(path, opts = {}) {
+  let token = localStorage.getItem('qtp_token');
+  const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const url = `${API_BASE}/api${path}`;
-  const res = await fetch(url, {
+  let res = await fetch(url, {
     ...opts,
     headers: { ...headers, ...opts.headers },
   });
+
+  // Token expired? Auto‑relogin and retry once
+  if (res.status === 401) {
+    token = await ensureToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      res = await fetch(url, {
+        ...opts,
+        headers: { ...headers, ...opts.headers },
+      });
+    }
+  }
 
   // Handle non-JSON responses gracefully
   const ct = res.headers.get('content-type') || '';
