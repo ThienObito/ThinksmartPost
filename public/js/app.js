@@ -783,8 +783,13 @@ QTP.Articles = {
     $id('imgCountLabel').textContent = n + ' ảnh';
   },
 
-  /** Load all articles and render grid */
+  /** Load all articles and render grid + pre‑load templates for create form */
   async load() {
+    // Pre‑load templates if not already loaded (for the create-article dropdown)
+    if (!QTP._templates.length) {
+      QTP.Templates.load().catch(() => {});
+    }
+
     // ══ Fake Data ══
     if (QTP._fakeMode) {
       const arts = QTP._fake.articles;
