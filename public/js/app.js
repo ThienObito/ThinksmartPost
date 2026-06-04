@@ -494,6 +494,7 @@ QTP.App = {
     if (mb) mb.style.display = window.innerWidth <= 767 ? 'flex' : 'none';
     this.setUserInfo();
     this.loadCategories();
+    this.subscribeCategorySSE(); // real-time push khi WP fetch xong
   },
 
   /** Load WP categories into Danh Mục dropdown */
@@ -531,6 +532,43 @@ QTP.App = {
     } catch {
       sel.innerHTML = '<option value="giai-phap">Giải pháp</option><option value="ung-dung">Ứng dụng</option>';
     }
+  },
+
+  /** Subscribe to SSE for real-time category updates */
+  subscribeCategorySSE() {
+    if (typeof EventSource === 'undefined') return;
+    const es = new EventSource('/api/events/categories');
+    es.addEventListener('category-update', (e) => {
+      try {
+        const map = JSON.parse(e.data);
+        if (Object.keys(map).length === 0) return;
+        this.updateCategoryDropdown(map);
+      } catch {}
+    });
+    es.onerror = () => {
+      es.close();
+      setTimeout(() => this.subscribeCategorySSE(), 30000);
+    };
+  },
+
+  /** Update dropdown from SSE data (reuses loadCategories logic) */
+  updateCategoryDropdown(map) {
+    const sel = $id('cat');
+    if (!sel) return;
+    const catNames = {
+      'chua-phan-loai': 'Chưa phân loại',
+      'giai-phap': 'Giải pháp',
+      'ung-dung': 'Ứng dụng',
+      'huong-dan': 'Hướng dẫn',
+      'tin-tuc': 'Tin tức',
+      'cong-nghe': 'Công nghệ',
+      'san-pham': 'Sản phẩm',
+    };
+    const currentVal = sel.value;
+    sel.innerHTML = Object.entries(map)
+      .map(([slug]) => `<option value="${slug}">${catNames[slug] || slug}</option>`)
+      .join('');
+    if (currentVal && map[currentVal]) sel.value = currentVal;
   },
 
   /** Populate sidebar user info */

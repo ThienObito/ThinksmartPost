@@ -5,7 +5,12 @@
 
 const path = require('path');
 const fs = require('fs');
+const EventEmitter = require('events');
 const DATA_DIR = path.join(__dirname, '..', 'data');
+
+// ── Category change event emitter (for SSE real-time push) ──
+const categoryEmitter = new EventEmitter();
+const CATEGORY_EVENT = 'category-update';
 
 // ── WP config file (written by Settings UI, read before .env) ──
 const WP_CONFIG_PATH = path.join(__dirname, '..', 'data', 'wp-config.json');
@@ -144,6 +149,7 @@ async function refreshCategoryCache() {
         if (Object.keys(map).length > 0) {
           categoryCache = map;
           fs.writeFileSync(cacheFile, JSON.stringify({ cache: map, time: Date.now() }, null, 2), 'utf-8');
+          categoryEmitter.emit(CATEGORY_EVENT, map); // notify SSE clients
           return;
         }
       }
@@ -181,4 +187,6 @@ module.exports = {
   getCategoryId,
   refreshCategoryCache,
   categoryCache,
+  categoryEmitter,
+  CATEGORY_EVENT,
 };

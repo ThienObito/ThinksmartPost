@@ -439,6 +439,24 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ── SSE endpoint — real-time category updates ───────────────────
+const { categoryEmitter, CATEGORY_EVENT } = require('./utils');
+app.get('/api/events/categories', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  res.write('retry: 30000\n\n'); // reconnect after 30s if dropped
+
+  const handler = (map) => {
+    res.write(`event: ${CATEGORY_EVENT}\n`);
+    res.write(`data: ${JSON.stringify(map)}\n\n`);
+  };
+  categoryEmitter.on(CATEGORY_EVENT, handler);
+  req.on('close', () => categoryEmitter.off(CATEGORY_EVENT, handler));
+});
+
 // ── Multi-site migration ─────────────────────────────────────────
 const { migrateFromEnv } = require('./db/sites');
 migrateFromEnv();
