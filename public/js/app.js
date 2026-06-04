@@ -474,7 +474,6 @@ QTP.App = {
       analytics: 'Analytics.load',
       notes: 'Notes.load',
       media: 'Media.load',
-      chat: 'Chat.load',
       library: 'Library.load',
       schedule: 'Schedule.load',
       sites: 'Sites.load',
@@ -3390,91 +3389,6 @@ QTP.Library = {
 }; // end QTP.Library
 
 /* ===================================================================
-/* ===================================================================
-   SECTION 18 — QTP.Chat (AI Assistant Floating Chat)
-   =================================================================== */
-
-QTP.Chat = {
-  _open: false,
-
-  load() {
-    setTimeout(() => $id('chInput')?.focus(), 300);
-    // Hide suggestions after first message
-  },
-
-  clear() {
-    const msgs = $id('chMsgs');
-    msgs.innerHTML = `<div class="ch-msg ch-bot">
-      <div class="ch-msg-avatar"><i class="fas fa-robot"></i></div>
-      <div class="ch-msg-content">
-        <div class="ch-msg-bubble">👋 Đã xoá tin nhắn. Hỏi tôi bất cứ điều gì!</div>
-        <div class="ch-msg-time">Vừa xong</div>
-      </div>
-    </div>`;
-    $id('chSuggestions').style.display = 'flex';
-  },
-
-  suggest(msg) {
-    $id('chInput').value = msg;
-    this.send();
-  },
-
-  toggle() {
-    this._open = !this._open;
-    $id('chatPanel').classList.toggle('open', this._open);
-    if (this._open) {
-      $id('chatInput').focus();
-      this._scrollDown();
-    }
-  },
-
-  onKeydown(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      this.send();
-    }
-  },
-
-  async send() {
-    const input = $id('chInput');
-    const msg = input.value.trim();
-    if (!msg) return;
-    input.value = '';
-
-    const msgs = $id('chMsgs');
-    msgs.innerHTML += `<div class="ch-msg ch-user"><div class="ch-msg-content"><div class="ch-msg-bubble">${esc(msg)}</div></div></div>`;
-
-    // Hide suggestions after first message
-    $id('chSuggestions').style.display = 'none';
-
-    const typing = document.createElement('div');
-    typing.className = 'ch-typing';
-    typing.innerHTML = '<span></span><span></span><span></span>';
-    msgs.appendChild(typing);
-    this._scrollDown();
-
-    try {
-      const res = await api('/chat', { method: 'POST', body: JSON.stringify({ message: msg }) });
-      typing.remove();
-      msgs.innerHTML +=
-        `<div class="ch-msg ch-bot"><div class="ch-msg-avatar"><i class="fas fa-robot"></i></div><div class="ch-msg-content"><div class="ch-msg-bubble">${esc(res.reply || 'Xin lỗi, tôi chưa có câu trả lời.')}</div><div class="ch-msg-time">Vừa xong</div></div></div>`;
-    } catch {
-      typing.remove();
-      msgs.innerHTML +=
-        '<div class="ch-msg ch-bot"><div class="ch-msg-avatar"><i class="fas fa-robot"></i></div><div class="ch-msg-content"><div class="ch-msg-bubble">❌ Lỗi kết nối, vui lòng thử lại.</div><div class="ch-msg-time">Vừa xong</div></div></div>';
-    }
-    this._scrollDown();
-  },
-
-  _scrollDown() {
-    const msgs = $id('chMsgs');
-    requestAnimationFrame(() => {
-      msgs.scrollTop = msgs.scrollHeight;
-    });
-  },
-}; // end QTP.Chat
-
-/* ===================================================================
    SECTION 16a — QTP.Sites (Multi-site Management)
    =================================================================== */
 
@@ -3884,6 +3798,11 @@ window.addEventListener('DOMContentLoaded', () => {
   $id('loginBtn').addEventListener('click', () => QTP.Auth.doLogin());
   const style = document.createElement('style');
   style.textContent = `
+    /* ── Font đồng bộ Inter ── */
+    *{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif!important}
+    body{font-family:'Inter',sans-serif!important}
+    input,select,textarea,button{font-family:'Inter',sans-serif!important}
+
     /* ── Article Cards ── */
     .article-card{background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:var(--glass-border);border-radius:var(--radius-card-lg);box-shadow:var(--glass-shadow);padding:18px;transition:all 0.3s ease}
     .article-card:hover{border-color:rgba(237,105,24,0.15);transform:translateY(-2px)}

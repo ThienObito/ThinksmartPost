@@ -123,24 +123,24 @@
       <button onclick="QTP.Auth.hideLogin()" class="modal-close-abs"><i class="fas fa-times"></i></button>
       <div class="login-header">
         <div class="login-logo">QT<span style="color:var(--color-accent)">Poster</span><span class="login-logo-pro">Pro</span></div>
-        <p class="login-desc">Sign in to your account</p>
+        <p class="login-desc">Đăng nhập tài khoản</p>
       </div>
       <!-- Login form -->
       <div id="logForm">
-        <div style="margin-bottom:12px"><input id="hUser" type="text" placeholder="Username" class="inp"></div>
-        <div style="margin-bottom:12px"><input id="hPass" type="password" placeholder="Password" class="inp" onkeydown="if(event.key==='Enter'){event.preventDefault();QTP.Auth.doLogin();}"></div>
+        <div style="margin-bottom:12px"><input id="hUser" type="text" placeholder="Tên đăng nhập" class="inp"></div>
+        <div style="margin-bottom:12px"><input id="hPass" type="password" placeholder="Mật khẩu" class="inp" onkeydown="if(event.key==='Enter'){event.preventDefault();QTP.Auth.doLogin();}"></div>
         <div id="logErr" class="form-err"></div>
-        <button id="logBtn" onclick="QTP.Auth.doLogin()" class="btn btn-primary" style="width:100%;padding:13px;font-size:14px"><i class="fas fa-sign-in-alt" style="margin-right:6px"></i> Sign In</button>
-        <p class="login-switch">No account? <a href="#" onclick="QTP.Auth.showReg()" class="login-link">Sign Up</a></p>
+        <button id="logBtn" onclick="QTP.Auth.doLogin()" class="btn btn-primary" style="width:100%;padding:13px;font-size:14px"><i class="fas fa-sign-in-alt" style="margin-right:6px"></i> Đăng nhập</button>
+        <p class="login-switch">Chưa có tài khoản? <a href="#" onclick="QTP.Auth.showReg()" class="login-link">Đăng ký</a></p>
       </div>
       <!-- Register form -->
       <div id="regForm" style="display:none">
-        <div style="margin-bottom:12px"><input id="rName" type="text" placeholder="Full Name" class="inp"></div>
-        <div style="margin-bottom:12px"><input id="rUser" type="text" placeholder="Username" class="inp"></div>
+        <div style="margin-bottom:12px"><input id="rName" type="text" placeholder="Họ và tên" class="inp"></div>
+        <div style="margin-bottom:12px"><input id="rUser" type="text" placeholder="Tên đăng nhập" class="inp"></div>
         <div style="margin-bottom:12px"><input id="rPass" type="password" placeholder="Mật khẩu (6+ ký tự)" class="inp" onkeydown="if(event.key==='Enter'){event.preventDefault();QTP.Auth.doReg();}"></div>
         <div id="regErr" class="form-err"></div>
-        <button onclick="QTP.Auth.doReg()" class="btn btn-primary" style="width:100%;padding:13px;font-size:14px"><i class="fas fa-user-plus" style="margin-right:6px"></i> Sign Up</button>
-        <p class="login-switch">Have account? <a href="#" onclick="QTP.Auth.showLog()" class="login-link">Sign In</a></p>
+        <button onclick="QTP.Auth.doReg()" class="btn btn-primary" style="width:100%;padding:13px;font-size:14px"><i class="fas fa-user-plus" style="margin-right:6px"></i> Đăng ký</button>
+        <p class="login-switch">Đã có tài khoản? <a href="#" onclick="QTP.Auth.showLog()" class="login-link">Đăng nhập</a></p>
       </div>
     </div>
   </div>
@@ -184,7 +184,6 @@
       <button id="nav-users" data-section="users" class="nav-item" onclick="QTP.App.go('users')"><i class="fas fa-users-cog nav-icon"></i><span>Quản Lý TK</span></button>
       <button data-section="analytics" class="nav-item" onclick="QTP.App.go('analytics')"><i class="fas fa-chart-line nav-icon"></i><span>Analytics</span></button>
       <button data-section="notes" class="nav-item" onclick="QTP.App.go('notes')"><i class="fas fa-sticky-note nav-icon"></i><span>Ghi Chú</span></button>
-      <button id="nav-chat" data-section="chat" class="nav-item" onclick="QTP.App.go('chat')"><i class="fas fa-robot nav-icon"></i><span>AI Trợ Lý</span></button>
       <button data-section="settings" class="nav-item" onclick="QTP.App.go('settings')"><i class="fas fa-cog nav-icon"></i><span>Cài Đặt</span></button>
     </nav>
     <!-- Sidebar footer -->
@@ -220,22 +219,22 @@
         <div class="stat-card">
           <div class="stat-icon stat-icon-accent"><i class="fas fa-newspaper"></i></div>
           <div class="stat-val" style="color:#ed6918" id="sTotal">0</div>
-          <div class="stat-lbl">Total Articles</div>
+          <div class="stat-lbl">Tổng bài viết</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon stat-icon-success"><i class="fas fa-check-circle"></i></div>
           <div class="stat-val" style="color:#22c55e" id="sPub">0</div>
-          <div class="stat-lbl">Published</div>
+          <div class="stat-lbl">Đã đăng</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon stat-icon-purple"><i class="fas fa-pen-fancy"></i></div>
           <div class="stat-val" style="color:#a855f7" id="sDraft">0</div>
-          <div class="stat-lbl">Drafts</div>
+          <div class="stat-lbl">Bản nháp</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon stat-icon-blue"><i class="fas fa-images"></i></div>
           <div class="stat-val" style="color:#3b82f6" id="sImg">0</div>
-          <div class="stat-lbl">With AI Images</div>
+          <div class="stat-lbl">Có ảnh AI</div>
         </div>
       </div>
       <!-- subtle divider -->
@@ -243,8 +242,8 @@
       <!-- Recent articles -->
       <div class="glass-card" style="padding:0;overflow:hidden;border-radius:16px">
         <div class="recent-header">
-          <h2 class="recent-title"><i class="fas fa-history" style="color:#ed6918;font-size:14px"></i> Recent Articles</h2>
-          <button onclick="QTP.App.go('articles')" class="btn btn-ghost btn-sm">View All <i class="fas fa-arrow-right" style="font-size:10px;margin-left:4px"></i></button>
+          <h2 class="recent-title"><i class="fas fa-history" style="color:#ed6918;font-size:14px"></i> Bài viết gần đây</h2>
+          <button onclick="QTP.App.go('articles')" class="btn btn-ghost btn-sm">Xem tất cả <i class="fas fa-arrow-right" style="font-size:10px;margin-left:4px"></i></button>
         </div>
         <div id="recentArts" class="recent-list"></div>
       </div>
@@ -255,7 +254,7 @@
       <div class="section-header">
         <div>
           <h1 class="section-title">Tạo Bài Mới</h1>
-          <p class="section-subtitle">AI generates SEO content</p>
+          <p class="section-subtitle">AI tạo nội dung chuẩn SEO</p>
         </div>
       </div>
       <div class="create-layout">
@@ -270,11 +269,11 @@
           <textarea id="aiInstruction" rows="4" class="inp" style="width:100%;resize:vertical;font-size:13px;line-height:1.5" placeholder="Ví dụ: Tôi là Tobi, chủ thương hiệu iFlow &amp; Thinksmart. Hãy nhắc đến tên công ty trong bài viết. Giọng văn chuyên nghiệp, thân thiện. Tập trung vào lợi ích cho người dùng."></textarea>
         </div>
         <div style="margin-bottom:16px">
-          <label class="stat-lbl" style="margin-bottom:6px">Topic</label>
+          <label class="stat-lbl" style="margin-bottom:6px">Chủ đề</label>
           <div style="display:flex;gap:8px">
-            <input id="topic" type="text" placeholder="e.g. 3D Printing Technology" class="inp">
-            <button onclick="QTP.Articles.suggestTopics()" class="btn btn-ghost" style="padding:11px" title="AI Suggest Topics"><i class="fas fa-lightbulb"></i></button>
-            <button onclick="QTP.Articles.randomTopic()" class="btn btn-ghost" style="padding:11px;color:var(--color-accent)" title="🎲 Ngẫu nhiên Topic + Tạo bài"><i class="fas fa-dice"></i></button>
+            <input id="topic" type="text" placeholder="VD: Công nghệ in 3D hiện đại" class="inp">
+            <button onclick="QTP.Articles.suggestTopics()" class="btn btn-ghost" style="padding:11px" title="AI gợi ý chủ đề"><i class="fas fa-lightbulb"></i></button>
+            <button onclick="QTP.Articles.randomTopic()" class="btn btn-ghost" style="padding:11px;color:var(--color-accent)" title="🎲 Chủ đề ngẫu nhiên + Tạo bài"><i class="fas fa-dice"></i></button>
           </div>
         </div>
         <div style="margin-bottom:16px"><label class="stat-lbl" style="margin-bottom:6px">Tính Cách AI</label><select id="tmplSelect" onchange="QTP.Templates.applyTmpl()"><option value="">&mdash; Chọn tính cách &mdash;</option></select></div>
@@ -467,8 +466,8 @@
           <p class="section-subtitle">Tất cả bài viết đã tạo</p>
         </div>
         <div class="section-actions">
-          <button onclick="QTP.Articles.load()" class="btn btn-ghost btn-sm"><i class="fas fa-sync-alt"></i>Refresh</button>
-          <button onclick="QTP.App.go('create')" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i>New</button>
+          <button onclick="QTP.Articles.load()" class="btn btn-ghost btn-sm"><i class="fas fa-sync-alt"></i>Làm mới</button>
+          <button onclick="QTP.App.go('create')" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i>Thêm mới</button>
         </div>
       </div>
       <div id="artList" class="arts-grid"></div>
@@ -482,11 +481,11 @@
           <p class="section-subtitle">Chọn tính cách viết cho AI</p>
         </div>
         <div class="section-actions">
-          <button onclick="QTP.Templates.suggestByAI()" class="btn btn-ghost btn-sm"><i class="fas fa-magic" style="color:var(--color-purple)"></i>AI Suggest</button>
-          <button onclick="QTP.Templates.showForm()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i>New</button>
+          <button onclick="QTP.Templates.suggestByAI()" class="btn btn-ghost btn-sm"><i class="fas fa-magic" style="color:var(--color-purple)"></i>Gợi ý AI</button>
+          <button onclick="QTP.Templates.showForm()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i>Thêm mới</button>
         </div>
       </div>
-      <input id="tmplSearch" oninput="QTP.Templates.search()" type="text" placeholder="Search templates..." class="inp" style="margin-bottom:12px">
+      <input id="tmplSearch" oninput="QTP.Templates.search()" type="text" placeholder="Tìm kiếm tính cách..." class="inp" style="margin-bottom:12px">
       <div id="tmplList" class="arts-grid"></div>
     </section>
 
@@ -503,7 +502,7 @@
         </div>
       </div>
       <div class="queue-tabs">
-        <button data-qtap="queue" class="queue-tab queue-tab-active" onclick="QTP.Queue.showTab('queue')">Queue</button>
+        <button data-qtap="queue" class="queue-tab queue-tab-active" onclick="QTP.Queue.showTab('queue')">Hàng đợi</button>
         <button data-qtap="report" class="queue-tab" onclick="QTP.Queue.showTab('report')">Báo cáo</button>
       </div>
       <div id="qCont"></div>
@@ -528,7 +527,7 @@
           </button>
           <button onclick="QTP.WP.reset()" class="btn btn-sm wp-btn-danger" id="wpResetBtn">
             <i class="fas fa-trash-alt"></i>
-            <span class="btn-label">Reset</span>
+            <span class="btn-label">Đặt lại</span>
           </button>
         </div>
       </div>
@@ -549,9 +548,9 @@
       <div class="section-header">
         <div>
           <h1 class="section-title">Quản Lý Tài Khoản</h1>
-          <p style="color:var(--color-sub);font-size:14px;margin-top:4px" id="usersSubtitle">Users</p>
+          <p style="color:var(--color-sub);font-size:14px;margin-top:4px" id="usersSubtitle">Người dùng</p>
         </div>
-        <button onclick="QTP.Users.showForm()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i>Thêm Sale</button>
+        <button onclick="QTP.Users.showForm()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i>Thêm người dùng</button>
       </div>
       <div class="glass-card" style="padding:0;overflow:hidden"><div id="usersCont" style="padding:16px"></div></div>
     </section>
@@ -562,7 +561,7 @@
       <div class="section-header">
         <div>
           <h1 class="section-title">Cài Đặt</h1>
-          <p class="section-subtitle">API keys &amp; cấu hình</p>
+          <p class="section-subtitle">Khóa API và cấu hình</p>
         </div>
       </div>
       <div class="glass-card" style="max-width:500px;padding:24px">
@@ -809,11 +808,11 @@
     <section id="sec-media" class="sec">
       <div class="section-header" style="margin-bottom:16px">
         <div>
-          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#3b82f6,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Media Library</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#3b82f6,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Thư viện ảnh</h1>
           <p class="section-subtitle">Hình ảnh AI từ tất cả bài viết</p>
         </div>
         <div style="display:flex;gap:8px">
-          <button onclick="QTP.Media.refresh()" class="btn btn-ghost btn-sm"><i class="fas fa-sync-alt"></i> Refresh</button>
+          <button onclick="QTP.Media.refresh()" class="btn btn-ghost btn-sm"><i class="fas fa-sync-alt"></i> Làm mới</button>
         </div>
       </div>
       <div id="mediaCont" class="media-grid">
@@ -826,7 +825,7 @@
       <div class="section-header">
         <div>
           <h1 class="section-title">🌐 Quản Lý Site</h1>
-          <p class="section-subtitle">Quản lý nhiều WordPress sites từ một dashboard</p>
+          <p class="section-subtitle">Quản lý nhiều WordPress từ một bảng điều khiển</p>
         </div>
         <div class="section-actions">
           <button onclick="QTP.Sites.showAddForm()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Thêm Site</button>
@@ -886,7 +885,7 @@
       <div class="section-header" style="margin-bottom:16px">
         <div>
           <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#f59e0b,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Ghi Chú</h1>
-          <p class="section-subtitle">Sticky notes cho ý tưởng content &amp; workspace</p>
+          <p class="section-subtitle">Ghi chú cho ý tưởng nội dung và không gian làm việc</p>
         </div>
         <div style="display:flex;gap:8px">
           <button onclick="QTP.Notes.add()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Thêm ghi chú</button>
@@ -910,62 +909,6 @@
       </div>
     </section>
 
-    <!-- ═══ AI CHAT ═══ -->
-    <section id="sec-chat" class="sec">
-      <div class="section-header" style="margin-bottom:12px">
-        <div>
-          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">AI Trợ Lý</h1>
-          <p class="section-subtitle">Trò chuyện với trợ lý AI thông minh</p>
-        </div>
-      </div>
-
-      <div class="ch-box">
-        <!-- Header -->
-        <div class="ch-head">
-          <div class="ch-head-left">
-            <div class="ch-avatar">
-              <i class="fas fa-sparkles"></i>
-            </div>
-            <div>
-              <div class="ch-name">AI Trợ Lý</div>
-              <div class="ch-status"><span class="ch-dot"></span> Sẵn sàng</div>
-            </div>
-          </div>
-          <div class="ch-head-actions">
-            <button onclick="QTP.Chat.clear()" class="ch-head-btn" title="Xoá tin nhắn"><i class="fas fa-trash-alt"></i></button>
-          </div>
-        </div>
-
-        <!-- Messages -->
-        <div id="chMsgs" class="ch-msgs">
-          <div class="ch-msg ch-bot">
-            <div class="ch-msg-avatar"><i class="fas fa-robot"></i></div>
-            <div class="ch-msg-content">
-              <div class="ch-msg-bubble">
-                👋 Chào bạn! Tôi là trợ lý AI, sẵn sàng giúp bạn tạo nội dung.
-              </div>
-              <div class="ch-msg-time">Vừa xong</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick suggestions -->
-        <div id="chSuggestions" class="ch-suggestions">
-          <button class="ch-chip" onclick="QTP.Chat.suggest('Cách tạo template?')">📝 Cách tạo template</button>
-          <button class="ch-chip" onclick="QTP.Chat.suggest('Gợi ý 5 tiêu đề SEO')">🔍 Gợi ý tiêu đề SEO</button>
-          <button class="ch-chip" onclick="QTP.Chat.suggest('Cách kết nối WordPress?')">🌐 Kết nối WP</button>
-          <button class="ch-chip" onclick="QTP.Chat.suggest('Viết bài về AI')">✍️ Viết bài về AI</button>
-        </div>
-
-        <!-- Footer input -->
-        <div class="ch-foot">
-          <input id="chInput" type="text" placeholder="Nhập tin nhắn..." onkeydown="QTP.Chat.onKeydown(event)" autocomplete="off">
-          <button id="chSend" onclick="QTP.Chat.send()" class="ch-send-btn">
-            <i class="fas fa-paper-plane"></i>
-          </button>
-        </div>
-      </div>
-    </section>
   </main>
 </div>
 
@@ -974,15 +917,15 @@
 <!-- User Form Modal -->
 <div id="ufModal" class="modal" onclick="if(event.target==this)QTP.Users.closeForm()">
   <div class="modal-inner" style="max-width:420px" onclick="event.stopPropagation()">
-    <div class="modal-head"><h2 class="modal-title" id="ufTitle">Add User</h2><button onclick="QTP.Users.closeForm()" class="modal-close"><i class="fas fa-times"></i></button></div>
+    <div class="modal-head"><h2 class="modal-title" id="ufTitle">Thêm người dùng</h2><button onclick="QTP.Users.closeForm()" class="modal-close"><i class="fas fa-times"></i></button></div>
     <div class="modal-body">
-      <input id="ufName" type="text" placeholder="Full Name" class="inp" style="margin-bottom:12px">
-      <input id="ufUser" type="text" placeholder="Username *" class="inp" style="margin-bottom:12px">
-      <input id="ufPass" type="password" placeholder="Password" class="inp" style="margin-bottom:12px">
-      <select id="ufRole" style="margin-bottom:12px"><option value="sale">Sale</option><option value="admin">Admin</option><option value="dev">Dev</option></select>
+      <input id="ufName" type="text" placeholder="Họ và tên" class="inp" style="margin-bottom:12px">
+      <input id="ufUser" type="text" placeholder="Tên đăng nhập *" class="inp" style="margin-bottom:12px">
+      <input id="ufPass" type="password" placeholder="Mật khẩu" class="inp" style="margin-bottom:12px">
+      <select id="ufRole" style="margin-bottom:12px"><option value="sale">Người bán</option><option value="admin">Quản trị</option><option value="dev">Phát triển</option></select>
       <div id="ufErr" class="form-err"></div>
     </div>
-    <div class="modal-foot"><button id="ufSaveBtn" onclick="QTP.Users.save()" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i>Save</button></div>
+    <div class="modal-foot"><button id="ufSaveBtn" onclick="QTP.Users.save()" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i>Lưu</button></div>
   </div>
 </div>
 
@@ -997,14 +940,14 @@
       <textarea id="tfPrompt" rows="5" placeholder="Prompt template với {{variable}}" class="inp" style="resize:none;font-family:monospace;font-size:12px;margin-bottom:10px"></textarea>
       <input id="tfLen" type="hidden" value="1500"><input id="tfId" type="hidden" value=""><input id="tfCat" type="hidden" value="Blog"><input id="tfSeo" type="hidden"><input id="tfStruct" type="hidden">
     </div>
-    <div class="modal-foot"><button id="tmplSaveBtn" onclick="QTP.Templates.save()" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i>Save</button></div>
+    <div class="modal-foot"><button id="tmplSaveBtn" onclick="QTP.Templates.save()" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i>Lưu</button></div>
   </div>
 </div>
 
 <!-- AI Suggest Template Modal -->
 <div id="aiSuggestModal" class="modal" onclick="if(event.target==this)QTP.Templates.closeAISuggest()">
   <div class="modal-inner" style="max-width:540px" onclick="event.stopPropagation()">
-    <div class="modal-head"><h2 class="modal-title"><i class="fas fa-magic" style="color:var(--color-purple);margin-right:8px"></i>AI Suggest Template</h2><button onclick="QTP.Templates.closeAISuggest()" class="modal-close"><i class="fas fa-times"></i></button></div>
+    <div class="modal-head"><h2 class="modal-title"><i class="fas fa-magic" style="color:var(--color-purple);margin-right:8px"></i>Gợi ý tính cách AI</h2><button onclick="QTP.Templates.closeAISuggest()" class="modal-close"><i class="fas fa-times"></i></button></div>
     <div class="modal-body">
       <textarea id="aiSuggestDesc" rows="3" class="inp" style="resize:none;margin-bottom:12px" placeholder="Mô tả loại nội dung bạn cần... VD: Tôi cần template viết bài review sản phẩm in 3D, so sánh 3 dòng máy, tone chuyên nghiệp"></textarea>
       <button id="aiSuggestBtn" onclick="QTP.Templates.doAISuggest()" class="btn btn-purple" style="width:100%;padding:12px;font-size:14px;margin-bottom:12px"><i class="fas fa-wand-magic-sparkles" style="margin-right:6px"></i>Gợi ý</button>
@@ -1129,32 +1072,11 @@
   </div>
 </div>
 
-<!-- ═══════════════ CHAT ═══════════════ -->
-<div id="chatPanel">
-  <div class="cp-head">
-    <div class="cp-head-left">
-      <div class="cp-avatar"><i class="fas fa-robot"></i></div>
-      <div><div class="cp-name">AI Assistant</div><div class="cp-status"><span class="cp-dot"></span>Trực tuyến</div></div>
-    </div>
-    <button class="cp-close" onclick="QTP.Chat.toggle()"><i class="fas fa-times"></i></button>
-  </div>
-  <div id="chatMsgs" class="cp-msgs">
-    <div class="cp-msg cp-bot">
-      <div class="cp-msg-avatar"><i class="fas fa-robot"></i></div>
-      <div class="cp-msg-bubble">👋 Chào bạn! Tôi là trợ lý AI.<br><br>💡 Gợi ý:<br>• "Cách tạo template?"<br>• "Gợi ý 5 tiêu đề SEO"</div>
-    </div>
-  </div>
-  <div class="cp-foot">
-    <input id="chatInput" type="text" placeholder="Nhập tin nhắn..." onkeydown="QTP.Chat.onKeydown(event)">
-    <button id="chatSend" onclick="QTP.Chat.send()"><i class="fas fa-paper-plane"></i></button>
-  </div>
-</div>
-
 <!-- ═══════════════ EXTERNAL LIBS ═══════════════ -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-	<script src="js/app.js?v=8"></script>
+	<script src="js/app.js?v=9"></script>
 </body>
 </html>
