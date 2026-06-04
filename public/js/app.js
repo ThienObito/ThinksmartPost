@@ -3899,6 +3899,17 @@ window.addEventListener('DOMContentLoaded', () => {
     .article-actions{display:flex;gap:6px}
     .create-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 
+    /* ── Create layout (form + guide side-by-side) ── */
+    .create-layout{display:flex;gap:24px;align-items:flex-start}
+    @media(max-width:900px){.create-layout{flex-direction:column}}
+    .guide-panel{flex:0 0 340px;padding:20px;font-size:13px;line-height:1.6}
+    @media(max-width:900px){.guide-panel{flex:1}}
+    .guide-panel p{margin:2px 0 0 0;color:var(--color-sub);font-size:12px;line-height:1.5}
+    .guide-steps{display:flex;flex-direction:column;gap:14px}
+    .guide-step{display:flex;gap:12px;align-items:flex-start}
+    .guide-num{width:26px;height:26px;border-radius:50%;background:rgba(237,105,24,0.12);color:var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+    .guide-step strong{font-size:13px;color:var(--color-text)}
+
     /* ── Section Header ── */
     .section-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:28px}
     .section-title{font-size:26px;font-weight:800;letter-spacing:-.4px;background:linear-gradient(180deg,var(--color-text),rgba(248,250,252,0.8));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}

@@ -258,7 +258,9 @@
           <p class="section-subtitle">AI generates SEO content</p>
         </div>
       </div>
-      <div class="glass-card" style="max-width:600px;padding:24px">
+      <div class="create-layout">
+        <!-- ══ Cột trái: Form tạo bài ══ -->
+        <div class="glass-card" style="flex:1;padding:24px">
         <!-- ═══ AI Instruction Box — luôn hiện, lưu tự động ═══ -->
         <div style="margin-bottom:16px">
           <label class="stat-lbl" style="margin-bottom:6px;display:flex;align-items:center;gap:6px">
@@ -321,8 +323,63 @@
         <div id="crtProg" style="display:none;margin-top:16px">
           <div class="prog-bar"><div id="progFill" class="prog-fill"></div></div>
           <p id="progTxt" style="text-align:center;margin-top:6px;font-size:13px;color:var(--color-accent)">Đang tạo...</p>
+        </div> <!-- end crtProg -->
+      </div> <!-- end glass-card form -->
+
+      <!-- ══ Cột phải: Hướng dẫn ══ -->
+      <div class="glass-card guide-panel">
+        <h3 style="margin:0 0 14px 0;font-size:15px;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-book-open" style="color:var(--color-accent)"></i> Hướng dẫn tạo bài
+        </h3>
+        <div class="guide-steps">
+          <div class="guide-step">
+            <div class="guide-num">1</div>
+            <div>
+              <strong>Chỉ thị AI</strong>
+              <p>Nhập hướng dẫn riêng: tên công ty, giọng văn, nội dung muốn nhấn mạnh. Tự động lưu.</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-num">2</div>
+            <div>
+              <strong>Chủ đề / Topic</strong>
+              <p>Nhập chủ đề hoặc bấm <i class="fas fa-lightbulb" style="color:var(--color-accent)"></i> để AI gợi ý, hoặc <i class="fas fa-dice" style="color:var(--color-accent)"></i> để tạo ngẫu nhiên kèm bài viết.</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-num">3</div>
+            <div>
+              <strong>Tính cách AI</strong>
+              <p>Chọn persona trong tab <strong>Tính Cách AI</strong>. Mỗi persona có tông giọng riêng (chuyên nghiệp, hài hước, kỹ thuật…).</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-num">4</div>
+            <div>
+              <strong>Danh mục & Số lượng</strong>
+              <p>Chọn danh mục WordPress, nhập số bài cần tạo (tối đa 10).</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-num">5</div>
+            <div>
+              <strong>Ảnh thông minh</strong>
+              <p>Bật ON để AI tự sinh ảnh minh họa. Chọn số ảnh từ 1–5.</p>
+            </div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-num">6</div>
+            <div>
+              <strong>Bấm Tạo Bài Viết</strong>
+              <p>AI sẽ viết bài, lưu vào danh sách. Vào tab <strong>Bài Viết</strong> để xem trước, chỉnh sửa hoặc đăng WordPress.</p>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:12px;border-radius:8px;background:rgba(237,105,24,0.06);border:1px solid rgba(237,105,24,0.15);font-size:12px;line-height:1.6;color:var(--color-sub)">
+          <strong style="color:var(--color-accent)">💡 Mẹo:</strong> Viết <strong>Chỉ thị AI</strong> càng chi tiết, kết quả càng đúng ý bạn. VD: <em>"Tôi là Tobi – iFlow & Thinksmart. Nhắc đến tên Thinksmart, dùng giọng chuyên nghiệp, thân thiện, nhấn mạnh lợi ích cho doanh nghiệp Việt."</em>
         </div>
       </div>
+    </div> <!-- end create-layout -->
     </section>
 
     <!-- ═══ SCHEDULE ═══ -->
@@ -1098,6 +1155,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-	<script src="js/app.js?v=7"></script>
+	<script src="js/app.js?v=8"></script>
 </body>
 </html>
