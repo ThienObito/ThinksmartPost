@@ -1,6 +1,6 @@
 /**
- * AI Client — Gemini API wrapper.
- * Replaces direct DeepSeek calls across all API modules.
+ * AI Client — Gemini API wrapper (chính thức).
+ * Dùng GEMINI_API_KEY từ .env.
  *
  * Usage:
  *   const { callGemini, callGeminiWithSystem } = require('../utils/ai-client');
@@ -19,6 +19,27 @@ function getApiKey() {
     throw new Error('Missing GEMINI_API_KEY in .env file');
   }
   return key;
+}
+
+/**
+ * Parse Gemini response, handling API errors and empty responses.
+ */
+function parseGeminiResponse(responseData) {
+  // Check for Gemini API error
+  if (responseData?.error) {
+    const err = responseData.error;
+    throw new Error(`Gemini API error: ${err.message || JSON.stringify(err)}`);
+  }
+  const text = responseData?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (text === undefined || text === null) {
+    // Check if response was blocked
+    const finishReason = responseData?.candidates?.[0]?.finishReason;
+    if (finishReason && finishReason !== 'STOP') {
+      throw new Error(`Gemini response blocked: ${finishReason}`);
+    }
+    throw new Error('Gemini returned empty response (no text content)');
+  }
+  return text;
 }
 
 /**
@@ -42,8 +63,7 @@ async function callGemini(prompt, options = {}) {
   }
 
   const response = await axios.post(url, body, { timeout });
-
-  return response.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return parseGeminiResponse(response.data);
 }
 
 /**
@@ -68,8 +88,7 @@ async function callGeminiWithSystem(systemPrompt, userMessage, options = {}) {
   }
 
   const response = await axios.post(url, body, { timeout });
-
-  return response.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return parseGeminiResponse(response.data);
 }
 
 module.exports = { callGemini, callGeminiWithSystem };

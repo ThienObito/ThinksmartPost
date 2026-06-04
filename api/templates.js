@@ -13,6 +13,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const { v4: uuidv4 } = require('uuid');
 const { authRequired } = require('../middleware/auth');
 const { track } = require('../utils/api-tracker');
 const { callGemini } = require('../utils/ai-client');

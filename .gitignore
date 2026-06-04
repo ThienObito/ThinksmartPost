@@ -4,6 +4,12 @@ data/
 !data/users.json
 !data/templates.json
 !data/articles/
+!data/sites.json
+!data/queue.json
+!data/notes.json
+!data/library.json
+!data/api-usage.json
+!data/*.json
 .env
 .env.*
 !.env.example

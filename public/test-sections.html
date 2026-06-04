@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html><body>
+<h2>Test Sections</h2>
+<p>Click để kiểm tra từng section:</p>
+<button onclick="check('sites')">Quản Lý Site</button>
+<button onclick="check('schedule')">Lên Lịch</button>
+<button onclick="check('templates')">Tính Cách AI</button>
+<button onclick="check('articles')">Bài Viết</button>
+<div id="result"></div>
+<script>
+async function api(path) {
+  const token = localStorage.getItem('token');
+  const r = await fetch('/api' + path, { headers: { 'Authorization': 'Bearer ' + token } });
+  return r.json();
+}
+async function check(section) {
+  const el = document.getElementById('result');
+  try {
+    let data;
+    switch(section) {
+      case 'sites': data = await api('/sites'); break;
+      case 'templates': data = await api('/templates'); break;
+      case 'articles': data = await api('/articles?status=all'); break;
+    }
+    if (data.success === false || data.error) throw new Error(data.message || 'Lỗi');
+    el.innerHTML = '<pre style="background:#1a1a2e;color:#0f0;padding:16px;border-radius:8px;max-height:400px;overflow:auto">'
+      + JSON.stringify(data, null, 2).slice(0, 2000) + '</pre>';
+  } catch(e) {
+    el.innerHTML = '<div style="color:red;font-weight:bold">❌ ' + e.message + '</div>';
+    // Nếu lỗi auth, redirect login
+    if (e.message.includes('đăng nhập') || e.message.includes('token')) {
+      el.innerHTML += '<br>⚠️ Chưa đăng nhập. Vui lòng đăng nhập trước.';
+    }
+  }
+}
+</script>
+</body></html>

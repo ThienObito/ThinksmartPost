@@ -17,7 +17,13 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 
 function loadArticle(filename) {
   try {
-    const filePath = path.join(DATA_DIR, 'articles', filename);
+    // Primary: data/ directory (where actual articles are stored)
+    let filePath = path.join(DATA_DIR, filename);
+    if (fs.existsSync(filePath)) {
+      return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    }
+    // Fallback: data/articles/ (legacy sample articles)
+    filePath = path.join(DATA_DIR, 'articles', filename);
     if (!fs.existsSync(filePath)) return null;
     return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   } catch { return null; }

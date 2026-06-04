@@ -183,7 +183,6 @@
       <button data-section="library" class="nav-item" onclick="QTP.App.go('library')"><i class="fas fa-photo-film nav-icon"></i><span>Thư viện</span></button>
       <button id="nav-users" data-section="users" class="nav-item" onclick="QTP.App.go('users')"><i class="fas fa-users-cog nav-icon"></i><span>Quản Lý TK</span></button>
       <button data-section="analytics" class="nav-item" onclick="QTP.App.go('analytics')"><i class="fas fa-chart-line nav-icon"></i><span>Analytics</span></button>
-      <button data-section="usage" class="nav-item" onclick="QTP.App.go('usage')"><i class="fas fa-gauge-high nav-icon"></i><span>API Usage</span></button>
       <button data-section="notes" class="nav-item" onclick="QTP.App.go('notes')"><i class="fas fa-sticky-note nav-icon"></i><span>Ghi Chú</span></button>
       <button id="nav-chat" data-section="chat" class="nav-item" onclick="QTP.App.go('chat')"><i class="fas fa-robot nav-icon"></i><span>AI Trợ Lý</span></button>
       <button data-section="settings" class="nav-item" onclick="QTP.App.go('settings')"><i class="fas fa-cog nav-icon"></i><span>Cài Đặt</span></button>
@@ -319,7 +318,7 @@
     </section>
 
     <!-- ═══ SCHEDULE ═══ -->
-    <section id="sec-schedule" class="sec" style="display:none">
+    <section id="sec-schedule" class="sec">
       <div class="section-header">
         <div>
           <h1 class="section-title">📅 Lên Lịch Đăng Bài</h1>
@@ -350,6 +349,22 @@
               <option value="default">Mặc định (.env)</option>
             </select>
           </div>
+        </div>
+
+        <!-- Manual datetime picker (hiện khi chọn "Tự chọn giờ") -->
+        <div id="schedManualPicker" style="display:none;margin-bottom:16px;padding:16px;border-radius:10px;background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.2)">
+          <div style="font-weight:600;margin-bottom:10px">⏰ Chọn thời gian đăng</div>
+          <div class="create-grid">
+            <div>
+              <label class="stat-lbl" style="margin-bottom:6px">Ngày</label>
+              <input id="schedDate" type="date" class="inp">
+            </div>
+            <div>
+              <label class="stat-lbl" style="margin-bottom:6px">Giờ</label>
+              <input id="schedTime" type="time" class="inp" value="08:00">
+            </div>
+          </div>
+          <p style="font-size:12px;color:var(--color-muted);margin-top:8px">💡 Mỗi bài viết cách nhau tối thiểu 2 giờ</p>
         </div>
 
         <!-- Preview -->
@@ -477,113 +492,6 @@
     </section>
 
     <!-- ═══ API USAGE ═══ -->
-    <section id="sec-usage" class="sec">
-      <div class="section-header" style="margin-bottom:16px">
-        <div>
-          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#22c55e,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">API Usage</h1>
-          <p class="section-subtitle">Theo dõi số lần gọi API và chi phí ước tính</p>
-        </div>
-      </div>
-      <!-- KPI cards -->
-      <div class="stats-grid" style="margin-bottom:16px">
-        <div class="stat-card">
-          <div class="stat-icon stat-icon-success"><i class="fas fa-robot"></i></div>
-          <div class="stat-val" style="color:#22c55e;font-size:22px" id="usDeepseek">—</div>
-          <div class="stat-lbl">Gemini Calls</div>
-          <div class="an-growth-badge an-growth-up" style="display:none;position:static;margin-top:4px" id="usDeepseekGrowth"></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background:rgba(168,85,247,0.1);color:#a855f7"><i class="fas fa-image"></i></div>
-          <div class="stat-val" style="color:#a855f7;font-size:22px" id="usReplicate">—</div>
-          <div class="stat-lbl">Image Gen</div>
-          <div class="an-growth-badge an-growth-up" style="display:none;position:static;margin-top:4px" id="usReplicateGrowth"></div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon stat-icon-blue"><i class="fas fa-globe"></i></div>
-          <div class="stat-val" style="color:#3b82f6;font-size:22px" id="usWp">—</div>
-          <div class="stat-lbl">WP Published</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background:rgba(245,158,11,0.1);color:#f59e0b"><i class="fas fa-dollar-sign"></i></div>
-          <div class="stat-val" style="color:#f59e0b;font-size:22px" id="usCost">—</div>
-          <div class="stat-lbl">Total Cost</div>
-        </div>
-      </div>
-
-      <!-- Cost Breakdown + Today Summary -->
-      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:16px">
-        <!-- Cost Trend Chart -->
-        <div class="glass-card" style="padding:20px">
-          <div class="analytics-card-header" style="margin-bottom:8px">
-            <h3 class="analytics-card-title"><i class="fas fa-chart-line" style="color:#22c55e"></i> Chi phí 30 ngày</h3>
-          </div>
-          <div style="position:relative;height:200px">
-            <canvas id="usageChart"></canvas>
-          </div>
-        </div>
-        <!-- Today Summary -->
-        <div class="glass-card" style="padding:20px">
-          <div class="analytics-card-header" style="margin-bottom:12px">
-            <h3 class="analytics-card-title"><i class="fas fa-calendar-day" style="color:#3b82f6"></i> Hôm nay</h3>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <div class="report-row">
-              <span class="report-label"><i class="fas fa-robot" style="color:#22c55e;width:16px"></i> Gemini</span>
-              <span style="font-weight:600" id="usTodayGemini">0</span>
-            </div>
-            <div class="report-row">
-              <span class="report-label"><i class="fas fa-image" style="color:#a855f7;width:16px"></i> Image Gen</span>
-              <span style="font-weight:600" id="usTodayReplicate">0</span>
-            </div>
-            <div class="report-row">
-              <span class="report-label"><i class="fas fa-dollar-sign" style="color:#f59e0b;width:16px"></i> Chi phí</span>
-              <span style="font-weight:600;color:#f59e0b" id="usTodayCost">$0.00</span>
-            </div>
-          </div>
-          <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.04)">
-            <div style="font-size:11px;color:var(--color-muted);margin-bottom:4px">Trung bình/ngày</div>
-            <div style="display:flex;gap:12px;font-size:11px">
-              <span><span style="color:#22c55e;font-weight:600" id="usAvgDaily">—</span> calls</span>
-              <span><span style="color:#f59e0b;font-weight:600" id="usAvgCost">—</span>/ngày</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Service Breakdown + History -->
-      <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:16px;margin-bottom:16px">
-        <!-- Service Breakdown -->
-        <div class="glass-card" style="padding:20px">
-          <div class="analytics-card-header" style="margin-bottom:12px">
-            <h3 class="analytics-card-title"><i class="fas fa-chart-pie" style="color:var(--color-sub)"></i> Phân bổ</h3>
-          </div>
-          <div id="usBreakdown" style="display:flex;flex-direction:column;gap:8px">
-            <div class="report-row">
-              <span class="report-label">Gemini</span>
-              <span style="color:#22c55e;font-weight:600" id="usGeminiPct">—</span>
-            </div>
-            <div class="report-row">
-              <span class="report-label">Replicate</span>
-              <span style="color:#a855f7;font-weight:600" id="usReplicatePct">—</span>
-            </div>
-            <div class="report-row">
-              <span class="report-label">Chat/Other</span>
-              <span style="color:#3b82f6;font-weight:600" id="usOtherPct">—</span>
-            </div>
-          </div>
-        </div>
-        <!-- Daily History -->
-        <div class="glass-card" style="padding:20px">
-          <div class="analytics-card-header" style="margin-bottom:12px">
-            <h3 class="analytics-card-title"><i class="fas fa-chart-bar" style="color:var(--color-sub)"></i> Lịch sử 30 ngày</h3>
-          </div>
-          <div id="usHistory" style="font-size:12px;color:var(--color-muted);text-align:center;padding:20px">
-            Đang tải...
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ═══ SETTINGS ═══ -->
     <section id="sec-settings" class="sec">
       <div class="section-header">
@@ -849,7 +757,7 @@
     </section>
 
     <!-- ═══ SITES ═══ -->
-    <section id="sec-sites" class="sec" style="display:none">
+    <section id="sec-sites" class="sec">
       <div class="section-header">
         <div>
           <h1 class="section-title">🌐 Quản Lý Site</h1>
@@ -1182,6 +1090,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-	<script src="js/app.js?v=2"></script>
+	<script src="js/app.js?v=3"></script>
 </body>
 </html>

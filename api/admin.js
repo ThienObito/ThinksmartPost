@@ -4,11 +4,12 @@
  */
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const { loadUsers, saveUsers, authRequired } = require('../middleware/auth');
 
 const router = express.Router();
-const DATA_DIR = require('path').join(__dirname, '..', 'data');
+const DATA_DIR = path.join(__dirname, '..', 'data');
 
 // ── Helper: admin check ─────────────────────────────────────────
 function requireAdmin(req, res, next) {

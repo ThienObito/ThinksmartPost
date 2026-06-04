@@ -12,15 +12,19 @@ function extractJSON(text) {
     if (!text) throw new Error("AI returned empty response");
 
     let cleaned = text.trim();
+    // Remove markdown code blocks
+    cleaned = cleaned.replace(/```[a-z]*/gi, '').replace(/```/g, '').trim();
+    
     const braceIdx = cleaned.indexOf('{');
     if (braceIdx >= 0) cleaned = cleaned.slice(braceIdx);
     else throw new Error("No JSON object found in AI response");
 
-    cleaned = cleaned.replace(/```/g, '').trim();
+    // Strip trailing comma before closing brace (Gemini sometimes adds it)
+    cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
 
     try {
         return JSON.parse(cleaned);
-    } catch {
+    } catch (parseErr) {
         try {
             return j5.parse(cleaned);
         } catch {}
@@ -28,8 +32,10 @@ function extractJSON(text) {
         if (match) {
             try {
                 return JSON.parse(match[0]);
-            } catch { /* fall through */ }
+            } catch {}
         }
+        console.error('❌ extractJSON failed. Raw cleaned (first 500):', cleaned.substring(0, 500));
+        console.error('❌ Last error:', parseErr.message);
         throw new Error("Cannot parse AI response as JSON");
     }
 }
@@ -89,43 +95,17 @@ async function suggestTopicsHandler(req, res) {
     // Build prompt based on mode
     let prompt;
     if (auto_fill && template) {
-        // Mode "Ngẫu nhiên Topic" — sinh N topic phù hợp với tính cách AI
-        prompt = `Bạn là chuyên gia SEO nội dung chuyên ngành sản xuất và công nghệ.
-
-Gợi ý ${count} chủ đề bài viết KHÔNG TRÙNG cho chuyên mục "${categoryName}" năm 2026.${avoidStr}
-Các chủ đề này sẽ được viết theo phong cách tính cách AI sau:
-- Tên: ${template.name}
-- Giọng văn: ${template.tone}
-- Trọng tâm SEO: ${template.seo_focus}
-
-YÊU CẦU:
-- ${count} chủ đề khác nhau, mỗi chủ đề 1 góc nhìn riêng
-- Chủ đề hot, có khả năng SEO cao
-- Mỗi chủ đề kèm lý do vì sao phù hợp với tính cách "${template.name}"
-- KHÔNG quảng bá thương hiệu, không đề cập công ty
-
-Trả về JSON thuần (không backtick, không text ngoài JSON):
-{"suggestions":[{"topic":"...","reason":"...","score":9}]}`;
+        prompt = `Gợi ý ${count} chủ đề cho "${categoryName}" (2026). Phong cách: ${template.name} - ${template.tone}.${avoidStr}
+Trả về JSON:{"suggestions":[{"topic":"...","reason":"...","score":9}]}`;
     } else {
-        // Mode cũ — gợi ý chung
-        prompt = `Bạn là chuyên gia SEO nội dung chuyên ngành sản xuất và công nghệ.
-
-Gợi ý ${count} chủ đề bài viết KHÔNG TRÙNG cho chuyên mục "${categoryName}" năm 2026.${avoidStr}
-YÊU CẦU:
-- Mỗi chủ đề 1 góc nhìn khác nhau
-- Chủ đề hot, có khả năng SEO cao
-- Phân tích thể loại bài (Comparison/How-to/Case Study/Guide/Trend)
-- Kèm lý do giá trị cho người đọc
-- KHÔNG quảng bá thương hiệu, không đề cập công ty
-
-Trả về JSON thuần (không backtick, không text ngoài JSON):
-{"suggestions":[{"topic":"...","type":"...","reason":"...","score":9}]}`;
+        prompt = `Gợi ý ${count} chủ đề cho "${categoryName}" (2026).${avoidStr}
+Trả về JSON:{"suggestions":[{"topic":"...","type":"...","reason":"...","score":9}]}`;
     }
 
     try {
-        const rawContent = await callGemini(prompt, { temperature: 1.0, max_tokens: 4000, timeout: 60000 });
+        const rawContent = await callGemini(prompt, { temperature: 1.0, max_tokens: 4096, timeout: 90000 });
         if (!rawContent) throw new Error('Gemini returned empty response');
-        console.log('📥 suggest-topics raw (first 300):', rawContent.substring(0, 300));
+        console.log('📥 suggest-topics raw:', rawContent);
         const result = extractJSON(rawContent);
 
         res.json({

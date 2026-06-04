@@ -416,7 +416,7 @@ async function createArticleHandler(req, res) {
         if (jsonStart >= 0 && jsonStart < trimmed.indexOf('<article>') + 20) {
           // Try to find and parse JSON inside content
           const jsonPart = trimmed.slice(jsonStart);
-          const match = jsonPart.match(/\{[\\s\\S]*\}/);
+          const match = jsonPart.match(/\{[\s\S]*\}/);
           if (match) {
             try {
               const reparsed = JSON.parse(match[0]);

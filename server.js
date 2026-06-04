@@ -87,8 +87,8 @@ app.use(cors({
     if (!origin || ALLOWED_ORIGINS.some(o => origin.startsWith(o))) {
       cb(null, true);
     } else {
-      cb(null, true); // Still allow, just log
-      console.warn('CORS request from unknown origin:', origin);
+      cb(null, true); // Still allow, just log once per unknown origin
+      console.warn('⚠️ CORS request from unknown origin:', origin);
     }
   },
   credentials: true,
@@ -132,8 +132,6 @@ app.use('/api/templates', templateRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/analytics', analyticsRoutes);
-const usageRoutes = require('./api/usage');
-app.use('/api/usage', usageRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/library', libraryRoutes);
 app.use('/api/generate-image', imageGenRoutes);

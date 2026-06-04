@@ -65,7 +65,17 @@ async function api(path, opts = {}) {
     ...opts,
     headers: { ...headers, ...opts.headers },
   });
-  return res.json();
+
+  // Handle non-JSON responses gracefully
+  const ct = res.headers.get('content-type') || '';
+  if (ct.includes('application/json')) {
+    return res.json();
+  }
+  // Fallback for non-JSON responses (HTML errors, etc.)
+  const text = await res.text();
+  try { return JSON.parse(text); } catch {
+    return { success: false, message: `Server returned ${res.status}: ${text.substring(0, 200)}` };
+  }
 }
 
 /** Escape HTML entities (XSS prevention) */
@@ -420,7 +430,6 @@ QTP.App = {
       wp: 'WP.load',
       users: 'Users.load',
       analytics: 'Analytics.load',
-      usage: 'Usage.load',
       notes: 'Notes.load',
       media: 'Media.load',
       chat: 'Chat.load',
@@ -3329,193 +3338,6 @@ QTP.Library = {
 }; // end QTP.Library
 
 /* ===================================================================
-   SECTION 17 — QTP.Usage (API Usage Tracking)
-   =================================================================== */
-
-QTP.Usage = {
-  async load() {
-    // ══ Fake Data ══
-    if (QTP._fakeMode) {
-      this._loadFakeUsage();
-      return;
-    }
-
-    try {
-      const data = await api('/usage');
-      if (!data.success) throw new Error();
-
-      const t = data.total;
-      const today = data.today;
-      const cost = data.cost;
-
-      $id('usGemini').textContent = (t.gemini || 0).toLocaleString();
-      $id('usReplicate').textContent = (t.replicate || 0).toLocaleString();
-      $id('usWp').textContent = (t.wp_publish || 0).toLocaleString();
-      $id('usCost').textContent = '$' + (cost.total || 0).toFixed(2);
-
-      $id('usTodayGemini').textContent = today.gemini || 0;
-      $id('usTodayReplicate').textContent = today.replicate || 0;
-      $id('usTodayCost').textContent = '$' + (cost.today || 0).toFixed(2);
-
-      // Render daily history
-      const days = data.days || [];
-      const hist = $id('usHistory');
-      if (!days.length) {
-        hist.innerHTML = '<span>Chưa có dữ liệu</span>';
-        return;
-      }
-      hist.innerHTML = days.slice().reverse().map(d => {
-        const total = (d.gemini || 0) + (d.replicate || 0) + (d.chat || 0);
-        const maxBar = Math.max(...days.map(x => (x.gemini||0)+(x.replicate||0)+(x.chat||0)), 1);
-        const barPct = Math.max(3, (total / maxBar) * 100);
-        const dateObj = new Date(d.date + 'T00:00:00');
-        const label = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <span style="width:50px;font-size:10px;color:var(--color-muted);flex-shrink:0">${label}</span>
-          <div style="flex:1;height:18px;background:var(--color-border);border-radius:4px;overflow:hidden">
-            <div style="height:100%;width:${barPct}%;background:linear-gradient(90deg,#22c55e,#3b82f6);border-radius:4px;transition:width .5s ease"></div>
-          </div>
-          <span style="width:30px;font-size:10px;color:var(--color-sub);text-align:right;flex-shrink:0">${total}</span>
-        </div>`;
-      }).join('');
-    } catch {
-      $id('usDeepseek').textContent = 'ERR';
-      $id('usHistory').innerHTML = '<span style="color:var(--color-danger)">Lỗi tải dữ liệu</span>';
-    }
-  },
-
-  /** Fake usage data — $52 total cost */
-  _loadFakeUsage() {
-    const today = new Date().toISOString().split('T')[0];
-
-    // Total stats
-    $id('usDeepseek').textContent = '14,280';
-    $id('usReplicate').textContent = '847';
-    $id('usWp').textContent = '156';
-    $id('usCost').textContent = '$52.00';
-
-    // Growth badges
-    const g1 = $id('usDeepseekGrowth');
-    if (g1) { g1.style.display = 'inline-flex'; g1.innerHTML = '↑ 12.4%'; }
-    const g2 = $id('usReplicateGrowth');
-    if (g2) { g2.style.display = 'inline-flex'; g2.innerHTML = '↑ 8.7%'; }
-
-    // Today
-    $id('usTodayGemini').textContent = '47';
-    $id('usTodayReplicate').textContent = '3';
-    $id('usTodayCost').textContent = '$0.18';
-
-    // Avg daily
-    $id('usAvgDaily').textContent = '506';
-    $id('usAvgCost').textContent = '$1.73';
-
-    // Breakdown percentages
-    const total = 14280 + 847 + 2156; // gemini + replicate + chat
-    $id('usDeepseekPct').textContent = Math.round(14280 / total * 100) + '%';
-    $id('usReplicatePct').textContent = Math.round(847 / total * 100) + '%';
-    $id('usOtherPct').textContent = Math.round(2156 / total * 100) + '%';
-
-    // Daily history (30 ngày)
-    const days = [];
-    let ds = 280, rep = 12, cht = 40;
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      ds += Math.round(Math.random() * 30 - 8);
-      rep += Math.round(Math.random() * 4 - 1);
-      cht += Math.round(Math.random() * 10 - 3);
-      days.push({
-        date: d.toISOString().split('T')[0],
-        gemini: Math.max(0, ds),
-        replicate: Math.max(0, rep),
-        chat: Math.max(0, cht),
-      });
-    }
-
-    // Render cost chart (daily cost = gemini * 0.002 + replicate * 0.004 + chat * 0.001)
-    this._renderUsageChart(days);
-
-    // Render history bars
-    const hist = $id('usHistory');
-    const maxBar = Math.max(...days.map(d => d.gemini + d.replicate + d.chat), 1);
-    hist.innerHTML = days.map(d => {
-      const total = d.gemini + d.replicate + d.chat;
-      const barPct = Math.max(3, (total / maxBar) * 100);
-      const dateObj = new Date(d.date + 'T00:00:00');
-      const label = dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
-        <span style="width:44px;font-size:9px;color:var(--color-muted);flex-shrink:0">${label}</span>
-        <div style="flex:1;height:14px;background:var(--color-border);border-radius:3px;overflow:hidden">
-          <div style="height:100%;width:${barPct}%;background:linear-gradient(90deg,#22c55e,#3b82f6);border-radius:3px;transition:width .5s ease"></div>
-        </div>
-        <span style="width:26px;font-size:9px;color:var(--color-sub);text-align:right;flex-shrink:0">${total}</span>
-      </div>`;
-    }).join('');
-  },
-
-  /** Render usage cost trend chart */
-  _renderUsageChart(days) {
-    const canvas = $id('usageChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-    const ctx = canvas.getContext('2d');
-
-    if (this._usageChart) this._usageChart.destroy();
-
-    const labels = days.map(d => {
-      const dt = new Date(d.date + 'T00:00:00');
-      return dt.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
-    });
-    const costs = days.map(d => +(d.gemini * 0.002 + d.replicate * 0.004 + d.chat * 0.001).toFixed(2));
-    const step = Math.max(1, Math.floor(labels.length / 8));
-
-    this._usageChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Chi phí ($)',
-          data: costs,
-          borderColor: '#22c55e',
-          backgroundColor: 'rgba(34,197,94,0.08)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 2,
-          borderWidth: 2,
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(12,12,22,0.95)',
-            titleColor: '#f8fafc',
-            bodyColor: '#cbd5e1',
-            borderColor: 'rgba(34,197,94,0.2)',
-            borderWidth: 1,
-            cornerRadius: 8,
-            callbacks: {
-              label: ctx => '$' + ctx.parsed.y.toFixed(2),
-            },
-          },
-        },
-        scales: {
-          x: {
-            ticks: { color: '#52525b', font: { size: 8 }, maxTicksLimit: 10 },
-            grid: { display: false },
-          },
-          y: {
-            beginAtZero: true,
-            ticks: { color: '#52525b', font: { size: 8 }, callback: v => '$' + v.toFixed(2) },
-            grid: { color: 'rgba(255,255,255,0.03)' },
-          },
-        },
-      },
-    });
-  },
-}; // end QTP.Usage
-
 /* ===================================================================
    SECTION 18 — QTP.Chat (AI Assistant Floating Chat)
    =================================================================== */
@@ -3658,7 +3480,7 @@ QTP.Sites = {
           <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">App Password</label><input id="sFormPass" type="password" class="inp" placeholder="xxxx xxxx xxxx"></div>
         </div>
         <div style="display:flex;gap:12px;margin-top:20px">
-          <button onclick="this.closest('[style*=\\'fixed\\']').remove()" style="flex:1;padding:10px;border-radius:10px;background:var(--color-card-2);border:1px solid var(--color-border);color:var(--color-sub);font-weight:600;font-family:inherit;cursor:pointer">Hủy</button>
+          <button onclick="this.closest('[style*=&quot;fixed&quot;]').remove()" style="flex:1;padding:10px;border-radius:10px;background:var(--color-card-2);border:1px solid var(--color-border);color:var(--color-sub);font-weight:600;font-family:inherit;cursor:pointer">Hủy</button>
           <button onclick="QTP.Sites.saveNew()" style="flex:1;padding:10px;border-radius:10px;background:linear-gradient(135deg,var(--color-accent),#d4550f);border:none;color:#fff;font-weight:600;font-family:inherit;cursor:pointer">Thêm Site</button>
         </div>
       </div>`;
@@ -3722,7 +3544,68 @@ QTP.Sites = {
     });
   },
 
-  edit(id) { showToast('Chức năng sửa đang phát triển', 'warning'); },
+  async edit(id) {
+    // Fetch site data
+    let site;
+    try {
+      const res = await api('/sites');
+      site = (res.sites || []).find(s => s.id === id);
+      if (!site) { showToast('Không tìm thấy site', 'error'); return; }
+    } catch { showToast('Lỗi tải dữ liệu site', 'error'); return; }
+
+    // Tạo modal form sửa
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML = `
+      <div style="background:var(--color-card);border:1px solid var(--color-border);border-radius:16px;max-width:500px;width:100%;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.5)">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+          <i class="fas fa-edit" style="font-size:24px;color:var(--color-accent)"></i>
+          <h3 style="font-size:18px;font-weight:700;margin:0">Sửa Site</h3>
+        </div>
+        <div style="display:grid;gap:14px">
+          <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">Tên site</label><input id="sEditName" class="inp" value="${esc(site.name)}"></div>
+          <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">URL WordPress</label><input id="sEditUrl" class="inp" value="${esc(site.url)}"></div>
+          <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">Username</label><input id="sEditUser" class="inp" value="${esc(site.username)}"></div>
+          <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">App Password <span style="color:var(--color-muted);font-size:11px">(để trống nếu giữ nguyên)</span></label><input id="sEditPass" type="password" class="inp" placeholder="**** **** ****"></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:20px">
+          <button onclick="this.closest('[style*=&quot;fixed&quot;]').remove()" style="flex:1;padding:10px;border-radius:10px;background:var(--color-card-2);border:1px solid var(--color-border);color:var(--color-sub);font-weight:600;font-family:inherit;cursor:pointer">Hủy</button>
+          <button onclick="QTP.Sites.saveEdit('${id}')" style="flex:1;padding:10px;border-radius:10px;background:linear-gradient(135deg,var(--color-accent),#d4550f);border:none;color:#fff;font-weight:600;font-family:inherit;cursor:pointer">Lưu thay đổi</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+  },
+
+  async saveEdit(id) {
+    const name = $id('sEditName')?.value.trim();
+    const url = $id('sEditUrl')?.value.trim();
+    const username = $id('sEditUser')?.value.trim();
+    const appPassword = $id('sEditPass')?.value.trim();
+
+    if (!name || !url || !username) {
+      showToast('Tên, URL và Username không được để trống!', 'error');
+      return;
+    }
+
+    const body = { name, url, username };
+    if (appPassword) body.appPassword = appPassword;
+
+    try {
+      const res = await api(`/sites/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      });
+      if (res.success) {
+        showToast('Đã cập nhật site!');
+        document.querySelector('[style*="fixed"]')?.remove();
+        this.load();
+      } else {
+        showToast(res.message || 'Lỗi cập nhật', 'error');
+      }
+    } catch {
+      showToast('Lỗi kết nối!', 'error');
+    }
+  },
 };
 
 /* ===================================================================
@@ -3741,8 +3624,8 @@ QTP.Schedule = {
   async loadArticles() {
     const container = $id('scheduleArticles');
     try {
-      const res = await api('/queue', { method: 'GET' });
-      let articles = Array.isArray(res) ? res : (res.queue || []);
+      const res = await api('/articles?status=all', { method: 'GET' });
+      let articles = Array.isArray(res) ? res : [];
 
       if (!articles.length) {
         container.innerHTML = '<p style="text-align:center;color:var(--color-muted);padding:20px">Chưa có bài viết nào để lên lịch. Hãy tạo bài viết trước.</p>';
@@ -3750,14 +3633,14 @@ QTP.Schedule = {
       }
 
       container.innerHTML = articles
-        .filter(a => a.filename && a.title)
+        .filter(a => a.file && a.title)
         .map((a, i) => `
-          <div class="sched-item ${this._selected[a.filename] ? 'selected' : ''}"
-               onclick="QTP.Schedule.toggle('${esc(a.filename)}', this)">
-            <input type="checkbox" class="sched-checkbox" ${this._selected[a.filename] ? 'checked' : ''}>
+          <div class="sched-item ${this._selected[a.file] ? 'selected' : ''}"
+               onclick="QTP.Schedule.toggle('${esc(a.file)}', this)">
+            <input type="checkbox" class="sched-checkbox" ${this._selected[a.file] ? 'checked' : ''}>
             <div style="flex:1;min-width:0">
               <div style="font-weight:500;font-size:13px">${esc(a.title)}</div>
-              <div style="font-size:11px;color:var(--color-muted)">${esc(a.filename)}</div>
+              <div style="font-size:11px;color:var(--color-muted)">${esc(a.file)}</div>
             </div>
           </div>
         `).join('');
@@ -3780,8 +3663,17 @@ QTP.Schedule = {
 
   toggleMode() {
     const mode = $id('schedMode').value;
+    $id('schedManualPicker').style.display = mode === 'manual' ? 'block' : 'none';
     $id('schedPreview').style.display = 'none';
     $id('schedWarnings').style.display = 'none';
+    // Set ngày mặc định là hôm nay
+    if (mode === 'manual') {
+      const now = new Date();
+      // Đề xuất giờ đẹp tiếp theo (làm tròn lên giờ chẵn + 2h so với hiện tại)
+      now.setHours(now.getHours() + 2, 0, 0, 0);
+      $id('schedDate').value = now.toISOString().split('T')[0];
+      $id('schedTime').value = String(now.getHours()).padStart(2,'0') + ':00';
+    }
   },
 
   async preview() {
