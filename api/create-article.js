@@ -345,7 +345,7 @@ function addImageInstructions(prompt, count) {
 
 // ── Handler ─────────────────────────────────────────────────────
 async function createArticleHandler(req, res) {
-  const { topics, category = 'giai-phap', prompt_template, smart_images = false, image_count = 2 } = req.body;
+  const { topics, category = 'giai-phap', prompt_template, smart_images = false, image_count = 2, ai_instruction } = req.body;
   const userId = req.user?.id || 'unknown';
 
   if (!topics || !Array.isArray(topics) || topics.length === 0) {
@@ -390,6 +390,12 @@ async function createArticleHandler(req, res) {
       if (ragContext) {
         finalPrompt += ragContext;
         console.log(`  📚 RAG context injected (${ragContext.length} chars)`);
+      }
+
+      // ── AI Instruction (user-defined context) ──────────────────
+      if (ai_instruction && ai_instruction.trim()) {
+        finalPrompt += `\n\n### 📋 CHỈ THỊ NGƯỜI DÙNG (ưu tiên cao nhất)\n${ai_instruction.trim()}`;
+        console.log(`  📋 AI instruction injected (${ai_instruction.length} chars)`);
       }
 
       // 2. Call Gemini (text only — no image generation)

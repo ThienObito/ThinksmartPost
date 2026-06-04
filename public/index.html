@@ -259,6 +259,14 @@
         </div>
       </div>
       <div class="glass-card" style="max-width:600px;padding:24px">
+        <!-- ═══ AI Instruction Box — luôn hiện, lưu tự động ═══ -->
+        <div style="margin-bottom:16px">
+          <label class="stat-lbl" style="margin-bottom:6px;display:flex;align-items:center;gap:6px">
+            <i class="fas fa-bullhorn" style="color:var(--color-accent)"></i> Chỉ thị AI
+            <span style="font-size:11px;color:var(--color-muted);font-weight:400">(hướng dẫn AI về bạn, dự án, giọng văn…)</span>
+          </label>
+          <textarea id="aiInstruction" rows="4" class="inp" style="width:100%;resize:vertical;font-size:13px;line-height:1.5" placeholder="Ví dụ: Tôi là Tobi, chủ thương hiệu iFlow &amp; Thinksmart. Hãy nhắc đến tên công ty trong bài viết. Giọng văn chuyên nghiệp, thân thiện. Tập trung vào lợi ích cho người dùng."></textarea>
+        </div>
         <div style="margin-bottom:16px">
           <label class="stat-lbl" style="margin-bottom:6px">Topic</label>
           <div style="display:flex;gap:8px">
@@ -1090,6 +1098,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-	<script src="js/app.js?v=6"></script>
+	<script src="js/app.js?v=7"></script>
 </body>
 </html>

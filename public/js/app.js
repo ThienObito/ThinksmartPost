@@ -878,6 +878,7 @@ QTP.Articles = {
     const topic = $id('topic').value.trim();
     const category = $id('cat').value;
     const qty = parseInt($id('qty').value) || 1;
+    const instruction = $id('aiInstruction').value.trim();
 
     if (!topic) {
       showToast('Vui lòng nhập chủ đề!', 'error');
@@ -903,6 +904,7 @@ QTP.Articles = {
           category,
           smart_images: QTP.Articles._imgEnabled,
           image_count: QTP.Articles._imgCount,
+          ai_instruction: instruction || undefined,
         }),
       });
 
@@ -1039,6 +1041,7 @@ QTP.Articles = {
     const qty = parseInt($id('qty').value) || 1;
     const cat = $id('cat').value;
     const tmpl = $id('tmplSelect').value;
+    const instruction = $id('aiInstruction').value.trim();
 
     if (!tmpl) {
       showToast('Vui lòng chọn Tính Cách AI trước!', 'error');
@@ -1066,6 +1069,7 @@ QTP.Articles = {
           count: qty,
           template_id: tmpl,
           auto_fill: true,
+          ai_instruction: instruction || undefined,
         }),
       });
 
@@ -1087,6 +1091,7 @@ QTP.Articles = {
           template_id: tmpl,
           smart_images: QTP.Articles._imgEnabled,
           image_count: QTP.Articles._imgCount,
+          ai_instruction: instruction || undefined,
         }),
       });
 
@@ -3866,8 +3871,17 @@ QTP.Schedule = {
    SECTION 17 — Bootstrap (DOMContentLoaded)
    =================================================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
-  // ── Inject dynamic component styles ──
+window.addEventListener('DOMContentLoaded', () => {
+  // Restore saved AI instruction
+  const saved = localStorage.getItem('qtp_ai_instruction');
+  const ta = $id('aiInstruction');
+  if (saved && ta) ta.value = saved;
+  // Auto-save on input
+  if (ta) ta.addEventListener('input', () => {
+    localStorage.setItem('qtp_ai_instruction', ta.value);
+  });
+
+  $id('loginBtn').addEventListener('click', () => QTP.Auth.doLogin());
   const style = document.createElement('style');
   style.textContent = `
     /* ── Article Cards ── */

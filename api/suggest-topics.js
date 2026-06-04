@@ -73,6 +73,7 @@ async function suggestTopicsHandler(req, res) {
         count = 6,
         template_id = null,
         auto_fill = false,      // true = chỉ cần trả về N topic phù hợp, không cần chi tiết
+        ai_instruction,
     } = req.body;
 
     if (!process.env.GEMINI_API_KEY) {
@@ -107,6 +108,11 @@ Trả về JSON:{"suggestions":[{"topic":"...","type":"...","reason":"...","scor
     const ragCtx = rag.buildContext(categoryName, { limit: 5, sources: ['articles'] });
     if (ragCtx) {
         prompt += `\n\nBÀI VIẾT ĐÃ CÓ (tham khảo để KHÔNG trùng lặp chủ đề):${ragCtx}`;
+    }
+
+    // ── AI Instruction ──────────────────────────────────────────
+    if (ai_instruction && ai_instruction.trim()) {
+        prompt += `\n\n### 📋 CHỈ THỊ NGƯỜI DÙNG (ưu tiên cao nhất)\n${ai_instruction.trim()}`;
     }
 
     try {
