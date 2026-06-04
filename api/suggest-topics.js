@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { callGemini } = require('../utils/ai-client');
+const rag = require('../utils/rag');
 const j5 = require('json5');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
@@ -100,6 +101,12 @@ Trả về JSON:{"suggestions":[{"topic":"...","reason":"...","score":9}]}`;
     } else {
         prompt = `Gợi ý ${count} chủ đề cho "${categoryName}" (2026).${avoidStr}
 Trả về JSON:{"suggestions":[{"topic":"...","type":"...","reason":"...","score":9}]}`;
+    }
+
+    // ── RAG: inject bài viết cũ để AI tránh trùng ──────────────
+    const ragCtx = rag.buildContext(categoryName, { limit: 5, sources: ['articles'] });
+    if (ragCtx) {
+        prompt += `\n\nBÀI VIẾT ĐÃ CÓ (tham khảo để KHÔNG trùng lặp chủ đề):${ragCtx}`;
     }
 
     try {

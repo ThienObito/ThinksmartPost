@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { track } = require('../utils/api-tracker');
 const { callGemini } = require('../utils/ai-client');
+const rag = require('../utils/rag');
 
 const DATA_DIR = path.join(__dirname, '../data');
 
@@ -382,6 +383,13 @@ async function createArticleHandler(req, res) {
       if (imgCount > 0) {
         finalPrompt = addImageInstructions(finalPrompt, imgCount);
         console.log(`  🖼️ Smart images ON: ${imgCount} images/article`);
+      }
+
+      // ── RAG: Inject knowledge context ─────────────────────────
+      const ragContext = rag.buildContext(topic, { limit: 3, sources: ['articles', 'templates'] });
+      if (ragContext) {
+        finalPrompt += ragContext;
+        console.log(`  📚 RAG context injected (${ragContext.length} chars)`);
       }
 
       // 2. Call Gemini (text only — no image generation)

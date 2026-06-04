@@ -397,6 +397,36 @@ app.post('/api/suggest-topics', authRequired, aiLimiter, suggestTopicsHandler);
 // ── Smart Scheduling ────────────────────────────────────────────
 require('./api/schedule-posts')(app);
 
+// ── RAG API ─────────────────────────────────────────────────────
+const ragService = require('./utils/rag');
+
+// Index/Rebuild knowledge base (admin only)
+app.post('/api/rag/index', require('./middleware/auth').authRequired, (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'dev') {
+    return res.status(403).json({ success: false, message: 'Chỉ admin/dev mới được rebuild index' });
+  }
+  try {
+    const result = ragService.syncAll(true);
+    res.json({ success: true, message: `RAG index: ${result.articlesIndexed} articles, ${result.templatesIndexed} templates`, ...result });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
+// Search knowledge base
+app.get('/api/rag/search', require('./middleware/auth').authRequired, (req, res) => {
+  try {
+    const { q, limit = 5 } = req.query;
+    if (!q || !q.trim()) {
+      return res.json({ success: true, results: [] });
+    }
+    const results = ragService.query(q, { limit: parseInt(limit) });
+    res.json({ success: true, results });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 // ── Global error handler ────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('❌ Unhandled error:', err.message);
@@ -419,4 +449,12 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   http://localhost:${PORT}`);
   console.log(`   Auth: enabled (JWT)`);
   console.log(`   Rate limit: global=200/15m, auth=20/15m, AI=10/1m`);
+
+  // ── RAG Auto-Index trên startup ──────────────────────────────
+  try {
+    const ragSync = ragService.syncAll();
+    console.log(`   RAG: ${ragSync.articlesIndexed} articles, ${ragSync.templatesIndexed} templates indexed`);
+  } catch (e) {
+    console.error(`   RAG index failed: ${e.message}`);
+  }
 });
