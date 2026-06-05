@@ -3828,7 +3828,7 @@ QTP.Sites = {
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0">
             <button onclick="QTP.Sites.test('${s.id}')" class="btn btn-ghost btn-sm" title="Test kết nối"><i class="fas fa-plug"></i></button>
-            <button onclick="QTP.Sites.edit('${s.id}')" class="btn btn-ghost btn-sm" title="Sửa"><i class="fas fa-edit"></i></button>
+            <button onclick="QTP.Sites.showEditForm('${s.id}')" class="btn btn-ghost btn-sm" title="Sửa"><i class="fas fa-edit"></i></button>
             <button onclick="QTP.Sites.toggleActive('${s.id}')" class="btn btn-ghost btn-sm" title="${s.isActive ? 'Tắt' : 'Bật'}">
               <i class="fas ${s.isActive ? 'fa-pause' : 'fa-play'}"></i>
             </button>
@@ -3925,14 +3925,13 @@ QTP.Sites = {
     });
   },
 
-  async edit(id) {
-    // Fetch site data
+  async showEditForm(id) {
     let site;
     try {
       const res = await api('/sites');
       site = (res.sites || []).find(s => s.id === id);
-      if (!site) { showToast('Không tìm thấy site', 'error'); return; }
-    } catch { showToast('Lỗi tải dữ liệu site', 'error'); return; }
+      if (!site) { showToast('❌ Không tìm thấy site để chỉnh sửa', 'error'); return; }
+    } catch (e) { showToast('❌ Lỗi tải dữ liệu site: ' + (e.message || 'Unknown error'), 'error'); return; }
 
     // Tạo modal form sửa
     const overlay = document.createElement('div');
