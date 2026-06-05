@@ -347,20 +347,8 @@ QTP._fake = {
     return t;
   },
 
-  /** Generate fake queue */
-  get queue() {
-    const now = new Date();
-    return [
-      { id: 'q1', filename: 'Hướng dẫn SEO WordPress.json', status: 'pending', createdAt: new Date(now - 3600000).toISOString(), error: null },
-      { id: 'q2', filename: 'Cách Viết Content Chuẩn AI.json', status: 'published', createdAt: new Date(now - 7200000).toISOString(), error: null },
-      { id: 'q3', filename: 'Top 10 Công Cụ AI Content.json', status: 'publishing', createdAt: new Date(now - 10800000).toISOString(), error: null },
-      { id: 'q4', filename: 'Chiến Lược Social Media.json', status: 'pending', createdAt: new Date(now - 14400000).toISOString(), error: null },
-      { id: 'q5', filename: 'Tối Ưu Tốc Độ WordPress.json', status: 'failed', createdAt: new Date(now - 18000000).toISOString(), error: 'WP API timeout' },
-    ];
-  },
-
-  /** Generate fake WP posts */
-  get wpPosts() {
+  /** Generate fake templates summary */
+  get templatesSummary() {
     const now = new Date();
     return [
       { id: 101, title: { rendered: 'Hướng dẫn SEO WordPress Toàn Diện 2026' }, date: new Date(now - 86400000).toISOString(), status: 'publish', link: 'https://thinksmart.vn/seo-wordpress-2026' },
@@ -468,7 +456,6 @@ QTP.App = {
       dashboard: 'loadDashboard',
       articles: 'Articles.load',
       templates: 'Templates.load',
-      queue: 'Queue.load',
       wp: 'WP.load',
       users: 'Users.load',
       analytics: 'Analytics.load',
@@ -1435,169 +1422,7 @@ QTP.Templates = {
 }; // end QTP.Templates
 
 /* ===================================================================
-   SECTION 8 — QTP.Queue (Publishing Queue)
-   =================================================================== */
-
-QTP.Queue = {
-  _data: [],
-
-  async load() {
-    // ══ Fake Data ══
-    if (QTP._fakeMode) {
-      this._data = QTP._fake.queue;
-      this._renderQueue(QTP._fake.queue);
-      return;
-    }
-
-    const cont = $id('qCont');
-    cont.innerHTML =
-      '<div class="loading-state"><div class="spinner"></div><p>Đang tải hàng đợi…</p></div>';
-
-    try {
-      const res = await api('/queue');
-      if (res.success && Array.isArray(res.queue)) {
-        this._data = res.queue;
-        this._renderQueue(res.queue);
-      } else {
-        throw new Error();
-      }
-    } catch {
-      cont.innerHTML =
-        '<div style="text-align:center;padding:40px;color:var(--color-muted)">Lỗi tải hàng đợi</div>';
-    }
-  },
-
-  _renderQueue(queue) {
-    const cont = $id('qCont');
-    if (!queue.length) {
-      cont.innerHTML =
-        '<div style="text-align:center;padding:60px;color:var(--color-muted)"><i class="fas fa-clock" style="font-size:48px;opacity:0.3;display:block;margin-bottom:16px"></i>Hàng đợi trống</div>';
-      return;
-    }
-    cont.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${queue
-          .map(
-            (q) => `
-          <div class="report-card">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div>
-                <div style="font-weight:600;font-size:14px">${esc(q.filename || '')}</div>
-                <div style="font-size:12px;color:var(--color-muted);margin-top:2px">${q.status || 'pending'} · ${fmtDate(q.createdAt)}</div>
-              </div>
-              <div style="display:flex;gap:8px;align-items:center">
-                <span class="article-status ${q.status === 'published' ? 'pub' : q.status === 'failed' ? 'drf' : 'draft'}">${q.status || 'pending'}</span>
-                ${q.status === 'pending' ? `<button onclick="QTP.Queue._remove('${q.id}')" class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)"><i class="fas fa-times"></i></button>` : ''}
-              </div>
-            </div>
-            ${q.error ? `<div style="margin-top:8px;font-size:12px;color:var(--color-danger)">${esc(q.error)}</div>` : ''}
-          </div>`
-          )
-          .join('')}
-      </div>`;
-  },
-
-  showTab(tab) {
-    $qa('.queue-tab').forEach((t) => t.classList.remove('queue-tab-active'));
-    $q(`[data-qtap="${tab}"]`).classList.add('queue-tab-active');
-    if (tab === 'queue') {
-      $id('qCont').style.display = 'block';
-      $id('reportCont').style.display = 'none';
-    } else {
-      $id('qCont').style.display = 'none';
-      $id('reportCont').style.display = 'block';
-      QTP.Report.show();
-    }
-  },
-
-  _remove(id) {
-    showConfirm('Xóa khỏi hàng đợi?', async () => {
-      try {
-        await api(`/queue/${id}`, { method: 'DELETE' });
-        showToast('Đã xóa!');
-        this.load();
-      } catch {
-        showToast('Lỗi!', 'error');
-      }
-    });
-  },
-}; // end QTP.Queue
-
-/* ===================================================================
-   SECTION 9 — QTP.Report (Sales Report)
-   =================================================================== */
-
-QTP.Report = {
-  async show() {
-    const cont = $id('reportCont');
-    cont.innerHTML =
-      '<div class="loading-state"><div class="spinner"></div><p>Đang tải báo cáo…</p></div>';
-
-    try {
-      const res = await api('/report/summary');
-      if (!res.success || !res.report) throw new Error();
-
-      const r = res.report;
-      let html = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px">
-          <div class="stat-card"><div class="stat-lbl">Tổng bài</div><div class="stat-val" style="font-size:24px;color:var(--color-accent)">${r.totalArticles}</div></div>
-          <div class="stat-card"><div class="stat-lbl">Đã đăng</div><div class="stat-val" style="font-size:24px;color:#22c55e">${r.totalPublished}</div></div>
-          <div class="stat-card"><div class="stat-lbl">Nháp</div><div class="stat-val" style="font-size:24px;color:var(--color-muted)">${r.totalDraft}</div></div>
-          <div class="stat-card"><div class="stat-lbl">Có ảnh</div><div class="stat-val" style="font-size:24px;color:#3b82f6">${r.withImages}</div></div>
-        </div>`;
-
-      // Sale stats table
-      if (r.saleStats?.length) {
-        html += `
-          <div class="glass-card" style="padding:0;overflow:hidden;margin-bottom:16px">
-            <div style="padding:14px 20px;border-bottom:1px solid var(--color-border);font-weight:600;font-size:14px">Thống kê theo Sale</div>
-            <table class="admin-table">
-              <thead><tr><th>Sale</th><th>Tổng</th><th>Đã đăng</th><th>Nháp</th><th>Có ảnh</th></tr></thead>
-              <tbody>
-                ${r.saleStats
-                  .map(
-                    (s) => `
-                  <tr>
-                    <td><strong>${esc(s.fullName || s.username)}</strong></td>
-                    <td>${s.total}</td>
-                    <td style="color:#22c55e">${s.published}</td>
-                    <td style="color:var(--color-muted)">${s.draft}</td>
-                    <td style="color:#3b82f6">${s.withImages}</td>
-                  </tr>`
-                  )
-                  .join('')}
-              </tbody>
-            </table>
-          </div>`;
-      }
-
-      // Top articles
-      if (r.topArticles?.length) {
-        html += `
-          <div class="glass-card" style="padding:16px">
-            <h3 style="font-size:14px;font-weight:600;margin-bottom:12px">Top bài viết</h3>
-            ${r.topArticles
-              .map(
-                (a) => `
-              <div class="report-row">
-                <span class="report-label">${esc(a.title)}</span>
-                <span class="report-value">${a.published === 'Yes' ? '✅' : '📝'} ${a.hasImages === 'Yes' ? '🖼️' : ''}</span>
-              </div>`
-              )
-              .join('')}
-          </div>`;
-      }
-
-      cont.innerHTML = html;
-    } catch {
-      cont.innerHTML =
-        '<div style="text-align:center;padding:40px;color:var(--color-danger)">Lỗi tải báo cáo</div>';
-    }
-  },
-}; // end QTP.Report
-
-/* ===================================================================
-   SECTION 10 — QTP.WP (WordPress Posts Management)
+   SECTION 8 — QTP.WP (WordPress Posts Management)
    =================================================================== */
 
 QTP.WP = {

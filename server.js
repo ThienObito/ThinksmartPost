@@ -27,10 +27,7 @@ db.initDatabase();
 const createArticleHandler = require('./api/create-article');
 const suggestTopicsHandler = require('./api/suggest-topics');
 const authRoutes = require('./api/auth');
-const queueRoutes = require('./api/queue');
 const templateRoutes = require('./api/templates');
-const chatRoutes = require('./api/chat');
-const reportRoutes = require('./api/report');
 const analyticsRoutes = require('./api/analytics');
 const notesRoutes = require('./api/notes');
 const libraryRoutes = require('./api/library');
@@ -127,10 +124,8 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authLimiter, authRoutes);
 
 // ── API routes ──────────────────────────────────────────────────
-app.use('/api/queue', queueRoutes);
 app.use('/api/templates', templateRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/report', reportRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/library', libraryRoutes);

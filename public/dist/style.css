@@ -1480,36 +1480,7 @@ textarea.inp {
   border: 1px solid rgba(139,92,246,0.12);
 }
 
-/* ═══ 3D. QUEUE / REPORT ═══ */
-.queue-tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
-  background: rgba(255,255,255,0.03);
-  padding: 4px;
-  border-radius: var(--radius);
-}
-
-.queue-tab {
-  padding: 8px 18px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: none;
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 150ms;
-  font-family: var(--font-body);
-}
-
-.queue-tab-active,
-.queue-tab:hover {
-  background: rgba(255,107,44,0.08);
-  color: var(--accent);
-}
-
-/* ═══ 3E. WORDPRESS ═══ */
+/* ═══ 3D. WORDPRESS ═══ */
 .wp-status-card {
   padding: 16px 20px;
   border-radius: var(--radius-lg);

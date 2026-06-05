@@ -176,7 +176,6 @@
       <button data-section="create" class="nav-item" onclick="QTP.App.go('create')"><i class="fas fa-plus-circle nav-icon"></i><span>Tạo Bài</span></button>
       <button data-section="articles" class="nav-item" onclick="QTP.App.go('articles')"><i class="fas fa-newspaper nav-icon"></i><span>Bài Viết</span></button>
       <button data-section="templates" class="nav-item" onclick="QTP.App.go('templates')"><i class="fas fa-robot nav-icon"></i><span>Tính Cách AI</span></button>
-      <button data-section="queue" class="nav-item" onclick="QTP.App.go('queue')"><i class="fas fa-clock nav-icon"></i><span>Lịch / Báo cáo</span></button>
       <button data-section="wp" class="nav-item" onclick="QTP.App.go('wp')"><i class="fas fa-globe nav-icon"></i><span>WordPress</span></button>
       <button data-section="schedule" class="nav-item" onclick="QTP.App.go('schedule')"><i class="fas fa-calendar-alt nav-icon"></i><span>Lên Lịch</span></button>
       <button data-section="sites" class="nav-item" onclick="QTP.App.go('sites')"><i class="fas fa-globe nav-icon"></i><span>Quản Lý Site</span></button>
@@ -210,7 +209,7 @@
     <section id="sec-dashboard" class="sec active">
       <div class="section-header">
         <div>
-          <h1 class="section-title">Dashboard</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-chart-pie" style="margin-right:8px;font-size:16px"></i>Dashboard</h1>
           <p class="section-subtitle">Tổng quan hệ thống</p>
         </div>
       </div>
@@ -253,7 +252,7 @@
     <section id="sec-create" class="sec">
       <div class="section-header">
         <div>
-          <h1 class="section-title">Tạo Bài Mới</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-plus-circle" style="margin-right:8px;font-size:16px"></i>Tạo Bài Mới</h1>
           <p class="section-subtitle">AI tạo nội dung chuẩn SEO</p>
         </div>
       </div>
@@ -385,7 +384,7 @@
     <section id="sec-schedule" class="sec">
       <div class="section-header">
         <div>
-          <h1 class="section-title">📅 Lên Lịch Đăng Bài</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-calendar-alt" style="margin-right:8px;font-size:16px"></i>Lên Lịch Đăng Bài</h1>
           <p class="section-subtitle">Chọn bài viết và lên lịch đăng tự động</p>
         </div>
       </div>
@@ -462,7 +461,7 @@
     <section id="sec-articles" class="sec">
       <div class="section-header">
         <div>
-          <h1 class="section-title">Bài Viết</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-newspaper" style="margin-right:8px;font-size:16px"></i>Bài Viết</h1>
           <p class="section-subtitle">Tất cả bài viết đã tạo</p>
         </div>
         <div class="section-actions">
@@ -477,7 +476,7 @@
     <section id="sec-templates" class="sec">
       <div class="section-header">
         <div>
-          <h1 class="section-title">Tính Cách AI</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-robot" style="margin-right:8px;font-size:16px"></i>Tính Cách AI</h1>
           <p class="section-subtitle">Chọn tính cách viết cho AI</p>
         </div>
         <div class="section-actions">
@@ -489,31 +488,11 @@
       <div id="tmplList" class="arts-grid"></div>
     </section>
 
-    <!-- ═══ QUEUE / REPORT ═══ -->
-    <section id="sec-queue" class="sec">
-      <div class="section-header">
-        <div>
-          <h1 class="section-title">Lịch &amp; Báo cáo</h1>
-          <p class="section-subtitle">Hàng đợi xuất bản và thống kê</p>
-        </div>
-        <div class="section-actions">
-          <button onclick="QTP.Report.show()" class="btn btn-primary btn-sm"><i class="fas fa-file-export"></i>Xuất báo cáo</button>
-          <button onclick="QTP.Queue.load()" class="btn btn-ghost btn-sm"><i class="fas fa-sync-alt"></i>Refresh</button>
-        </div>
-      </div>
-      <div class="queue-tabs">
-        <button data-qtap="queue" class="queue-tab queue-tab-active" onclick="QTP.Queue.showTab('queue')">Hàng đợi</button>
-        <button data-qtap="report" class="queue-tab" onclick="QTP.Queue.showTab('report')">Báo cáo</button>
-      </div>
-      <div id="qCont"></div>
-      <div id="reportCont" style="display:none"></div>
-    </section>
-
     <!-- ═══ WORDPRESS ═══ -->
     <section id="sec-wp" class="sec">
       <div class="section-header">
         <div>
-          <h1 class="section-title">WordPress</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-globe" style="margin-right:8px;font-size:16px"></i>WordPress</h1>
           <p class="section-subtitle">Kết nối &amp; quản lý bài viết trên WordPress</p>
         </div>
         <div class="section-actions">
@@ -547,7 +526,7 @@
     <section id="sec-users" class="sec">
       <div class="section-header">
         <div>
-          <h1 class="section-title">Quản Lý Tài Khoản</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-users-cog" style="margin-right:8px;font-size:16px"></i>Quản Lý Tài Khoản</h1>
           <p style="color:var(--color-sub);font-size:14px;margin-top:4px" id="usersSubtitle">Người dùng</p>
         </div>
         <button onclick="QTP.Users.showForm()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i>Thêm người dùng</button>
@@ -560,7 +539,7 @@
     <section id="sec-settings" class="sec">
       <div class="section-header">
         <div>
-          <h1 class="section-title">Cài Đặt</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-cog" style="margin-right:8px;font-size:16px"></i>Cài Đặt</h1>
           <p class="section-subtitle">Khóa API và cấu hình</p>
         </div>
       </div>
@@ -589,7 +568,7 @@
     <section id="sec-analytics" class="sec">
       <div class="section-header" style="margin-bottom:20px">
         <div>
-          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Smart Analytics</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-chart-line" style="margin-right:8px;font-size:16px"></i>Smart Analytics</h1>
           <p class="section-subtitle">Content intelligence &amp; performance insights</p>
         </div>
         <div class="analytics-tabs" id="analyticsTabs">
@@ -808,7 +787,7 @@
     <section id="sec-media" class="sec">
       <div class="section-header" style="margin-bottom:16px">
         <div>
-          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#3b82f6,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Thư viện ảnh</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-photo-film" style="margin-right:8px;font-size:16px"></i>Thư viện ảnh</h1>
           <p class="section-subtitle">Hình ảnh AI từ tất cả bài viết</p>
         </div>
         <div style="display:flex;gap:8px">
@@ -826,7 +805,7 @@
     <section id="sec-sites" class="sec">
       <div class="section-header">
         <div>
-          <h1 class="section-title">🌐 Quản Lý Site</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-globe" style="margin-right:8px;font-size:16px"></i>Quản Lý Site</h1>
           <p class="section-subtitle">Quản lý nhiều WordPress từ một bảng điều khiển</p>
         </div>
         <div class="section-actions">
@@ -842,7 +821,7 @@
     <section id="sec-library" class="sec">
       <div class="section-header" style="margin-bottom:16px">
         <div>
-          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#22c55e,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Thư viện Ảnh</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-photo-film" style="margin-right:8px;font-size:16px"></i>Thư viện Ảnh</h1>
           <p class="section-subtitle">Upload, quản lý &amp; AI truy vấn ảnh</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -886,7 +865,7 @@
     <section id="sec-notes" class="sec">
       <div class="section-header" style="margin-bottom:16px">
         <div>
-          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#f59e0b,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Ghi Chú</h1>
+          <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-sticky-note" style="margin-right:8px;font-size:16px"></i>Ghi Chú</h1>
           <p class="section-subtitle">Ghi chú cho ý tưởng nội dung và không gian làm việc</p>
         </div>
         <div style="display:flex;gap:8px">
