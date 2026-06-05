@@ -262,7 +262,7 @@ app.get('/api/stats', authRequired, (req, res) => {
 app.get('/api/categories', authRequired, asyncHandler(async (req, res) => {
   const { categoryCache } = require('./utils');
   await refreshCategoryCache(); // refresh before sending
-  const cats = Object.entries(categoryCache).map(([slug, id]) => ({ slug, id }));
+  const cats = Object.entries(categoryCache).map(([slug, val]) => ({ slug, id: val.id || val, name: val.name || slug }));
   res.json({ success: true, categories: cats });
 }));
 

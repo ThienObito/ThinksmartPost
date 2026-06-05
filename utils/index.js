@@ -125,7 +125,7 @@ function asyncHandler(fn) {
 }
 
 // ── Category ID mapping (with caching from WP) ──────────────────
-let categoryCache = { 'giai-phap': 13, 'ung-dung': 14 }; // defaults (synced with WP)
+let categoryCache = {}; // populated from WP on startup + refresh
 let categoryCacheTime = 0;
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 
@@ -144,7 +144,7 @@ async function refreshCategoryCache() {
       if (Array.isArray(res.data)) {
         const map = {};
         for (const cat of res.data) {
-          map[cat.slug] = cat.id;
+          map[cat.slug] = { id: cat.id, name: cat.name || cat.slug };
         }
         if (Object.keys(map).length > 0) {
           categoryCache = map;
@@ -160,7 +160,16 @@ async function refreshCategoryCache() {
       if (fs.existsSync(cacheFile)) {
         const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
         if (cached.cache && Object.keys(cached.cache).length > 0) {
-          categoryCache = cached.cache;
+          // Normalize: old format had {slug: idNumber}, new has {slug: {id, name}}
+          const map = {};
+          for (const [slug, val] of Object.entries(cached.cache)) {
+            if (typeof val === 'number' || typeof val === 'string') {
+              map[slug] = { id: Number(val), name: slug };
+            } else {
+              map[slug] = val;
+            }
+          }
+          categoryCache = map;
         }
       }
     } catch { /* keep defaults */ }
@@ -168,7 +177,8 @@ async function refreshCategoryCache() {
 }
 
 function getCategoryId(slug) {
-  return categoryCache[slug] || 2; // fallback to default 'giai-phap'
+  const cat = categoryCache[slug];
+  return cat ? (cat.id || cat) : 2; // fallback to WP default
 }
 
 // Refresh cache on module load (don't block startup)
