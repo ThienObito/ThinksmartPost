@@ -1019,7 +1019,7 @@ code, pre { font-family: var(--font-mono); }
 .btn-label { }
 
 /* ── ALl dropdowns — dark theme ── */
-select, select.inp, #tmplSelect, #cat, #schedMode, #schedSite, #analyticsPeriod, #ufRole, #libEditFolder {
+select, select.inp, #tmplSelect, #schedMode, #schedSite, #analyticsPeriod, #ufRole, #libEditFolder {
   background: var(--bg-surface) !important;
   color: var(--text) !important;
   border: 1px solid var(--border) !important;

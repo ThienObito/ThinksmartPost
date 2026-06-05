@@ -268,7 +268,7 @@ app.get('/api/categories', authRequired, asyncHandler(async (req, res) => {
 
 // ── Post to WordPress ───────────────────────────────────────────
 app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
-  const { files, deleteAfterPublish = false } = req.body;
+  const { files, deleteAfterPublish = false, defaultCategory } = req.body;
   if (!files || files.length === 0) {
     return res.status(400).json({ success: false, message: 'Danh sách files trống' });
   }
@@ -312,7 +312,7 @@ app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
         content: wpContent,
         excerpt: post.summary || '',
         status: 'publish',
-        categories: [getCategoryId(post.category_slug)],
+        categories: [getCategoryId(defaultCategory || post.category_slug)],
       };
 
       if (cleanThumb) {

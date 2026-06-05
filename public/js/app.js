@@ -398,6 +398,28 @@ QTP._fake = {
       { url: 'https://picsum.photos/800/400?random=103', title: 'WordPress Theme Preview' },
     ]);
   },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
+  },
 };
 
 /* ===================================================================
@@ -480,84 +502,16 @@ QTP.App = {
     const mb = $id('mobileTopbar');
     if (mb) mb.style.display = window.innerWidth <= 767 ? 'flex' : 'none';
     this.setUserInfo();
-    this.loadCategories();
-    this.subscribeCategorySSE(); // real-time push khi WP fetch xong
   },
 
   /** Load WP categories into Danh Mục dropdown */
-  async loadCategories() {
-    const sel = $id('cat');
-    // ══ Fake Data ══
-    if (QTP._fakeMode) {
-      const cats = [
-        { slug: 'giai-phap', name: 'Giải pháp' },
-        { slug: 'ung-dung', name: 'Ứng dụng' },
-        { slug: 'huong-dan', name: 'Hướng dẫn' },
-        { slug: 'tin-tuc', name: 'Tin tức' },
-      ];
-      sel.innerHTML = cats.map(c => `<option value="${c.slug}">${c.name}</option>`).join('');
-      return;
-    }
-    try {
-      const res = await api('/categories');
-      if (res.success && Array.isArray(res.categories) && res.categories.length > 0) {
-        const catNames = {
-          'chua-phan-loai': 'Chưa phân loại',
-          'giai-phap': 'Giải pháp',
-          'ung-dung': 'Ứng dụng',
-          'huong-dan': 'Hướng dẫn',
-          'tin-tuc': 'Tin tức',
-          'cong-nghe': 'Công nghệ',
-          'san-pham': 'Sản phẩm',
-        };
-        sel.innerHTML = res.categories
-          .map(c => `<option value="${c.slug}">${catNames[c.slug] || c.slug}</option>`)
-          .join('');
-      } else {
-        sel.innerHTML = '<option value="giai-phap">Giải pháp</option><option value="ung-dung">Ứng dụng</option>';
-      }
-    } catch {
-      sel.innerHTML = '<option value="giai-phap">Giải pháp</option><option value="ung-dung">Ứng dụng</option>';
-    }
-  },
+  /* Danh mục moved to Site management */
 
   /** Subscribe to SSE for real-time category updates */
-  subscribeCategorySSE() {
-    if (typeof EventSource === 'undefined') return;
-    const es = new EventSource('/api/events/categories');
-    es.addEventListener('category-update', (e) => {
-      try {
-        const map = JSON.parse(e.data);
-        if (Object.keys(map).length === 0) return;
-        this.updateCategoryDropdown(map);
-      } catch {}
-    });
-    es.onerror = () => {
-      es.close();
-      setTimeout(() => this.subscribeCategorySSE(), 30000);
-    };
-  },
+  /* Category SSE moved to Site management */
 
   /** Update dropdown from SSE data (reuses loadCategories logic) */
-  updateCategoryDropdown(map) {
-    const sel = $id('cat');
-    if (!sel) return;
-    const catNames = {
-      'chua-phan-loai': 'Chưa phân loại',
-      'giai-phap': 'Giải pháp',
-      'ung-dung': 'Ứng dụng',
-      'huong-dan': 'Hướng dẫn',
-      'tin-tuc': 'Tin tức',
-      'cong-nghe': 'Công nghệ',
-      'san-pham': 'Sản phẩm',
-    };
-    const currentVal = sel.value;
-    sel.innerHTML = Object.entries(map)
-      .map(([slug]) => `<option value="${slug}">${catNames[slug] || slug}</option>`)
-      .join('');
-    if (currentVal && map[currentVal]) sel.value = currentVal;
-  },
-
+  
   /** Populate sidebar user info */
   setUserInfo() {
     const u = QTP._user;
@@ -674,6 +628,28 @@ QTP.App = {
   _syncFakeBtn() {
     const el = $id('fakeOnOff');
     if (el) el.className = 'fake-onoff ' + (QTP._fakeMode ? 'on' : 'off');
+  },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
   },
 }; // end QTP.App
 
@@ -798,6 +774,28 @@ QTP.Auth = {
       $id('landingPage').style.display = 'block';
     });
   },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
+  },
 }; // end QTP.Auth
 
 /* ===================================================================
@@ -915,7 +913,6 @@ QTP.Articles = {
   /** Create new article(s) via AI */
   async create() {
     const topic = $id('topic').value.trim();
-    const category = $id('cat').value;
     const qty = parseInt($id('qty').value) || 1;
     const instruction = $id('aiInstruction').value.trim();
 
@@ -998,9 +995,16 @@ QTP.Articles = {
     showConfirm('Đăng bài viết này lên WordPress?', async () => {
       showToast('Đang đăng…', 'loading');
       try {
+        // Get default category from active site
+        let defaultCategory = '';
+        try {
+          const sitesRes = await api('/sites');
+          const activeSite = (sitesRes.sites || []).find(s => s.isActive && s.defaultCategory);
+          if (activeSite) defaultCategory = activeSite.defaultCategory;
+        } catch {}
         const res = await api('/post-all', {
           method: 'POST',
-          body: JSON.stringify({ files: [filename] }),
+          body: JSON.stringify({ files: [filename], defaultCategory }),
         });
         if (res.success) {
           showToast('✅ Đã đăng lên WordPress!');
@@ -1038,7 +1042,7 @@ QTP.Articles = {
     try {
       const res = await api('/suggest-topics', {
         method: 'POST',
-        body: JSON.stringify({ category: $id('cat').value }),
+        body: JSON.stringify({ category: '' }),
       });
 
       if (res.success && Array.isArray(res.suggestions)) {
@@ -1078,7 +1082,6 @@ QTP.Articles = {
   /** 🎲 Random topics: generate N topics + auto-fill + auto-generate articles */
   async randomTopic() {
     const qty = parseInt($id('qty').value) || 1;
-    const cat = $id('cat').value;
     const tmpl = $id('tmplSelect').value;
     const instruction = $id('aiInstruction').value.trim();
 
@@ -1156,6 +1159,28 @@ QTP.Articles = {
 
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-magic"></i> Tạo Bài Viết';
+  },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
   },
 }; // end QTP.Articles
 
@@ -1434,6 +1459,28 @@ QTP.Templates = {
     $id('tfId').value = '';
     $id('tmplFormTitle').textContent = title;
     $id('tmplSaveBtn').innerHTML = '<i class="fas fa-save"></i> Save';
+  },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
   },
 }; // end QTP.Templates
 
@@ -1724,6 +1771,28 @@ QTP.WP = {
       }
     });
   },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
+  },
 }; // end QTP.WP
 
 /* ===================================================================
@@ -1898,6 +1967,28 @@ QTP.Users = {
       }
     });
   },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
+  },
 }; // end QTP.Users
 
 /* ===================================================================
@@ -1950,6 +2041,28 @@ QTP.Settings = {
     } catch {
       showToast('❌ Lỗi kết nối server!', 'error');
     }
+  },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
   },
 }; // end QTP.Settings
 
@@ -2621,6 +2734,28 @@ QTP.Analytics = {
       },
     };
   },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
+  },
 }; // end QTP.Analytics
 
 /* ===================================================================
@@ -2744,6 +2879,28 @@ QTP.Media = {
       this._render();
       showToast('✅ Đã xóa ảnh!');
     });
+  },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
   },
 }; // end QTP.Media
 
@@ -2881,6 +3038,28 @@ QTP.Notes = {
         showToast('Lỗi xóa!', 'error');
       }
     });
+  },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
   },
 }; // end QTP.Notes
 
@@ -3304,6 +3483,28 @@ QTP.Library = {
       this.search();
     }
   },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
+  },
 }; // end QTP.Library
 
 /* ===================================================================
@@ -3328,6 +3529,7 @@ QTP.Sites = {
             <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--color-muted)">
               <span>👤 ${esc(s.username)}</span>
               <span>📄 ${s.postCount || 0} bài</span>
+              <span>📂 ${s.defaultCategory || 'Chưa PL'}</span>
               <span>📅 ${s.createdAt ? new Date(s.createdAt).toLocaleDateString('vi-VN') : ''}</span>
               <span style="color:${s.isActive ? '#22c55e' : '#ef4444'}">${s.isActive ? '✅ Hoạt động' : '⛔ Tắt'}</span>
             </div>
@@ -3362,13 +3564,24 @@ QTP.Sites = {
           <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">URL WordPress</label><input id="sFormUrl" class="inp" placeholder="VD: https://thinksmart.vn"></div>
           <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">Username</label><input id="sFormUser" class="inp" placeholder="admin"></div>
           <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">App Password</label><input id="sFormPass" type="password" class="inp" placeholder="xxxx xxxx xxxx"></div>
+          <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">Danh mục mặc định (WordPress)</label><div style="display:flex;gap:6px"><select id="sFormCategory" class="inp" style="flex:1"><option value="">— Chưa phân loại —</option></select><button onclick="QTP.Sites.refreshCat('sFormCategory')" class="btn btn-ghost btn-sm" title="Làm mới danh mục từ WP" style="flex-shrink:0;padding:0 10px;min-height:38px"><i class="fas fa-sync-alt"></i></button></div></div>
         </div>
+        <p style="font-size:11px;color:var(--color-muted);margin-top:-8px">💡 Danh mục sẽ được áp dụng khi đăng bài lên site này</p>
         <div style="display:flex;gap:12px;margin-top:20px">
           <button onclick="this.closest('[style*=&quot;fixed&quot;]').remove()" style="flex:1;padding:10px;border-radius:10px;background:var(--color-card-2);border:1px solid var(--color-border);color:var(--color-sub);font-weight:600;font-family:inherit;cursor:pointer">Hủy</button>
           <button onclick="QTP.Sites.saveNew()" style="flex:1;padding:10px;border-radius:10px;background:linear-gradient(135deg,var(--color-accent),#d4550f);border:none;color:#fff;font-weight:600;font-family:inherit;cursor:pointer">Thêm Site</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
+
+    // Load categories for the dropdown
+    api('/categories').then(res => {
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const sel = $id('sFormCategory');
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}">${c.name || c.slug}</option>`).join('');
+      }
+    }).catch(() => {});
   },
 
   async saveNew() {
@@ -3376,6 +3589,7 @@ QTP.Sites = {
     const url = $id('sFormUrl')?.value.trim();
     const username = $id('sFormUser')?.value.trim();
     const appPassword = $id('sFormPass')?.value.trim();
+    const defaultCategory = $id('sFormCategory')?.value || '';
 
     if (!name || !url || !username || !appPassword) {
       showToast('Vui lòng nhập đầy đủ thông tin!', 'error');
@@ -3385,7 +3599,7 @@ QTP.Sites = {
     try {
       const res = await api('/sites', {
         method: 'POST',
-        body: JSON.stringify({ name, url, username, appPassword }),
+        body: JSON.stringify({ name, url, username, appPassword, defaultCategory }),
       });
       if (res.success) {
         showToast('Đã thêm site!');
@@ -3451,6 +3665,7 @@ QTP.Sites = {
           <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">URL WordPress</label><input id="sEditUrl" class="inp" value="${esc(site.url)}"></div>
           <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">Username</label><input id="sEditUser" class="inp" value="${esc(site.username)}"></div>
           <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">App Password <span style="color:var(--color-muted);font-size:11px">(để trống nếu giữ nguyên)</span></label><input id="sEditPass" type="password" class="inp" placeholder="**** **** ****"></div>
+          <div><label style="font-size:12px;color:var(--color-sub);margin-bottom:4px;display:block">Danh mục mặc định (WordPress)</label><div style="display:flex;gap:6px"><select id="sEditCategory" class="inp" style="flex:1"><option value="">— Chưa phân loại —</option></select><button onclick="QTP.Sites.refreshCat('sEditCategory')" class="btn btn-ghost btn-sm" title="Làm mới danh mục từ WP" style="flex-shrink:0;padding:0 10px;min-height:38px"><i class="fas fa-sync-alt"></i></button></div></div>
         </div>
         <div style="display:flex;gap:12px;margin-top:20px">
           <button onclick="this.closest('[style*=&quot;fixed&quot;]').remove()" style="flex:1;padding:10px;border-radius:10px;background:var(--color-card-2);border:1px solid var(--color-border);color:var(--color-sub);font-weight:600;font-family:inherit;cursor:pointer">Hủy</button>
@@ -3458,6 +3673,15 @@ QTP.Sites = {
         </div>
       </div>`;
     document.body.appendChild(overlay);
+
+    // Load categories and pre-select site's default category
+    api('/categories').then(res => {
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const sel = $id('sEditCategory');
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === site.defaultCategory ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+      }
+    }).catch(() => {});
   },
 
   async saveEdit(id) {
@@ -3465,13 +3689,14 @@ QTP.Sites = {
     const url = $id('sEditUrl')?.value.trim();
     const username = $id('sEditUser')?.value.trim();
     const appPassword = $id('sEditPass')?.value.trim();
+    const defaultCategory = $id('sEditCategory')?.value || '';
 
     if (!name || !url || !username) {
       showToast('Tên, URL và Username không được để trống!', 'error');
       return;
     }
 
-    const body = { name, url, username };
+    const body = { name, url, username, defaultCategory };
     if (appPassword) body.appPassword = appPassword;
 
     try {
@@ -3489,6 +3714,28 @@ QTP.Sites = {
     } catch {
       showToast('Lỗi kết nối!', 'error');
     }
+  },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
   },
 };
 
@@ -3696,6 +3943,50 @@ QTP.Schedule = {
       txt.textContent = `❌ ${res.message || 'Lỗi lên lịch'}`;
       showToast(res.message || 'Lỗi', 'error');
     }
+  },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
+  },
+
+  /** Refresh category dropdown from WP */
+  async refreshCat(selId) {
+    const sel = $id(selId);
+    if (!sel) return;
+    const btn = sel.nextElementSibling;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    try {
+      const res = await api('/categories');
+      if (res.success && Array.isArray(res.categories) && res.categories.length) {
+        const currentVal = sel.value;
+        sel.innerHTML = '<option value="">— Chưa phân loại —</option>' +
+          res.categories.map(c => `<option value="${c.slug}"${c.slug === currentVal ? ' selected' : ''}>${c.name || c.slug}</option>`).join('');
+        showToast('✅ Đã cập nhật ' + res.categories.length + ' danh mục từ WP');
+      } else {
+        showToast('❌ Không lấy được danh mục từ WP', 'error');
+      }
+    } catch {
+      showToast('❌ Lỗi kết nối WP', 'error');
+    }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i>'; }
   },
 };
 

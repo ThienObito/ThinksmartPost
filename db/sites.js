@@ -73,7 +73,7 @@ function getSiteById(id) {
   return sites.find(s => s.id === id) || null;
 }
 
-function createSite({ name, url, username, appPassword, categories }) {
+function createSite({ name, url, username, appPassword, categories, defaultCategory }) {
   const sites = loadSites();
   const newSite = {
     id: uuidv4(),
@@ -82,6 +82,7 @@ function createSite({ name, url, username, appPassword, categories }) {
     username: username.trim(),
     appPassword: encrypt(appPassword),
     categories: categories || [],
+    defaultCategory: defaultCategory || '',
     isActive: true,
     createdAt: new Date().toISOString(),
     lastSync: null,
