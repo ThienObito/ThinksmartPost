@@ -585,14 +585,22 @@ QTP.App = {
       const container = $id('recentArts');
       container.innerHTML = recent
         .map(
-          (a) => `
-        <div class="recent-row">
-          <div class="recent-dot ${a.published ? 'published' : 'draft'}"></div>
-          <div class="recent-info">
-            <div class="recent-title">${esc(a.title)}</div>
-            <div class="recent-meta">${a.published ? 'Đã đăng' : 'Nháp'} · ${fmtDate(a.createdAt)}</div>
+          (a, i) => `
+        <div class="dashboard-article-item" style="animation: fade-slide-up 400ms var(--ease-out) ${i * 80}ms both">
+          <div class="item-left">
+            <span class="item-icon">📄</span>
+            <div class="item-content">
+              <h3 class="item-title">${esc(a.title)}</h3>
+              <div class="item-meta">
+                <span>📅 ${fmtDate(a.createdAt)}</span>
+                <span>📂 ${a.category_slug || 'Chung'}</span>
+              </div>
+            </div>
           </div>
-          <span class="recent-status ${a.published ? 'pub' : 'drf'}">${a.published ? 'WP' : 'Draft'}</span>
+          <div class="item-right">
+            <span class="item-badge ${a.published ? 'status-published' : 'status-draft'}">${a.published ? 'Đã đăng' : 'Bản nháp'}</span>
+            <button class="item-action-btn" onclick="event.stopPropagation();QTP.Articles.preview('${a.file}')" title="Xem bài viết">✎</button>
+          </div>
         </div>`
         )
         .join('');
@@ -620,19 +628,27 @@ QTP.App = {
         const container = $id('recentArts');
         if (!recent.length) {
           container.innerHTML =
-            '<div style="padding:24px;text-align:center;color:var(--color-muted);font-size:13px">Chưa có bài viết nào</div>';
+            '<div style="padding:40px;text-align:center;color:var(--color-muted);font-size:13px">Chưa có bài viết nào</div>';
           return;
         }
         container.innerHTML = recent
           .map(
-            (a) => `
-          <div class="recent-row" onclick="QTP.Articles.preview('${a.file}')">
-            <div class="recent-dot ${a.published ? 'published' : 'draft'}"></div>
-            <div class="recent-info">
-              <div class="recent-title">${esc(a.title)}</div>
-              <div class="recent-meta">${a.published ? 'Đã đăng' : 'Nháp'} · ${fmtDate(a.createdAt)}</div>
+            (a, i) => `
+          <div class="dashboard-article-item" style="animation: fade-slide-up 400ms var(--ease-out) ${i * 80}ms both">
+            <div class="item-left">
+              <span class="item-icon">📄</span>
+              <div class="item-content">
+                <h3 class="item-title">${esc(a.title)}</h3>
+                <div class="item-meta">
+                  <span>📅 ${fmtDate(a.createdAt)}</span>
+                  <span>📂 ${a.category_slug || 'Chung'}</span>
+                </div>
+              </div>
             </div>
-            <span class="recent-status ${a.published ? 'pub' : 'drf'}">${a.published ? 'WP' : 'Draft'}</span>
+            <div class="item-right">
+              <span class="item-badge ${a.published ? 'status-published' : 'status-draft'}">${a.published ? 'Đã đăng' : 'Bản nháp'}</span>
+              <button class="item-action-btn" onclick="event.stopPropagation();QTP.Articles.preview('${a.file}')" title="Xem bài viết">✎</button>
+            </div>
           </div>`
           )
           .join('');

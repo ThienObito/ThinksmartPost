@@ -216,21 +216,45 @@
       <!-- Stats grid -->
       <div class="stats-grid">
         <div class="stat-card">
+          <div class="stat-card-top">
+            <span class="stat-growth" id="gTotal">+12% ↑</span>
+            <svg class="sparkline" viewBox="0 0 60 24" width="60" height="24">
+              <polyline fill="none" stroke="#ed6918" stroke-width="1.5" opacity="0.3" points="0,20 10,14 20,18 30,8 40,12 50,4 60,6" />
+            </svg>
+          </div>
           <div class="stat-icon stat-icon-accent"><i class="fas fa-newspaper"></i></div>
           <div class="stat-val" style="color:#ed6918" id="sTotal">0</div>
           <div class="stat-lbl">Tổng bài viết</div>
         </div>
         <div class="stat-card">
+          <div class="stat-card-top">
+            <span class="stat-growth is-up" id="gPub">+8% ↑</span>
+            <svg class="sparkline" viewBox="0 0 60 24" width="60" height="24">
+              <polyline fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.3" points="0,18 10,8 20,14 30,6 40,10 50,2 60,4" />
+            </svg>
+          </div>
           <div class="stat-icon stat-icon-success"><i class="fas fa-check-circle"></i></div>
           <div class="stat-val" style="color:#22c55e" id="sPub">0</div>
           <div class="stat-lbl">Đã đăng</div>
         </div>
         <div class="stat-card">
+          <div class="stat-card-top">
+            <span class="stat-growth is-down" id="gDraft">-3% ↓</span>
+            <svg class="sparkline" viewBox="0 0 60 24" width="60" height="24">
+              <polyline fill="none" stroke="#a855f7" stroke-width="1.5" opacity="0.3" points="0,4 10,8 20,6 30,12 40,10 50,16 60,14" />
+            </svg>
+          </div>
           <div class="stat-icon stat-icon-purple"><i class="fas fa-pen-fancy"></i></div>
           <div class="stat-val" style="color:#a855f7" id="sDraft">0</div>
           <div class="stat-lbl">Bản nháp</div>
         </div>
         <div class="stat-card">
+          <div class="stat-card-top">
+            <span class="stat-growth is-up" id="gImg">+5% ↑</span>
+            <svg class="sparkline" viewBox="0 0 60 24" width="60" height="24">
+              <polyline fill="none" stroke="#3b82f6" stroke-width="1.5" opacity="0.3" points="0,16 10,12 20,18 30,10 40,14 50,6 60,8" />
+            </svg>
+          </div>
           <div class="stat-icon stat-icon-blue"><i class="fas fa-images"></i></div>
           <div class="stat-val" style="color:#3b82f6" id="sImg">0</div>
           <div class="stat-lbl">Có ảnh AI</div>
@@ -239,12 +263,12 @@
       <!-- subtle divider -->
       <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(237,105,24,0.08),transparent);margin-bottom:24px"></div>
       <!-- Recent articles -->
-      <div class="glass-card" style="padding:0;overflow:hidden;border-radius:16px">
-        <div class="recent-header">
-          <h2 class="recent-title"><i class="fas fa-history" style="color:#ed6918;font-size:14px"></i> Bài viết gần đây</h2>
+      <div class="dashboard-recent-wrap">
+        <div class="dashboard-recent-header">
+          <h2 class="dashboard-recent-title"><i class="fas fa-history" style="color:#ed6918;font-size:14px"></i> Bài viết gần đây</h2>
           <button onclick="QTP.App.go('articles')" class="btn btn-ghost btn-sm">Xem tất cả <i class="fas fa-arrow-right" style="font-size:10px;margin-left:4px"></i></button>
         </div>
-        <div id="recentArts" class="recent-list"></div>
+        <div id="recentArts" class="dashboard-article-list"></div>
       </div>
     </section>
 

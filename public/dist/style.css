@@ -44,6 +44,11 @@
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+@keyframes fade-slide-up {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: scale(1); }
@@ -1146,7 +1151,17 @@ textarea.inp {
 }
 
 /* ═══ 2H. DASHBOARD ═══ */
-.recent-header {
+/* ——— Recent Articles Wrap ——— */
+.dashboard-recent-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 200ms var(--ease-out);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+}
+
+.dashboard-recent-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1154,7 +1169,7 @@ textarea.inp {
   border-bottom: 1px solid var(--border);
 }
 
-.recent-title {
+.dashboard-recent-title {
   font-family: var(--font-heading);
   font-size: 15px;
   font-weight: 700;
@@ -1163,7 +1178,170 @@ textarea.inp {
   gap: 8px;
 }
 
-.recent-list { }
+.dashboard-article-list {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ——— Dashboard Article Item ——— */
+.dashboard-article-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.02);
+  border: 1px solid transparent;
+  transition: all 180ms var(--ease-out);
+  cursor: default;
+  gap: 12px;
+}
+
+.dashboard-article-item:hover {
+  background: rgba(255,255,255,0.04);
+  border-color: var(--border);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.item-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.item-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-title {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0 0 4px 0;
+  transition: color 150ms;
+}
+
+.dashboard-article-item:hover .item-title {
+  color: var(--accent);
+}
+
+.item-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.item-meta span {
+  white-space: nowrap;
+}
+
+.item-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.item-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 3px 10px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+.item-badge.status-draft {
+  background: rgba(245,158,11,0.1);
+  color: #f59e0b;
+}
+
+.item-badge.status-published {
+  background: rgba(16,185,129,0.1);
+  color: #10b981;
+}
+
+.item-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 150ms;
+}
+
+.dashboard-article-item:hover .item-action-btn {
+  opacity: 1;
+  background: rgba(255,107,44,0.1);
+  color: var(--accent);
+}
+
+.item-action-btn:hover {
+  background: rgba(255,107,44,0.2) !important;
+  transform: scale(1.1);
+}
+
+/* ——— Stat Card Top (Growth Badge + Sparkline) ——— */
+.stat-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.stat-growth {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: rgba(16,185,129,0.1);
+  color: #10b981;
+  letter-spacing: 0.02em;
+}
+
+.stat-growth.is-down {
+  background: rgba(239,68,68,0.1);
+  color: #ef4444;
+}
+
+.sparkline {
+  flex-shrink: 0;
+  opacity: 0.3;
+  transition: opacity 200ms;
+}
+
+.stat-card:hover .sparkline {
+  opacity: 0.5;
+}
 
 /* ═══ 2I. TOAST ═══ */
 #toastC {
