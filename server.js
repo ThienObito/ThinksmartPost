@@ -28,6 +28,7 @@ const createArticleHandler = require('./api/create-article');
 const suggestTopicsHandler = require('./api/suggest-topics');
 const authRoutes = require('./api/auth');
 const templateRoutes = require('./api/templates');
+const chatRoutes = require('./api/chat');
 const analyticsRoutes = require('./api/analytics');
 const notesRoutes = require('./api/notes');
 const libraryRoutes = require('./api/library');
