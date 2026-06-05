@@ -502,6 +502,10 @@ QTP.App = {
     const mb = $id('mobileTopbar');
     if (mb) mb.style.display = window.innerWidth <= 767 ? 'flex' : 'none';
     this.setUserInfo();
+    // Pre‑load AI Personas (Tính Cách AI) so dropdown is ready when user opens create form
+    if (QTP._templates && !QTP._templates.length) {
+      QTP.Templates.load().catch(() => {});
+    }
   },
 
   /** Load WP categories into Danh Mục dropdown */
