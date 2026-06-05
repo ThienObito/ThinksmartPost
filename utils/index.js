@@ -147,7 +147,9 @@ async function refreshCategoryCache() {
           map[cat.slug] = { id: cat.id, name: cat.name || cat.slug };
         }
         if (Object.keys(map).length > 0) {
-          categoryCache = map;
+          // Mutate in-place so module.exports reference stays valid
+          Object.keys(categoryCache).forEach(k => delete categoryCache[k]);
+          Object.assign(categoryCache, map);
           fs.writeFileSync(cacheFile, JSON.stringify({ cache: map, time: Date.now() }, null, 2), 'utf-8');
           categoryEmitter.emit(CATEGORY_EVENT, map); // notify SSE clients
           return;
@@ -169,7 +171,9 @@ async function refreshCategoryCache() {
               map[slug] = val;
             }
           }
-          categoryCache = map;
+          // Mutate in-place so module.exports reference stays valid
+          Object.keys(categoryCache).forEach(k => delete categoryCache[k]);
+          Object.assign(categoryCache, map);
         }
       }
     } catch { /* keep defaults */ }
