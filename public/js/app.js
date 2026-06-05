@@ -2113,7 +2113,7 @@ QTP.Analytics = {
         }
 
         // Top articles
-        const topCont = $id('anTopArticles');
+        const topCont = $id('anTrendingPosts');
         if (perf.topArticles?.length) {
           topCont.innerHTML = perf.topArticles
             .map(
@@ -4008,7 +4008,8 @@ window.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('qtp_ai_instruction', ta.value);
   });
 
-  $id('loginBtn').addEventListener('click', () => QTP.Auth.doLogin());
+  const logBtn = $id('logBtn');
+  if (logBtn) logBtn.addEventListener('click', () => QTP.Auth.doLogin());
 
   // ── Bootstrap the app ──
   QTP.App.init();
