@@ -54,6 +54,37 @@ router.post('/', authRequired, async (req, res) => {
   }
 });
 
+// POST /api/sites/test-categories — Lấy categories bằng credentials trực tiếp (cho form Add/Edit chưa lưu)
+router.post('/test-categories', authRequired, async (req, res) => {
+  try {
+    const { url, username, appPassword } = req.body;
+    if (!url || !username || !appPassword) {
+      return res.status(400).json({ success: false, message: 'Thiếu thông tin kết nối' });
+    }
+    const axios = require('axios');
+    const authHeader = Buffer.from(`${username.trim()}:${appPassword.trim()}`).toString('base64');
+    const cleanUrl = url.replace(/\/+$/, '');
+    
+    const response = await axios.get(`${cleanUrl}/wp-json/wp/v2/categories?per_page=100`, {
+      headers: { Authorization: `Basic ${authHeader}` },
+      timeout: 10000
+    });
+    
+    if (Array.isArray(response.data)) {
+      const cats = response.data.map(cat => ({
+        slug: cat.slug,
+        id: cat.id,
+        name: cat.name || cat.slug
+      }));
+      res.json({ success: true, categories: cats });
+    } else {
+      res.status(400).json({ success: false, message: 'Dữ liệu không hợp lệ từ WordPress' });
+    }
+  } catch (e) {
+    res.status(400).json({ success: false, message: 'Không thể kết nối WP hoặc sai thông tin' });
+  }
+});
+
 // PUT /api/sites/:id — Sửa site
 router.put('/:id', authRequired, async (req, res) => {
   try {
