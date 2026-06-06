@@ -28,4 +28,4 @@ USER.md
 npm-debug.log*
 .tunnel-token
 .backup-pre-gemini
-AGENTS.md
+cloudflared.token
