@@ -38,12 +38,12 @@ const $qa = (sel) => document.querySelectorAll(sel);
 
 /** Auto-detect API base URL: use proxy if embedded in other domain */
 const API_BASE = (() => {
-  // If loaded from iflow or another domain, use sotviet.site
+  // If loaded from iflow or another domain, use app.thinkedu.com.vn
   if (window.location.hostname !== 'localhost' &&
-      window.location.hostname !== 'sotviet.site' &&
+      window.location.hostname !== 'app.thinkedu.com.vn' &&
       window.location.hostname !== '127.0.0.1') {
-    console.warn('Embedded mode detected at', window.location.hostname, '→ using sotviet.site API');
-    return 'https://sotviet.site';
+    console.warn('Embedded mode detected at', window.location.hostname, '→ using app.thinkedu.com.vn API');
+    return 'https://app.thinkedu.com.vn';
   }
   return '';
 })();

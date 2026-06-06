@@ -17,7 +17,7 @@ APP_URL="http://localhost:4001"
 LOG_FILE="$APP_DIR/logs/cloudflared.log"
 TOKEN_FILE="$APP_DIR/.tunnel-token"
 CONFIG_DIR="$HOME/.cloudflared"
-DOMAIN="https://sotviet.site"
+DOMAIN="https://app.thinkedu.com.vn"
 
 GRN='\033[0;32m'; YLW='\033[1;33m'; RED='\033[0;31m'; CYN='\033[0;36m'
 NC='\033[0m'
@@ -65,12 +65,12 @@ if [ -z "$TOKEN" ]; then
     echo -e "${YLW}==============================================${NC}"
     echo -e "${YLW}  CHUA CO TOKEN CLOUDFLARE                     ${NC}"
     echo -e "${YLW}                                              ${NC}"
-    echo -e "${YLW}  Can token de ket noi tunnel toi sotviet.site ${NC}"
+    echo -e "${YLW}  Can token de ket noi tunnel toi app.thinkedu.com.vn ${NC}"
     echo -e "${YLW}                                              ${NC}"
     echo -e "${YLW}  CACH LAY TOKEN:                             ${NC}"
     echo -e "${YLW}  1. https://dash.cloudflare.com              ${NC}"
     echo -e "${YLW}  2. Zero Trust -> Networks -> Tunnels       ${NC}"
-    echo -e "${YLW}  3. Click tunnel 'sotviet'                  ${NC}"
+    echo -e "${YLW}  3. Click tunnel 'thinkedu'                  ${NC}"
     echo -e "${YLW}  4. Tab 'Run for specific OS'               ${NC}"
     echo -e "${YLW}  5. Copy --token <TOKEN>                   ${NC}"
     echo -e "${YLW}  6. Dan token ben duoi                      ${NC}"

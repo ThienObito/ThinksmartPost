@@ -74,10 +74,9 @@ const aiLimiter = rateLimit({
 const ALLOWED_ORIGINS = [
   'http://localhost:4001',
   'http://localhost:4002',
-  'https://sotviet.site',
+  'https://app.thinkedu.com.vn',
   'https://iflow.thinksmart.site',
   'https://thinksmart.vn',
-  'https://app.thinkedu.com.vn',
 ];
 app.use(cors({
   origin: (origin, cb) => {

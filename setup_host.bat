@@ -178,7 +178,7 @@ echo.
 echo   📍 TRUY CẬP:
 echo.
 if not "%CF_TOKEN%"=="" (
-    echo      🌐 QUA DOMAIN: https://sotviet.site
+    echo      🌐 QUA DOMAIN: https://app.thinkedu.com.vn
     echo      🌐 IP THẬT:    http://<IP-cua-may>:4002
 )
 echo      💻 LOCAL:       http://localhost:4002
