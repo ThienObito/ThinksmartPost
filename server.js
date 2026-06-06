@@ -180,11 +180,7 @@ app.get('/api/articles', authRequired, (req, res) => {
       .filter(Boolean)
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-    const filtered = req.user.role === 'admin'
-      ? files
-      : files.filter(f => !f.userId || f.userId === req.user.id);
-
-    res.json(filtered);
+    res.json(files);
   } catch (e) {
     res.status(500).json({ success: false, message: e.message });
   }
@@ -236,15 +232,11 @@ app.get('/api/stats', authRequired, (req, res) => {
       })
       .filter(Boolean);
 
-    const filtered = req.user.role === 'admin'
-      ? files
-      : files.filter(f => !f.userId || f.userId === req.user.id);
-
-    const totalArticles = filtered.length;
-    const published = filtered.filter(f => f.published).length;
-    const withImages = filtered.filter(f => f.images && f.images.length > 0).length;
+    const totalArticles = files.length;
+    const published = files.filter(f => f.published).length;
+    const withImages = files.filter(f => f.images && f.images.length > 0).length;
     const categories = {};
-    filtered.forEach(f => {
+    files.forEach(f => {
       const cat = f.category_slug || 'other';
       categories[cat] = (categories[cat] || 0) + 1;
     });
