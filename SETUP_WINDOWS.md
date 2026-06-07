@@ -1,28 +1,54 @@
-# Setup Host Server (Windows)
+# Setup Windows Server (Chạy 1 lần, tự động mãi mãi)
 
-## Cách 1: Chạy lần đầu (setup đầy đủ)
-Gấp đôi click vào **`setup_host.bat** — nó sẽ tự động:
+## Bước 1: Cài đặt lần đầu
 
-1. Kiểm tra quyền Admin
-2. Cài Node.js (nếu chưa có)
-3. Chạy `npm install`
-4. Cài Cloudflared (nếu chưa có)
-5. Nhắc dán Tunnel Token → kết nối Cloudflare
-6. Tạo auto-start khi khởi động Windows
-7. Khởi động server
+1. Mở thư mục dự án (có chứa `server.js`)
+2. **Chuột phải** vào `setup_server.bat` → **Run as Administrator**
+3. Script sẽ tự động:
+   - Cài Node.js (nếu chưa có)
+   - Chạy `npm install`
+   - Cài Cloudflared (nếu chưa có)
+   - Hỏi Tunnel Token → nhập → cài làm Windows Service
+   - Tạo Scheduled Task để server tự chạy khi boot
+   - Khởi động server ngay lập tức
 
-## Cách 2: Chạy lại sau khi đã setup
-Gấp đôi click vào **`start_server.bat`** — chỉ khởi động server nhanh.
+## Bước 2: Lấy Tunnel Token
 
-## Cách lấy Cloudflare Tunnel Token
+Khi script hỏi token, vào:
+**https://dash.cloudflare.com** → **Zero Trust** → **Networks** → **Tunnels**
+→ **Create a tunnel** (tên: `thinkedu`) → Copy token (eyJ...) → Dán vào script
 
-1. Vào **https://dash.cloudflare.com**
-2. Zero Trust → Networks → Tunnels
-3. Tạo tunnel mới (tên: `autocontentposter`)
-4. Copy token (dạng `eyJ...`)
-5. Dán vào `setup_host.bat` khi được hỏi
+## Sau khi setup xong
 
-## Yêu cầu
-- Windows 10/11
-- Internet
-- Quyền Admin (khi chạy lần đầu)
+| Việc | Tự động chạy khi bật máy? |
+|---|---|
+| 🌐 Cloudflare Tunnel | ✅ Có (Windows Service) |
+| 🖥️ Node.js Server | ✅ Có (Scheduled Task) |
+
+Chỉ cần bật máy, mở trình duyệt vào `https://app.thinkedu.com.vn` là dùng được!
+
+## File đi kèm
+
+| File | Chức năng |
+|---|---|
+| `setup_server.bat` | Cài đặt lần đầu (chạy 1 lần) |
+| `start_server.bat` | Khởi động server thủ công |
+| `check_server.bat` | Kiểm tra tình trạng server + tunnel |
+
+## Troubleshooting
+
+### Server không chạy
+- Chạy `check_server.bat` để kiểm tra
+- Hoặc chạy `start_server.bat` thủ công
+
+### Lỗi "git pull" (Lock file)
+```bash
+git gc --prune=now
+git pull origin main
+```
+
+### Cần update code mới
+```bash
+git pull origin main
+# Rồi restart server (hoặc reboot máy)
+```
