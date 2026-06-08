@@ -1,31 +1,22 @@
-logs/
-public/uploads/
-data/
-!data/users.json
-!data/templates.json
-!data/articles/
-!data/sites.json
-!data/queue.json
-!data/notes.json
-!data/library.json
-!data/api-usage.json
-!data/*.json
+﻿# Local configuration
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local
+
+# Cloudflare tunnel
+.cloudflared/
+
+# Deployment
+.backups/
+.deploy-test/
+
+# Logs
+logs/
 *.log
-.DS_Store
+
+# Dependencies
 node_modules/
-.openclaw/
-AGENTS.md
-FRONTEND.md
-HEARTBEAT.md
-IDENTITY.md
-MEMORY.md
-SOUL.md
-TOOLS.md
-USER.md
-npm-debug.log*
-.tunnel-token
-.backup-pre-gemini
-cloudflared.token
+
+# OS
+Thumbs.db
+.DS_Store
