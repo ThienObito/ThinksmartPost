@@ -215,5 +215,7 @@ module.exports = {
   testConnection,
   fetchCategories,
   getSiteCredentials,
+  loadSites,
+  saveSites,
   migrateFromEnv,
 };

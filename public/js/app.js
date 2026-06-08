@@ -991,6 +991,7 @@ QTP.Articles = {
     const topic = $id('topic').value.trim();
     const qty = parseInt($id('qty').value) || 1;
     const instruction = $id('aiInstruction').value.trim();
+    const category = '';
 
     if (!topic) {
       showToast('Vui lòng nhập chủ đề!', 'error');
@@ -1160,6 +1161,7 @@ QTP.Articles = {
     const qty = parseInt($id('qty').value) || 1;
     const tmpl = $id('tmplSelect').value;
     const instruction = $id('aiInstruction').value.trim();
+    const cat = '';
 
     if (!tmpl) {
       showToast('Vui lòng chọn Tính Cách AI trước!', 'error');
@@ -3907,11 +3909,12 @@ QTP.Sites = {
 
   async toggleActive(id) {
     try {
-      const res = await api(`/sites/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ isActive: undefined }), // toggle server-side
-      });
-      if (res.success) showToast('Đã thay đổi trạng thái');
+      const res = await api(`/sites/${id}/toggle`, { method: 'PATCH' });
+      if (res.success) {
+        showToast(res.isActive ? '✅ Site đã bật' : '⛔ Site đã tắt');
+      } else {
+        showToast(res.message || 'Lỗi toggle', 'error');
+      }
       this.load();
     } catch { showToast('Lỗi!', 'error'); }
   },

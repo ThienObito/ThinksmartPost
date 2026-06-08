@@ -133,6 +133,23 @@ router.delete('/:id', authRequired, (req, res) => {
   }
 });
 
+// PATCH /api/sites/:id/toggle — Toggle trạng thái site
+router.patch('/:id/toggle', authRequired, (req, res) => {
+  try {
+    const sites = require('../db/sites').loadSites();
+    const site = sites.find(s => s.id === req.params.id);
+    if (!site) return res.status(404).json({ success: false, message: 'Không tìm thấy site' });
+    
+    site.isActive = !site.isActive;
+    site.updatedAt = new Date().toISOString();
+    require('../db/sites').saveSites(sites);
+    
+    res.json({ success: true, isActive: site.isActive });
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message });
+  }
+});
+
 // POST /api/sites/:id/test — Test kết nối
 router.post('/:id/test', authRequired, async (req, res) => {
   try {
