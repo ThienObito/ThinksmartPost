@@ -156,7 +156,7 @@ const SUB_TOPIC_DIRECTIONS = [
 ];
 
 // ═══════════════════════════════════════════════════════════════
-// PROMPT CHÍNH: SẠCH, KHÔNG CÓ THÔNG TIN CÔNG TY HAY LIÊN HỆ
+// PROMPT CHÍNH: Format mẫu + Hook mạnh + Rich HTML
 // ═══════════════════════════════════════════════════════════════
 
 const SEO_PROMPT = (topic, angleIdx, subDirection, articleIndex, totalCount) => {
@@ -173,7 +173,7 @@ const SEO_PROMPT = (topic, angleIdx, subDirection, articleIndex, totalCount) => 
 => Mỗi bài là một tác phẩm độc lập, không chỉ là biến thể của cùng một nội dung.`
     : '';
 
-  return `Bạn là chuyên gia viết nội dung SEO chuyên ngành, khách quan.
+  return `Bạn là chuyên gia viết nội dung SEO chuyên ngành, phong cách báo chí hiện đại, khách quan.
 
 Hãy viết một bài viết CHUẨN SEO chất lượng cao bằng tiếng Việt về chủ đề: "${topic}"
 
@@ -181,7 +181,7 @@ GÓC VIẾT: ${angle}
 
 ${diversityInstruction}
 
-YÊU CẦU SEO:
+📌 YÊU CẦU SEO:
 - Tiêu đề (H1): 50-65 ký tự, hấp dẫn, chứa từ khóa chính ở đầu, KHÔNG chứa tên công ty hay thương hiệu
 - Meta description: 155-160 ký tự, chứa từ khóa chính + từ kêu gọi tự nhiên
 - Thẻ H2: 4-6 thẻ, mỗi thẻ chứa từ khóa phụ (LSI), phân bố đều trong bài
@@ -191,27 +191,67 @@ YÊU CẦU SEO:
 - Đoạn văn: 2-4 câu/đoạn, tối đa 80 từ/đoạn (mobile-friendly)
 - Bullet points: dùng cho danh sách, so sánh, lợi ích
 - Internal linking: thêm gợi ý liên kết nội bộ dạng "[internal: chủ đề liên quan]"
-- External linking: dẫn nguồn uy tín nếu có số liệu
 - URL slug: gợi ý từ tiêu đề, không dấu, dùng dấu gạch ngang
 
-⚠️ TUYỆT ĐỐI KHÔNG được:
-- KHÔNG đề cập đến bất kỳ công ty, thương hiệu, website, email, hotline nào
-- KHÔNG có phần "Liên hệ chúng tôi", "Gọi ngay", "Đăng ký tư vấn"
-- KHÔNG có footer, quảng cáo, call-to-action bán hàng
-- KHÔNG giới thiệu hoặc quảng bá bất kỳ dịch vụ/sản phẩm thương mại nào
-- KHÔNG sử dụng các cụm như "chúng tôi có", "công ty chúng tôi", "hãy liên hệ"
+1️⃣ MỞ BÀI ẤN TƯỢNG — TUYỆT ĐỐI KHÔNG dùng "Trong bối cảnh...", "Trong thời đại...", "Trong một thế giới..."
+   ✅ ĐÚNG: "Hơn 70% doanh nghiệp đang thất bại trong việc áp dụng AI — và đây là lý do tại sao."
+   ✅ ĐÚNG: "Bạn có biết một chiếc máy in 3D có thể tạo ra một ngôi nhà trong 24 giờ?"
+   ✅ ĐÚNG: "Năm 2026 đánh dấu cột mốc: lần đầu tiên robot vận hành 50% dây chuyền sản xuất."
+   ❌ SAI: "Trong bối cảnh công nghiệp 4.0 đang phát triển mạnh mẽ..."
 
-Xem thêm: [internal: tiêu chuẩn SEO onpage], [internal: tối ưu content chuẩn SEO]
+2️⃣ CẤU TRÚC BÀI (viết theo HTML, đa dạng thẻ):
+   - <h2> cho section chính, <h3> cho subsection
+   - <strong>Nhấn mạnh ý chính</strong> trong mỗi đoạn (ít nhất 1 lần/đoạn)
+   - <blockquote> cho trích dẫn chuyên gia, nhận định quan trọng (ít nhất 1-2 cái)
+   - <table> cho số liệu so sánh (ít nhất 1 bảng — dữ liệu thực tế)
+   - <ul> hoặc <ol> cho danh sách (không quá 7 items)
+   - <p> ngắn: tối đa 2-3 câu/đoạn, không viết paragraph dài
+   - <em> cho thuật ngữ chuyên ngành
+
+3️⃣ NỘI DUNG:
+   - 1500-2500 từ, câu ngắn, dễ đọc
+   - Số liệu mới nhất (2025-2026), có nguồn tham khảo trong bài
+   - Ví dụ cụ thể (tên công ty, sản phẩm, con số thực)
+   - Kết luận: tóm tắt ngắn gọn, gợi ý hướng đi tiếp theo cho người đọc
+   - Văn phong: báo chí, conversational, gần gũi — không học thuật
+
+4️⃣ ⚠️ TUYỆT ĐỐI KHÔNG:
+   - KHÔNG đề cập bất kỳ công ty, thương hiệu, website, email, hotline nào
+   - KHÔNG có "Liên hệ chúng tôi", "Gọi ngay", "Đăng ký tư vấn"
+   - KHÔNG có footer, quảng cáo, call-to-action bán hàng
+   - KHÔNG giới thiệu/quảng bá dịch vụ/sản phẩm thương mại
+   - KHÔNG dùng "chúng tôi có", "công ty chúng tôi", "hãy liên hệ"
+   - KHÔNG chèn hình ảnh (chỉ text và HTML)
+
+[internal: tiêu chuẩn SEO onpage], [internal: tối ưu content chuẩn SEO]
+
+VÍ DỤ CẤU TRÚC HTML MONG ĐỢI:
+<article>
+  <p><strong>Câu mở bài ấn tượng với số liệu hoặc sự thật thú vị.</strong> Tiếp theo là 1-2 câu giới thiệu ngắn.</p>
+
+  <h2>Tiêu đề section</h2>
+  <p>Nội dung đoạn văn với <strong>từ khóa nhấn mạnh</strong>.</p>
+  <blockquote>"Trích dẫn quan trọng từ chuyên gia hoặc nhận định đáng chú ý."</blockquote>
+
+  <h3>Tiêu đề subsection</h3>
+  <table>
+    <thead><tr><th>Cột A</th><th>Cột B</th><th>Cột C</th></tr></thead>
+    <tbody><tr><td>Dữ liệu 1</td><td>Dữ liệu 2</td><td>Dữ liệu 3</td></tr></tbody>
+  </table>
+
+  <h2>Kết luận</h2>
+  <p>Tóm tắt ngắn gọn. Gợi ý hướng đi tiếp theo cho người đọc.</p>
+</article>
 
 QUAN TRỌNG: Chỉ trả về JSON, không thêm text nào khác.
 
 ĐỊNH DẠNG JSON:
 {
-  "title": "Tiêu đề hấp dẫn (50-65 ký tự, không có tên công ty)",
+  "title": "Tiêu đề hấp dẫn 50-65 ký tự, chứa số hoặc câu hỏi nếu có thể",
   "slug": "slug-tu-tieu-de-khong-dau",
-  "content": "<article><h2>...</h2><p>...</p></article>",
-  "meta_description": "Mô tả 155-160 ký tự chuẩn SEO",
-  "keywords": ["từ khóa chính", "từ khóa LSI 1", "từ khóa LSI 2"]
+  "content": "<article>...</article>",
+  "meta_description": "Mô tả 150-160 ký tự, kêu gọi click, chứa từ khóa chính",
+  "keywords": ["từ khóa 1", "từ khóa 2", "từ khóa 3"]
 }`;
 };
 
@@ -220,8 +260,12 @@ const SIMPLE_PROMPT = (topic, articleIndex, totalCount) => {
   const diversityNote = totalCount > 1
     ? `\nBÀI SỐ ${articleIndex + 1}/${totalCount}: Hãy viết với góc nhìn và nội dung KHÁC BIỆT so với các bài khác trong loạt.`
     : '';
-  return `Viết bài chuẩn SEO bằng tiếng Việt về: "${topic}"${diversityNote}
-Yêu cầu SEO: tiêu đề 50-65 ký tự, H2 4-6 thẻ, meta 155-160 ký tự, từ khóa LSI, đoạn văn ngắn 2-4 câu.
+  return `Viết bài chuẩn SEO, chất lượng cao bằng tiếng Việt về: "${topic}"${diversityNote}
+📌 YÊU CẦU SEO: tiêu đề 50-65 ký tự, H2 4-6 thẻ, meta 155-160 ký tự, từ khóa LSI, đoạn văn ngắn 2-4 câu.
+📌 MỞ BÀI ẤN TƯỢNG (số liệu, câu hỏi, sự thật) — KHÔNG dùng "Trong bối cảnh..."
+📌 Dùng <strong>nhấn mạnh</strong>, <blockquote>trích dẫn</blockquote>, <table>so sánh số liệu</table>
+📌 Kết luận có giá trị, gợi ý hướng đi tiếp
+
 KHÔNG được đề cập đến bất kỳ công ty, thương hiệu, liên hệ hay quảng cáo nào.
 Nội dung thuần túy chuyên môn, khách quan.
 Thêm gợi ý liên kết nội bộ: [internal: chủ đề liên quan] nếu phù hợp.
@@ -229,8 +273,8 @@ Thêm gợi ý liên kết nội bộ: [internal: chủ đề liên quan] nếu 
 Trả về JSON CHUẨN (không thêm text nào khác, "content" PHẢI là string HTML bắt đầu bằng <article>):
 {
   "title": "Tiêu đề (50-65 ký tự)",
-  "slug": "slug-tu-tieu-de",
-  "content": "<article><h2>...</h2><p>...</p></article>",
+  "slug": "slug-tu-tieu-de-khong-dau",
+  "content": "<article>...</article>",
   "meta_description": "Mô tả 155-160 ký tự",
   "keywords": ["từ khóa chính", "từ khóa LSI"]
 }`;
@@ -457,6 +501,15 @@ async function createArticleHandler(req, res) {
 
       // 3. Build HTML content
       let htmlContent = buildHtmlContent(article);
+
+      // 3a. Validate content không rỗng
+      const strippedContent = htmlContent.replace(/<[^>]+>/g, '').trim();
+      if (!strippedContent || strippedContent.length < 30) {
+        throw new Error(`Content rỗng hoặc quá ngắn (${strippedContent.length} chữ) — bỏ qua bài "${topic}"`);
+      }
+      if (htmlContent === '<article><p></p></article>') {
+        throw new Error('Content là HTML rỗng — bỏ qua bài');
+      }
 
       // 3b. Smart image injection
       let usedImages = [];

@@ -1,0 +1,29 @@
+{
+  "cache": {
+    "chua-phan-loai": {
+      "id": 1,
+      "name": "Chưa phân loại"
+    },
+    "giai-phap": {
+      "id": 13,
+      "name": "Giải pháp"
+    },
+    "style": {
+      "id": 3,
+      "name": "Style"
+    },
+    "test": {
+      "id": 16,
+      "name": "test"
+    },
+    "uncategorized": {
+      "id": 2,
+      "name": "Uncategorized"
+    },
+    "ung-dung": {
+      "id": 14,
+      "name": "Ứng dụng"
+    }
+  },
+  "time": 1781346847382
+}

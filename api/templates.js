@@ -37,7 +37,8 @@ function saveTemplates(templates) {
 
 // ── Helper: extract {{variable}} names from prompt ──────────────
 function extractVariables(prompt) {
-  const regex = /\{\{(\w+)\}\}/g;
+  // Support Unicode (Vietnamese) + alphanumeric + underscore
+  const regex = /\{\{([\p{L}\p{N}_]+)\}\}/gu;
   const vars = [];
   let match;
   while ((match = regex.exec(prompt)) !== null) {

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "54e65298-4399-46d3-8e9c-e94faf0fc154",
+    "name": "Site chính (từ .env)",
+    "url": "https://thinksmart.vn",
+    "username": "admin",
+    "appPassword": "7db40ac062367bcd33d05915bef04d60:e28576e2b12338ec86d771f2a86aef21d16a80caf3210668b36e86298a22bad6",
+    "categories": [],
+    "isActive": true,
+    "createdAt": "2026-06-13T10:34:06.474Z",
+    "lastSync": null,
+    "postCount": 0
+  }
+]

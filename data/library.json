@@ -1,0 +1,799 @@
+{
+  "folders": [],
+  "images": [
+    {
+      "id": "img-1779355693493-9xom",
+      "folderId": null,
+      "filename": "10_Engine-Blade.png",
+      "originalName": "10_Engine-Blade.png",
+      "url": "/uploads/10_Engine-Blade.png",
+      "thumb": "/uploads/thumbs/thumb_10_Engine-Blade.webp",
+      "alt": "Engine Blade",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 46368,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.493Z"
+    },
+    {
+      "id": "img-1779355693494-2eex",
+      "folderId": null,
+      "filename": "10_anh-1-scaled.jpg",
+      "originalName": "10_anh-1-scaled.jpg",
+      "url": "/uploads/10_anh-1-scaled.jpg",
+      "thumb": "/uploads/thumbs/thumb_10_anh-1-scaled.webp",
+      "alt": "anh scaled",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 735946,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-se5p",
+      "folderId": null,
+      "filename": "11_Combustion-Chamber.png",
+      "originalName": "11_Combustion-Chamber.png",
+      "url": "/uploads/11_Combustion-Chamber.png",
+      "thumb": "/uploads/thumbs/thumb_11_Combustion-Chamber.webp",
+      "alt": "Combustion Chamber",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 48692,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-0vsb",
+      "folderId": null,
+      "filename": "11_Landing-Gear-Panels.png",
+      "originalName": "11_Landing-Gear-Panels.png",
+      "url": "/uploads/11_Landing-Gear-Panels.png",
+      "thumb": "/uploads/thumbs/thumb_11_Landing-Gear-Panels.webp",
+      "alt": "Landing Gear Panels",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 39751,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-dc1n",
+      "folderId": null,
+      "filename": "12_Engine-Piping.png",
+      "originalName": "12_Engine-Piping.png",
+      "url": "/uploads/12_Engine-Piping.png",
+      "thumb": "/uploads/thumbs/thumb_12_Engine-Piping.webp",
+      "alt": "Engine Piping",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 52865,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-yf2y",
+      "folderId": null,
+      "filename": "12_Fuselage-Measurement-1.jpg",
+      "originalName": "12_Fuselage-Measurement-1.jpg",
+      "url": "/uploads/12_Fuselage-Measurement-1.jpg",
+      "thumb": "/uploads/thumbs/thumb_12_Fuselage-Measurement-1.webp",
+      "alt": "Fuselage Measurement",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 55350,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-bvry",
+      "folderId": null,
+      "filename": "13_Landing-Gear-Panels.png",
+      "originalName": "13_Landing-Gear-Panels.png",
+      "url": "/uploads/13_Landing-Gear-Panels.png",
+      "thumb": "/uploads/thumbs/thumb_13_Landing-Gear-Panels.webp",
+      "alt": "Landing Gear Panels",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 39751,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-g77r",
+      "folderId": null,
+      "filename": "13_tough_1500_on_metal.webp",
+      "originalName": "13_tough_1500_on_metal.webp",
+      "url": "/uploads/13_tough_1500_on_metal.webp",
+      "thumb": "/uploads/thumbs/thumb_13_tough_1500_on_metal.webp",
+      "alt": "tough on metal",
+      "tags": [
+        "in 3D",
+        "kim loại",
+        "metal"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 78346,
+      "mimeType": "image/webp",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-txis",
+      "folderId": null,
+      "filename": "14_Inlet-Housing.png",
+      "originalName": "14_Inlet-Housing.png",
+      "url": "/uploads/14_Inlet-Housing.png",
+      "thumb": "/uploads/thumbs/thumb_14_Inlet-Housing.webp",
+      "alt": "Inlet Housing",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 51085,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-9ndv",
+      "folderId": null,
+      "filename": "14_animate01.png",
+      "originalName": "14_animate01.png",
+      "url": "/uploads/14_animate01.png",
+      "thumb": "/uploads/thumbs/thumb_14_animate01.webp",
+      "alt": "animate",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 533733,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-gl8m",
+      "folderId": null,
+      "filename": "15_Inspection-of-Engine-Parts.jpg",
+      "originalName": "15_Inspection-of-Engine-Parts.jpg",
+      "url": "/uploads/15_Inspection-of-Engine-Parts.jpg",
+      "thumb": "/uploads/thumbs/thumb_15_Inspection-of-Engine-Parts.webp",
+      "alt": "Inspection of Engine Parts",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra",
+        "kiểm tra chất lượng",
+        "QC"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 111146,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-gkml",
+      "folderId": null,
+      "filename": "15_z3581039637538_7b3af1a916e7ad19b181a52a3ea3c533.png",
+      "originalName": "15_z3581039637538_7b3af1a916e7ad19b181a52a3ea3c533.png",
+      "url": "/uploads/15_z3581039637538_7b3af1a916e7ad19b181a52a3ea3c533.png",
+      "thumb": "/uploads/thumbs/thumb_15_z3581039637538_7b3af1a916e7ad19b181a52a3ea3c533.webp",
+      "alt": "bafaeadbaaeac",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 375597,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-1e9f",
+      "folderId": "",
+      "filename": "16_Fuselage-Measurement-1.jpg",
+      "originalName": "16_Fuselage-Measurement-1.jpg",
+      "url": "/uploads/16_Fuselage-Measurement-1.jpg",
+      "thumb": "/uploads/thumbs/thumb_16_Fuselage-Measurement-1.webp",
+      "alt": "scan 3d",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 55350,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z",
+      "aiTags": [
+        "scan3d",
+        "scan 3d hang khong"
+      ]
+    },
+    {
+      "id": "img-1779355693494-k1tx",
+      "folderId": null,
+      "filename": "16_Inlet-Housing.png",
+      "originalName": "16_Inlet-Housing.png",
+      "url": "/uploads/16_Inlet-Housing.png",
+      "thumb": "/uploads/thumbs/thumb_16_Inlet-Housing.webp",
+      "alt": "Inlet Housing",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 51085,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-lndh",
+      "folderId": null,
+      "filename": "1779261870550-b5c97c.jpg",
+      "originalName": "1779261870550-b5c97c.jpg",
+      "url": "/uploads/1779261870550-b5c97c.jpg",
+      "thumb": "/uploads/thumbs/thumb_1779261870550-b5c97c.webp",
+      "alt": "bcc",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 35159,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-n1qa",
+      "folderId": null,
+      "filename": "1779261870806-18211b.webp",
+      "originalName": "1779261870806-18211b.webp",
+      "url": "/uploads/1779261870806-18211b.webp",
+      "thumb": "/uploads/thumbs/thumb_1779261870806-18211b.webp",
+      "alt": "Hình ảnh minh họa",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 67396,
+      "mimeType": "image/webp",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-8nbh",
+      "folderId": null,
+      "filename": "1779261871339-96fce6.jpg",
+      "originalName": "1779261871339-96fce6.jpg",
+      "url": "/uploads/1779261871339-96fce6.jpg",
+      "thumb": "/uploads/thumbs/thumb_1779261871339-96fce6.webp",
+      "alt": "fce",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 244371,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-mn0t",
+      "folderId": null,
+      "filename": "1779261871585-1f4c48.jpeg",
+      "originalName": "1779261871585-1f4c48.jpeg",
+      "url": "/uploads/1779261871585-1f4c48.jpeg",
+      "thumb": "/uploads/thumbs/thumb_1779261871585-1f4c48.webp",
+      "alt": "fc",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 8729,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693494-bwua",
+      "folderId": null,
+      "filename": "17_Measurement-of-Fasteners-on-the-Airplane-Skins.jpg",
+      "originalName": "17_Measurement-of-Fasteners-on-the-Airplane-Skins.jpg",
+      "url": "/uploads/17_Measurement-of-Fasteners-on-the-Airplane-Skins.jpg",
+      "thumb": "/uploads/thumbs/thumb_17_Measurement-of-Fasteners-on-the-Airplane-Skins.webp",
+      "alt": "Measurement of Fasteners on the Airplane",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 23730,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.494Z"
+    },
+    {
+      "id": "img-1779355693495-lq77",
+      "folderId": null,
+      "filename": "17_optimized_for_web_jpeg-11292022_injection_molding_226_sh-standard_copy_1.webp",
+      "originalName": "17_optimized_for_web_jpeg-11292022_injection_molding_226_sh-standard_copy_1.webp",
+      "url": "/uploads/17_optimized_for_web_jpeg-11292022_injection_molding_226_sh-standard_copy_1.webp",
+      "thumb": "/uploads/thumbs/thumb_17_optimized_for_web_jpeg-11292022_injection_molding_226_sh-standard_copy_1.webp",
+      "alt": "optimized for web jpeg injection molding",
+      "tags": [
+        "in 3D",
+        "khuôn",
+        "mold"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 88978,
+      "mimeType": "image/webp",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-s7sf",
+      "folderId": null,
+      "filename": "18_Aircraft-Wing-Inspection.jpg",
+      "originalName": "18_Aircraft-Wing-Inspection.jpg",
+      "url": "/uploads/18_Aircraft-Wing-Inspection.jpg",
+      "thumb": "/uploads/thumbs/thumb_18_Aircraft-Wing-Inspection.webp",
+      "alt": "Aircraft Wing Inspection",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra",
+        "kiểm tra chất lượng",
+        "QC"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 74504,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-dy4f",
+      "folderId": null,
+      "filename": "18_Engine-Piping.png",
+      "originalName": "18_Engine-Piping.png",
+      "url": "/uploads/18_Engine-Piping.png",
+      "thumb": "/uploads/thumbs/thumb_18_Engine-Piping.webp",
+      "alt": "Engine Piping",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 52865,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-advi",
+      "folderId": null,
+      "filename": "19_Inspection-of-Engine-Parts.jpg",
+      "originalName": "19_Inspection-of-Engine-Parts.jpg",
+      "url": "/uploads/19_Inspection-of-Engine-Parts.jpg",
+      "thumb": "/uploads/thumbs/thumb_19_Inspection-of-Engine-Parts.webp",
+      "alt": "Inspection of Engine Parts",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra",
+        "kiểm tra chất lượng",
+        "QC"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 111146,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-6ngu",
+      "folderId": null,
+      "filename": "19_thumbnail_schiebel_1200x628-jpg.jpg",
+      "originalName": "19_thumbnail_schiebel_1200x628-jpg.jpg",
+      "url": "/uploads/19_thumbnail_schiebel_1200x628-jpg.jpg",
+      "thumb": "/uploads/thumbs/thumb_19_thumbnail_schiebel_1200x628-jpg.webp",
+      "alt": "thumbnail schiebel jpg",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 73537,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-spa1",
+      "folderId": null,
+      "filename": "1_2-e1658204144572.png",
+      "originalName": "1_2-e1658204144572.png",
+      "url": "/uploads/1_2-e1658204144572.png",
+      "thumb": "/uploads/thumbs/thumb_1_2-e1658204144572.webp",
+      "alt": "Hình ảnh minh họa",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 815420,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-6edc",
+      "folderId": null,
+      "filename": "1_Aerospace-2.jpg",
+      "originalName": "1_Aerospace-2.jpg",
+      "url": "/uploads/1_Aerospace-2.jpg",
+      "thumb": "/uploads/thumbs/thumb_1_Aerospace-2.webp",
+      "alt": "Aerospace",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 54217,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-lze8",
+      "folderId": null,
+      "filename": "20_WeChat-Image_20220718103519-1000x720.jpg",
+      "originalName": "20_WeChat-Image_20220718103519-1000x720.jpg",
+      "url": "/uploads/20_WeChat-Image_20220718103519-1000x720.jpg",
+      "thumb": "/uploads/thumbs/thumb_20_WeChat-Image_20220718103519-1000x720.webp",
+      "alt": "WeChat Image",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 171369,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-qc5d",
+      "folderId": null,
+      "filename": "20_z3581033226790_cb5aff5818a11ea0ca62cd683b13b856.png",
+      "originalName": "20_z3581033226790_cb5aff5818a11ea0ca62cd683b13b856.png",
+      "url": "/uploads/20_z3581033226790_cb5aff5818a11ea0ca62cd683b13b856.png",
+      "thumb": "/uploads/thumbs/thumb_20_z3581033226790_cb5aff5818a11ea0ca62cd683b13b856.webp",
+      "alt": "cbaffaeacacdbb",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 263130,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-eg6s",
+      "folderId": null,
+      "filename": "21_2-e1658204144572.png",
+      "originalName": "21_2-e1658204144572.png",
+      "url": "/uploads/21_2-e1658204144572.png",
+      "thumb": "/uploads/thumbs/thumb_21_2-e1658204144572.webp",
+      "alt": "Hình ảnh minh họa",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 815420,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-3q3x",
+      "folderId": null,
+      "filename": "21_Fuselage.png",
+      "originalName": "21_Fuselage.png",
+      "url": "/uploads/21_Fuselage.png",
+      "thumb": "/uploads/thumbs/thumb_21_Fuselage.webp",
+      "alt": "Fuselage",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 26926,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-iok2",
+      "folderId": null,
+      "filename": "22_thumbnail_schiebel_1200x628-jpg.jpg",
+      "originalName": "22_thumbnail_schiebel_1200x628-jpg.jpg",
+      "url": "/uploads/22_thumbnail_schiebel_1200x628-jpg.jpg",
+      "thumb": "/uploads/thumbs/thumb_22_thumbnail_schiebel_1200x628-jpg.webp",
+      "alt": "thumbnail schiebel jpg",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 73537,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-tx67",
+      "folderId": null,
+      "filename": "23_optimized_for_web_png-08252025_psyonic_user_story_645-edit.webp",
+      "originalName": "23_optimized_for_web_png-08252025_psyonic_user_story_645-edit.webp",
+      "url": "/uploads/23_optimized_for_web_png-08252025_psyonic_user_story_645-edit.webp",
+      "thumb": "/uploads/thumbs/thumb_23_optimized_for_web_png-08252025_psyonic_user_story_645-edit.webp",
+      "alt": "optimized for web png psyonic user",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 103848,
+      "mimeType": "image/webp",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-tw0w",
+      "folderId": null,
+      "filename": "24_z3581032094346_8606af33c18ecb58a2d221d5a2bd682b.png",
+      "originalName": "24_z3581032094346_8606af33c18ecb58a2d221d5a2bd682b.png",
+      "url": "/uploads/24_z3581032094346_8606af33c18ecb58a2d221d5a2bd682b.png",
+      "thumb": "/uploads/thumbs/thumb_24_z3581032094346_8606af33c18ecb58a2d221d5a2bd682b.webp",
+      "alt": "afcecbaddabdb",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 246026,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-jdhr",
+      "folderId": null,
+      "filename": "25_May-In-Form-4L-Va-Nhua-High-Temp-Da-Ho-Tro-Doi-Dua-Padova-In-He-Thong-Lam-Mat-Va-Ve-Dich-Nhu-The-Nao.webp",
+      "originalName": "25_May-In-Form-4L-Va-Nhua-High-Temp-Da-Ho-Tro-Doi-Dua-Padova-In-He-Thong-Lam-Mat-Va-Ve-Dich-Nhu-The-Nao.webp",
+      "url": "/uploads/25_May-In-Form-4L-Va-Nhua-High-Temp-Da-Ho-Tro-Doi-Dua-Padova-In-He-Thong-Lam-Mat-Va-Ve-Dich-Nhu-The-Nao.webp",
+      "thumb": "/uploads/thumbs/thumb_25_May-In-Form-4L-Va-Nhua-High-Temp-Da-Ho-Tro-Doi-Dua-Padova-In-He-Thong-Lam-Mat-Va-Ve-Dich-Nhu-The-Nao.webp",
+      "alt": "May In Form Va Nhua High",
+      "tags": [
+        "in 3D",
+        "Formlabs",
+        "resin",
+        "máy in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 69174,
+      "mimeType": "image/webp",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-il2n",
+      "folderId": null,
+      "filename": "26_bamboo.png",
+      "originalName": "26_bamboo.png",
+      "url": "/uploads/26_bamboo.png",
+      "thumb": "/uploads/thumbs/thumb_26_bamboo.webp",
+      "alt": "bamboo",
+      "tags": [
+        "in 3D",
+        "bamboo",
+        "vật liệu"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 1030719,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-h0rf",
+      "folderId": null,
+      "filename": "27_l8_box_xtar.webp",
+      "originalName": "27_l8_box_xtar.webp",
+      "url": "/uploads/27_l8_box_xtar.webp",
+      "thumb": "/uploads/thumbs/thumb_27_l8_box_xtar.webp",
+      "alt": "box xtar",
+      "tags": [
+        "in 3D",
+        "bao bì",
+        "packaging"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 25158,
+      "mimeType": "image/webp",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-gbwq",
+      "folderId": null,
+      "filename": "28_z3581025458953_4ae564ce09443cd4a4c4cd765ee4c1d3-1.png",
+      "originalName": "28_z3581025458953_4ae564ce09443cd4a4c4cd765ee4c1d3-1.png",
+      "url": "/uploads/28_z3581025458953_4ae564ce09443cd4a4c4cd765ee4c1d3-1.png",
+      "thumb": "/uploads/thumbs/thumb_28_z3581025458953_4ae564ce09443cd4a4c4cd765ee4c1d3-1.webp",
+      "alt": "aececdaccdeecd",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 343640,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-irtk",
+      "folderId": null,
+      "filename": "29_Aircraft-Wing-Inspection.jpg",
+      "originalName": "29_Aircraft-Wing-Inspection.jpg",
+      "url": "/uploads/29_Aircraft-Wing-Inspection.jpg",
+      "thumb": "/uploads/thumbs/thumb_29_Aircraft-Wing-Inspection.webp",
+      "alt": "Aircraft Wing Inspection",
+      "tags": [
+        "in 3D",
+        "hàng không",
+        "aerospace",
+        "kiểm tra",
+        "kiểm tra chất lượng",
+        "QC"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 74504,
+      "mimeType": "image/jpeg",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-l2ph",
+      "folderId": null,
+      "filename": "2_251530091_1798838540302933_8079534903727384727_n.png",
+      "originalName": "2_251530091_1798838540302933_8079534903727384727_n.png",
+      "url": "/uploads/2_251530091_1798838540302933_8079534903727384727_n.png",
+      "thumb": "/uploads/thumbs/thumb_2_251530091_1798838540302933_8079534903727384727_n.webp",
+      "alt": "Hình ảnh minh họa",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 299909,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    },
+    {
+      "id": "img-1779355693495-sk7v",
+      "folderId": null,
+      "filename": "2_z3581035244254_a49cd66680abff6bcfc95c93fb7ca926.png",
+      "originalName": "2_z3581035244254_a49cd66680abff6bcfc95c93fb7ca926.png",
+      "url": "/uploads/2_z3581035244254_a49cd66680abff6bcfc95c93fb7ca926.png",
+      "thumb": "/uploads/thumbs/thumb_2_z3581035244254_a49cd66680abff6bcfc95c93fb7ca926.webp",
+      "alt": "acdabffbcfccfbca",
+      "tags": [
+        "in 3D"
+      ],
+      "width": null,
+      "height": null,
+      "fileSize": 330282,
+      "mimeType": "image/png",
+      "userId": "admin-001",
+      "createdAt": "2026-05-21T09:28:13.495Z"
+    }
+  ]
+}

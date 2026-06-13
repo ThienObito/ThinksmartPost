@@ -280,18 +280,22 @@ app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
       // Sanitize content (handle double-encoded JSON)
       const cleanContent = sanitizeContent(post.content);
 
+      // ✅ Validate nội dung trước publish
+      const strippedPublish = cleanContent.replace(/<[^>]+>/g, '').trim();
+      if (!strippedPublish || strippedPublish.length < 30) {
+        throw new Error(`Content rỗng (${strippedPublish?.length || 0} chữ) — từ chối publish`);
+      }
+
       // Strip <article> wrapper — WP Gutenberg wraps its own blocks
       let wpContent = cleanContent;
       const articleStart = wpContent.indexOf('<article');
       const articleEnd = wpContent.indexOf('</article>');
       if (articleStart >= 0 && articleEnd > articleStart) {
         const inner = wpContent.substring(articleStart, articleEnd + 10);
-        // Get everything inside <article>...</article>
         const startTagEnd = wpContent.indexOf('>', articleStart) + 1;
         const innerContent = wpContent.substring(startTagEnd, articleEnd).trim();
         wpContent = wpContent.replace(inner, innerContent);
       }
-
       // Sanitize thumbnail
       const cleanThumb = sanitizeImageUrl(
         post.thumbnail || (Array.isArray(post.images) && post.images.length > 0 ? post.images[0] : '')

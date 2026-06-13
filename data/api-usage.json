@@ -1,0 +1,16 @@
+{
+  "deepseek": 3,
+  "replicate": 0,
+  "wp_publish": 0,
+  "chat": 0,
+  "history": {
+    "2026-05-21": {
+      "deepseek": 3
+    },
+    "2026-05-31": {
+      "gemini": 21
+    }
+  },
+  "lastUpdated": "2026-05-31T14:04:13.385Z",
+  "gemini": 21
+}

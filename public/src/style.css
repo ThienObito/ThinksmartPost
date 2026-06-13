@@ -2097,3 +2097,180 @@ window.addEventListener('scroll', () => {
   padding: 40px;
   color: var(--text-muted);
 }
+.img-cnt-btn:hover { border-color:var(--color-blue); color:var(--color-blue); }
+.img-cnt-btn.active { background:rgba(59,130,246,0.15); border-color:var(--color-blue); color:var(--color-blue); }
+
+/* ═══════════════════════════════════════════════════
+   Article Content Styling — Preview + Published
+   Supports: table, blockquote, code, figure, strong
+   ═══════════════════════════════════════════════════ */
+.modal-body article,
+.article-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.modal-body article p,
+.article-content p {
+  margin-bottom: 14px;
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.modal-body article strong,
+.article-content strong {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.modal-body article em,
+.article-content em {
+  color: var(--color-accent);
+  font-style: italic;
+}
+
+/* — Table — */
+.modal-body article table,
+.article-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 13px;
+  overflow-x: auto;
+  display: block;
+}
+.modal-body article thead,
+.article-content thead {
+  background: var(--color-card-2);
+}
+.modal-body article th,
+.article-content th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text);
+  border-bottom: 2px solid var(--color-accent);
+  white-space: nowrap;
+}
+.modal-body article td,
+.article-content td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-sub);
+}
+.modal-body article tbody tr:hover,
+.article-content tbody tr:hover {
+  background: var(--color-card);
+}
+
+/* — Blockquote — */
+.modal-body article blockquote,
+.article-content blockquote {
+  margin: 20px 0;
+  padding: 14px 20px;
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-card);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: var(--color-sub);
+  line-height: 1.7;
+}
+
+/* — Code — */
+.modal-body article code,
+.article-content code {
+  background: var(--color-card-2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--color-accent);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+.modal-body article pre,
+.article-content pre {
+  background: var(--color-card-2);
+  padding: 16px 20px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 16px 0;
+  border: 1px solid var(--color-border);
+}
+.modal-body article pre code,
+.article-content pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+/* — Figure + Caption — */
+.modal-body article figure,
+.article-content figure {
+  margin: 20px 0;
+  text-align: center;
+}
+.modal-body article figure img,
+.article-content figure img {
+  max-width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.modal-body article figcaption,
+.article-content figcaption {
+  font-size: 12px;
+  color: var(--color-muted);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* — Lists — */
+.modal-body article ul,
+.modal-body article ol,
+.article-content ul,
+.article-content ol {
+  padding-left: 24px;
+  margin: 12px 0;
+  line-height: 1.7;
+}
+.modal-body article li,
+.article-content li {
+  margin-bottom: 6px;
+  color: var(--color-sub);
+}
+
+/* — Headings — */
+.modal-body article h2,
+.article-content h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 28px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+.modal-body article h3,
+.article-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 22px 0 10px;
+}
+
+/* — Mobile responsive — */
+@media (max-width: 767px) {
+  .modal-body article table,
+  .article-content table {
+    font-size: 12px;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .modal-body article th,
+  .modal-body article td,
+  .article-content th,
+  .article-content td {
+    padding: 7px 10px;
+    white-space: nowrap;
+  }
+}
