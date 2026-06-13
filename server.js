@@ -296,6 +296,9 @@ app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
         const innerContent = wpContent.substring(startTagEnd, articleEnd).trim();
         wpContent = wpContent.replace(inner, innerContent);
       }
+
+      // Wrap in Gutenberg Custom HTML block — cần cho WP 7.0+ để content không bị xử lý sai
+      wpContent = `<!-- wp:html -->\n${wpContent}\n<!-- /wp:html -->`;
       // Sanitize thumbnail
       const cleanThumb = sanitizeImageUrl(
         post.thumbnail || (Array.isArray(post.images) && post.images.length > 0 ? post.images[0] : '')
