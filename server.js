@@ -115,6 +115,29 @@ async function wpRequest(method, endpoint, data = null) {
   return res.data;
 }
 
+// ── Multi-site WP request (uses credentials from sites.json) ────
+async function wpRequestForSite(siteId, method, endpoint, data = null) {
+  const { getSiteCredentials } = require('./db/sites');
+  const creds = getSiteCredentials(siteId);
+  if (!creds) throw new Error('Site không tồn tại hoặc thiếu credentials');
+  const auth = Buffer.from(`${creds.username}:${creds.appPassword}`).toString('base64');
+  const config = {
+    method,
+    url: `${creds.url}/wp-json/wp/v2/${endpoint}`,
+    headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' },
+    timeout: 30000,
+  };
+  if (data) config.data = data;
+  const res = await axios(config);
+  return res.data;
+}
+
+// ── Resolve WP endpoint to use: siteId -> per-site, else env ────
+function wpRequestAuto(siteId, method, endpoint, data = null) {
+  if (siteId) return wpRequestForSite(siteId, method, endpoint, data);
+  return wpRequest(method, endpoint, data);
+}
+
 // ── Serve index ─────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -252,6 +275,19 @@ app.get('/api/stats', authRequired, (req, res) => {
 // ── WordPress Categories endpoint ───────────────────────────────
 app.get('/api/categories', authRequired, asyncHandler(async (req, res) => {
   const { categoryCache } = require('./utils');
+  const siteId = req.query.siteId;
+
+  // If a site is selected, fetch categories from that specific WP site
+  if (siteId) {
+    try {
+      const { fetchCategories } = require('./db/sites');
+      const cats = await fetchCategories(siteId);
+      return res.json({ success: true, categories: cats });
+    } catch {
+      // fallback to cache
+    }
+  }
+
   await refreshCategoryCache(); // refresh before sending
   const cats = Object.entries(categoryCache).map(([slug, val]) => ({ slug, id: val.id || val, name: val.name || slug }));
   res.json({ success: true, categories: cats });
@@ -259,7 +295,7 @@ app.get('/api/categories', authRequired, asyncHandler(async (req, res) => {
 
 // ── Post to WordPress ───────────────────────────────────────────
 app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
-  const { files, deleteAfterPublish = false, defaultCategory } = req.body;
+  const { files, deleteAfterPublish = false, defaultCategory, siteId } = req.body;
   if (!files || files.length === 0) {
     return res.status(400).json({ success: false, message: 'Danh sách files trống' });
   }
@@ -318,7 +354,7 @@ app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
       }
 
       track('wp_publish');
-      const data = await wpRequest('POST', 'posts', wpBody);
+      const data = await wpRequestAuto(siteId, 'POST', 'posts', wpBody);
 
       // Mark as published & save back
       post.published = true;
@@ -351,10 +387,11 @@ app.post('/api/post-all', authRequired, asyncHandler(async (req, res) => {
   res.json({ success: true, successCount, results });
 }));
 
-// ── WordPress API proxy ─────────────────────────────────────────
+// ── WordPress API proxy (multi-site aware) ──────────────────────
 app.get('/api/wp-categories', asyncHandler(async (req, res) => {
+  const siteId = req.query.siteId;
   try {
-    const data = await wpRequest('GET', 'categories');
+    const data = await wpRequestAuto(siteId, 'GET', 'categories');
     res.json(data);
   } catch {
     res.json([
@@ -365,22 +402,27 @@ app.get('/api/wp-categories', asyncHandler(async (req, res) => {
 }));
 
 app.get('/api/wp-posts', asyncHandler(async (req, res) => {
+  const siteId = req.query.siteId;
   // Pass through WP query params (include, context, per_page, etc.)
-  const qs = Object.entries(req.query)
+  const query = { ...req.query };
+  delete query.siteId; // strip siteId before building WP query string
+  const qs = Object.entries(query)
     .map(([k, v]) => `${k}=${v}`)
     .join('&');
   const endpoint = qs ? `posts?${qs}` : 'posts?per_page=50';
-  const data = await wpRequest('GET', endpoint);
+  const data = await wpRequestAuto(siteId, 'GET', endpoint);
   res.json(data);
 }));
 
 app.delete('/api/wp-posts/:id', asyncHandler(async (req, res) => {
-  await wpRequest('DELETE', `posts/${req.params.id}?force=true`);
+  const siteId = req.query.siteId;
+  await wpRequestAuto(siteId, 'DELETE', `posts/${req.params.id}?force=true`);
   res.json({ success: true });
 }));
 
 app.put('/api/wp-posts/:id', asyncHandler(async (req, res) => {
-  const data = await wpRequest('POST', `posts/${req.params.id}`, req.body);
+  const siteId = req.query.siteId;
+  const data = await wpRequestAuto(siteId, 'POST', `posts/${req.params.id}`, req.body);
   res.json({ success: true, data });
 }));
 

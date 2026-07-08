@@ -1072,16 +1072,25 @@ QTP.Articles = {
     showConfirm('Đăng bài viết này lên WordPress?', async () => {
       showToast('Đang đăng…', 'loading');
       try {
-        // Get default category from active site
+        // Get siteId from WP section or first active site
+        let siteId = (typeof QTP.WP !== 'undefined') ? QTP.WP._siteId : '';
         let defaultCategory = '';
         try {
           const sitesRes = await api('/sites');
-          const activeSite = (sitesRes.sites || []).find(s => s.isActive && s.defaultCategory);
+          if (!siteId) {
+            const firstActive = (sitesRes.sites || []).find(s => s.isActive);
+            if (firstActive) siteId = firstActive.id;
+          }
+          const activeSite = (sitesRes.sites || []).find(s => s.id === siteId && s.defaultCategory);
           if (activeSite) defaultCategory = activeSite.defaultCategory;
         } catch {}
+        if (!siteId) {
+          showToast('⚠️ Vui lòng chọn WordPress site trong tab WP!', 'warning');
+          return;
+        }
         const res = await api('/post-all', {
           method: 'POST',
-          body: JSON.stringify({ files: [filename], defaultCategory }),
+          body: JSON.stringify({ files: [filename], defaultCategory, siteId }),
         });
         if (res.success) {
           showToast('✅ Đã đăng lên WordPress!');
@@ -1615,120 +1624,95 @@ QTP.Templates = {
    =================================================================== */
 
 QTP.WP = {
-  async load() {
-    // Always fetch real WP posts — no fake mode for this section
+  _siteId: '',
+  _sites: [],
+
+  async load(focusSiteId) {
     const cont = $id('wpCont');
-    cont.innerHTML =
-      '<div class="loading-state"><div class="spinner"></div><p>Đang tải từ WordPress…</p></div>';
-
-    // Show connection info
-    this.showStatus();
-
+    const sel = $id('wpSiteSelector');
     try {
-      const posts = await api('/wp-posts');
+      const res = await api('/sites');
+      if (res.success && Array.isArray(res.sites)) {
+        this._sites = res.sites;
+        const currentVal = focusSiteId || this._siteId;
+        sel.innerHTML = '<option value="">Chon site...</option>'
+          + res.sites.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+        if (currentVal && res.sites.some(s => s.id === currentVal)) sel.value = currentVal;
+      }
+    } catch {}
+    this._siteId = sel.value;
+    this.showStatus();
+    if (!this._siteId) {
+      cont.innerHTML = '<div class="p-12 tc-muted fs-4"><i class="fas fa-globe fa-3x op-3 db mb-4"></i>Chon mot WordPress site de xem bai viet</div>';
+      return;
+    }
+    cont.innerHTML = '<div class="loading-state"><div class="spinner"></div><p>Dang tai tu WordPress</p></div>';
+    try {
+      const posts = await api(`/wp-posts?siteId=${this._siteId}`);
       if (!Array.isArray(posts)) throw new Error();
-
       if (!posts.length) {
-        cont.innerHTML =
-          '<div style="text-align:center;padding:40px;color:var(--color-muted)"><i class="fas fa-globe" style="font-size:48px;opacity:0.3;display:block;margin-bottom:16px"></i>Chưa có bài viết trên WordPress</div>';
+        cont.innerHTML = '<div class="tc-muted p-12"><i class="fas fa-globe fa-3x op-3 db mb-4"></i>Chua co bai viet</div>';
         return;
       }
-
-      cont.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="font-size:12px;color:var(--color-muted);margin-bottom:4px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between">
-            <span>Tổng số: <strong style="color:var(--text)">${posts.length}</strong> bài viết</span>
-            <span class="wp-sync-info"><i class="fas fa-check-circle" style="color:#22c55e;font-size:10px"></i> Đã đồng bộ</span>
+      cont.innerHTML = `<div class="flex-col g-8">
+        <div class="fs-12 tm p-4 pb-8 bb-w0-04 flex jcsb"><span>Tong so: <strong class="tc-text">${posts.length}</strong> bai viet</span>
+        <span class="wp-sync-info"><i class="fas fa-check-circle cg-22 fs-10"></i> Da dong bo</span></div>
+        ${posts.map(p => `<div class="report-card">
+          <div class="flex jcsb aic g-12">
+            <div class="f-1 minw-0">
+              <div class="fw-600 fs-14">${esc(p.title?.rendered || 'Untitled')}</div>
+              <div class="fs-11 tm mt-2"><i class="far fa-calendar-alt mr-3"></i>${fmtDate(p.date)}
+                ${p.status ? `<span class="ml-8 px-6 br-4 fs-10 bg-${p.status==='publish'?'cg-22':'cy-59'} tc-${p.status==='publish'?'#22c55e':'#f59e0b'}">${p.status==='publish'?'Da xuat ban':'Nhap'}</span>` : ''}</div>
+            </div>
+            <div class="flex g-8 shr-0">
+              <a href="${p.link||'#'}" target="_blank" class="btn btn-ghost btn-sm" title="Xem"><i class="fas fa-external-link-alt"></i></a>
+              <button onclick="QTP.WP.edit(${p.id})" class="btn btn-ghost btn-sm" title="Sua"><i class="fas fa-pen"></i></button>
+              <button onclick="QTP.WP.del(${p.id})" class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)" title="Xoa"><i class="fas fa-trash"></i></button>
+            </div>
           </div>
-          ${posts
-            .map(
-              (p) => `
-            <div class="report-card">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-                <div style="flex:1;min-width:0">
-                  <div style="font-weight:600;font-size:14px">${esc(p.title?.rendered || 'Untitled')}</div>
-                  <div style="font-size:11px;color:var(--color-muted);margin-top:2px">
-                    <i class="far fa-calendar-alt" style="margin-right:3px"></i>${fmtDate(p.date)}
-                    ${p.status ? `<span style="margin-left:8px;padding:1px 6px;border-radius:4px;font-size:10px;background:${p.status === 'publish' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)'};color:${p.status === 'publish' ? '#22c55e' : '#f59e0b'}">${p.status === 'publish' ? 'Đã xuất bản' : 'Nháp'}</span>` : ''}
-                  </div>
-                </div>
-                <div style="display:flex;gap:8px;flex-shrink:0">
-                  <a href="${p.link || '#'}" target="_blank" class="btn btn-ghost btn-sm" title="Xem bài viết"><i class="fas fa-external-link-alt"></i></a>
-                  <button onclick="QTP.WP.edit(${p.id})" class="btn btn-ghost btn-sm" title="Chỉnh sửa bài viết"><i class="fas fa-pen"></i></button>
-                  <button onclick="QTP.WP.del(${p.id})" class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2)" title="Xóa khỏi WP"><i class="fas fa-trash"></i></button>
-                </div>
-              </div>
-            </div>`
-            )
-            .join('')}
-        </div>`;
+        </div>`).join('')}
+      </div>`;
     } catch {
-      cont.innerHTML =
-        '<div style="text-align:center;padding:40px;color:var(--color-danger)"><i class="fas fa-exclamation-triangle" style="font-size:48px;opacity:0.3;display:block;margin-bottom:16px"></i>Lỗi tải bài viết WordPress<br><span style="font-size:13px;color:var(--color-muted)">Kiểm tra kết nối hoặc URL WordPress trong Cài Đặt</span></div>';
+      cont.innerHTML = '<div class="p-12 tc-danger"><i class="fas fa-exclamation-triangle fa-3x op-3 db mb-4"></i>Loi tai bai viet<br><span class="fs-13 tm">Kiem tra ket noi hoac chon site khac</span></div>';
     }
+  },
+
+  onSiteChange() {
+    this._siteId = $id('wpSiteSelector').value;
+    this.load(this._siteId);
   },
 
   async testConn() {
     const btn = $id('wpTestBtn');
+    const siteId = this._siteId;
+    if (!siteId) { showToast('Vui long chon site truoc!', 'warning'); return; }
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;margin:0 auto"></div>';
-
     try {
-      const res = await api('/wp-posts?per_page=1');
-      if (Array.isArray(res)) {
-        this.showStatus(true, `✅ Kết nối thành công! WordPress có bài viết.`);
-      } else {
-        this.showStatus(false, '❌ Kết nối thất bại. Kiểm tra URL và mật khẩu ứng dụng WP trong Cài Đặt.');
-      }
+      const res = await api(`/sites/${siteId}/test`, { method: 'POST' });
+      this.showStatus(res.success, res.success ? 'Ket noi thanh cong' : ('Loi: ' + (res.error||'that bai')));
     } catch {
-      this.showStatus(false, '❌ Không thể kết nối WordPress. Kiểm tra cấu hình trong Cài Đặt.');
+      this.showStatus(false, 'Khong the ket noi site nay');
     }
-
     btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-plug"></i> Kiểm tra';
+    btn.innerHTML = '<i class="fas fa-plug"></i> Kiem tra';
   },
 
   showStatus(connected, msg) {
     const st = $id('wpStatus');
-    const wpUrl = localStorage.getItem('qtp_wp_url') || 'https://thinksmart.vn';
-
+    const site = this._sites.find(s => s.id === this._siteId);
+    const siteName = site ? site.name : 'WordPress';
+    const siteUrl = site ? site.url : '';
     if (connected === undefined) {
-      // Just show config info
+      if (!this._siteId) { st.style.display = 'none'; return; }
       st.style.display = 'block';
-      st.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:32px;height:32px;border-radius:8px;background:rgba(237,105,24,0.1);display:flex;align-items:center;justify-content:center;color:var(--color-accent)">
-              <i class="fas fa-globe"></i>
-            </div>
-            <div>
-              <div style="font-weight:600;font-size:13px">WordPress</div>
-              <div style="font-size:12px;color:var(--color-muted)">${esc(wpUrl)}</div>
-            </div>
-          </div>
-          <div style="font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(245,158,11,0.1);color:#f59e0b">
-            <i class="fas fa-circle" style="font-size:6px;margin-right:4px"></i> Chưa kiểm tra
-          </div>
-        </div>`;
+      st.innerHTML = `<div class="flex jcsb aic g-12"><div class="flex aic g-10"><div class="w-32 h-32 br-8 bg-accent-10 flex aic jcc tc-accent"><i class="fas fa-globe"></i></div><div><div class="fw-600 fs-13">${esc(siteName)}</div><div class="fs-12 tm">${esc(siteUrl)}</div></div></div><div class="fs-11 px-10 br-20 bg-warning-10 tc-warning"><i class="fas fa-circle fs-6 mr-4"></i> Chua kiem tra</div></div>`;
       return;
     }
-
     st.style.display = 'block';
-    st.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:32px;height:32px;border-radius:8px;background:${connected ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'};display:flex;align-items:center;justify-content:center;color:${connected ? '#22c55e' : '#ef4444'}">
-            <i class="fas ${connected ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
-          </div>
-          <div>
-            <div style="font-weight:600;font-size:13px">${esc(wpUrl)}</div>
-            <div style="font-size:12px;color:var(--color-muted)">${esc(msg || '')}</div>
-          </div>
-        </div>
-        <div style="font-size:11px;padding:3px 10px;border-radius:20px;background:${connected ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'};color:${connected ? '#22c55e' : '#ef4444'};white-space:nowrap">
-          <i class="fas fa-circle" style="font-size:6px;margin-right:4px"></i> ${connected ? 'Đã kết nối' : 'Lỗi kết nối'}
-        </div>
-      </div>`;
+    const bg = connected ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)';
+    const tc = connected ? '#22c55e' : '#ef4444';
+    st.innerHTML = `<div class="flex jcsb aic g-12"><div class="flex aic g-10"><div class="w-32 h-32 br-8" style="background:${bg};display:flex;align-items:center;justify-content:center;color:${tc}"><i class="fas ${connected?'fa-check-circle':'fa-exclamation-circle'}"></i></div><div><div class="fw-600 fs-13">${esc(siteName)}</div><div class="fs-12 tm">${esc(siteUrl)} ${msg?'&mdash; '+esc(msg):''}</div></div></div><div class="fs-11 px-10 br-20" style="background:${bg};color:${tc};white-space:nowrap"><i class="fas fa-circle fs-6 mr-4"></i> ${connected?'Da ket noi':'Loi ket noi'}</div></div>`;
   },
 
   reset() {
@@ -1769,7 +1753,7 @@ QTP.WP = {
     this.hideImagePicker();
 
     // Fetch full post data
-    api(`/wp-posts?include=${postId}`)
+    api(`/wp-posts?include=${postId}&siteId=${this._siteId}`)
       .then(posts => {
         const post = Array.isArray(posts) ? posts.find(p => p.id === postId) : null;
         if (!post) throw new Error('Không tìm thấy bài viết');
@@ -1802,7 +1786,7 @@ QTP.WP = {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu…';
 
-    api(`/wp-posts/${id}`, {
+    api(`/wp-posts/${id}?siteId=${this._siteId}`, {
       method: 'PUT',
       body: JSON.stringify({ title, content }),
     })
@@ -1889,7 +1873,7 @@ QTP.WP = {
   del(postId) {
     showConfirm('Xóa bài viết khỏi WordPress?', async () => {
       try {
-        await api(`/wp-posts/${postId}`, { method: 'DELETE' });
+        await api(`/wp-posts/${postId}?siteId=${this._siteId}`, { method: 'DELETE' });
         showToast('✅ Đã xóa!');
         this.load();
       } catch {

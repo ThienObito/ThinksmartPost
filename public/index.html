@@ -518,7 +518,10 @@
           <h1 class="section-title" style="-webkit-text-fill-color:var(--color-text);background:linear-gradient(135deg,#ed6918,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text"><i class="fas fa-globe" style="margin-right:8px;font-size:16px"></i>WordPress</h1>
           <p class="section-subtitle">Kết nối &amp; quản lý bài viết trên WordPress</p>
         </div>
-        <div class="section-actions">
+        <div class="section-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <select id="wpSiteSelector" onchange="QTP.WP.onSiteChange()" style="background:var(--color-card-2);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:6px 28px 6px 12px;font-size:13px;color:var(--text);cursor:pointer;appearance:auto;max-width:220px" title="Chọn site WordPress">
+            <option value="">📡 Chọn site...</option>
+          </select>
           <button onclick="QTP.WP.testConn()" class="btn btn-ghost btn-sm" id="wpTestBtn">
             <i class="fas fa-plug"></i>
             <span class="btn-label">Kiểm tra</span>
