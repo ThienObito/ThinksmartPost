@@ -1092,9 +1092,11 @@ QTP.Articles = {
           method: 'POST',
           body: JSON.stringify({ files: [filename], defaultCategory, siteId }),
         });
-        if (res.success) {
-          showToast('✅ Đã đăng lên WordPress!');
+        if (res.success && res.successCount > 0) {
+          showToast('✅ Đã đăng ' + res.successCount + ' bài lên WordPress!');
           this.load();
+        } else if (res.success && res.successCount === 0) {
+          showToast('⚠️ Không có bài nào được đăng! Kiểm tra WP credentials trong tab WP.', 'warning');
         } else {
           showToast('Lỗi: ' + (res.message || ''), 'error');
         }
