@@ -1,8 +1,4 @@
-[
-  {
-    "id": "default",
-    "url": "https://thinksmart.vn",
-    "pass": "",
-    "user": "admin"
-  }
-]
+{
+  "wpUrl": "https://thinksmart.vn",
+  "wpPass": "HUlX 771b dCxm x8jO riyV G4zu"
+}
